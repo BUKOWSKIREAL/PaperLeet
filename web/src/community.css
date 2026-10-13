@@ -10,12 +10,13 @@
   gap: 25px;
   padding: 10px 0 29px;
 }
+.social-page-heading > div {
+  min-width: 0;
+}
 .social-eyebrow {
   color: var(--accent);
-  font:
-    10px "IBM Plex Mono",
-    monospace;
-  letter-spacing: 1.5px;
+  font: 600 12px/1.5 var(--font-sans);
+  letter-spacing: 0.6px;
 }
 .social-page-heading h1,
 .login-card h1 {
@@ -27,11 +28,12 @@
 }
 .social-page-heading p,
 .social-description {
-  color: var(--muted);
-  line-height: 1.8;
-  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  font-size: 15px;
 }
 .social-panel {
+  min-width: 0;
   border: 1px solid var(--line);
   background: var(--surface);
   border-radius: 9px;
@@ -41,9 +43,9 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: var(--muted);
+  color: var(--text-secondary);
   margin-bottom: 25px;
-  font-size: 12px;
+  font-size: 14px;
 }
 .social-back:hover {
   color: var(--text);
@@ -69,6 +71,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-weight: 500;
+  white-space: nowrap;
 }
 .person-link:hover,
 .post-author-name:hover {
@@ -84,28 +87,19 @@
   border: 1px solid var(--line);
   border-radius: 5px;
   padding: 7px 11px;
-  font-size: 11px;
+  font-size: 14px;
   white-space: nowrap;
 }
 .sign-in-nav:hover {
   color: var(--accent);
   border-color: var(--accent);
 }
-.nav-inner {
-  gap: 33px;
-}
-.topbar nav {
-  gap: 24px;
-}
-.nav-actions {
-  gap: 16px;
-}
 .institution-badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   color: var(--green);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.6;
 }
 .social-notice {
@@ -113,7 +107,7 @@
   background: color-mix(in srgb, var(--accent) 8%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.8;
   margin: 15px 0;
   overflow-wrap: anywhere;
@@ -132,8 +126,8 @@
   justify-content: center;
   align-items: center;
   gap: 10px;
-  color: var(--muted);
-  font-size: 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
 }
 .social-form {
   display: flex;
@@ -144,7 +138,7 @@
   display: flex;
   flex-direction: column;
   gap: 9px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
 }
 .social-form input,
@@ -156,9 +150,7 @@
   color: var(--text);
   padding: 11px 12px;
   border-radius: 5px;
-  line-height: 1.6;
-  font: inherit;
-  font-weight: 400;
+  font: 400 15px/1.6 var(--font-sans);
 }
 .social-form input:focus,
 .social-form textarea:focus,
@@ -169,13 +161,15 @@
 .social-form textarea {
   resize: vertical;
   min-height: 95px;
+  font-size: 16px;
+  line-height: 1.75;
 }
 .social-form textarea::placeholder {
-  color: var(--muted);
+  color: var(--text-secondary);
 }
 .social-form label > small {
-  color: var(--muted);
-  font-size: 11px;
+  color: var(--text-secondary);
+  font-size: 13px;
   font-weight: 400;
   line-height: 1.7;
 }
@@ -187,14 +181,15 @@
 }
 .form-footer {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
 }
 .form-footer small {
-  color: var(--muted);
+  color: var(--text-secondary);
   line-height: 1.6;
-  font-size: 10px;
+  font-size: 13px;
 }
 .form-footer > .button {
   margin-left: auto;
@@ -219,9 +214,9 @@
   width: 100%;
 }
 .account-fineprint {
-  font-size: 10px;
-  color: var(--muted);
-  line-height: 1.9;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.7;
   margin-top: 24px;
   border-top: 1px solid var(--line);
   padding-top: 20px;
@@ -233,15 +228,15 @@
 }
 .account-aside h3 {
   margin: 14px 0 11px;
-  font-size: 13px;
+  font-size: 16px;
 }
 .account-aside .social-panel > h3:first-child {
   margin-top: 0;
 }
 .account-aside p {
-  font-size: 11px;
-  line-height: 1.9;
-  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text-secondary);
 }
 .accent-icon {
   color: var(--accent);
@@ -251,7 +246,7 @@
   align-items: center;
   justify-content: space-between;
   font-weight: 500;
-  font-size: 12px;
+  font-size: 14px;
   cursor: pointer;
 }
 .institution-request > p {
@@ -261,13 +256,15 @@
   gap: 15px;
 }
 .institution-request .social-form input {
-  font-size: 11px;
+  font-size: 15px;
   padding: 9px;
 }
 .form-inline-actions {
   display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 14px;
   color: var(--accent);
 }
 .recognized-institution {
@@ -275,7 +272,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: 13px;
   margin-top: -6px;
 }
 .settings-avatar {
@@ -285,7 +282,7 @@
   margin-bottom: 9px;
 }
 .settings-avatar h3 {
-  font-size: 12px;
+  font-size: 15px;
   margin-bottom: 12px;
 }
 .avatar-palette {
@@ -310,12 +307,12 @@
   padding-top: 24px;
 }
 .settings-section h3 {
-  font-size: 14px;
+  font-size: 17px;
 }
 .settings-section p {
-  color: var(--muted);
+  color: var(--text-secondary);
   line-height: 1.8;
-  font-size: 11px;
+  font-size: 14px;
   margin-top: 10px;
 }
 .social-form label.social-checkbox {
@@ -336,8 +333,8 @@
 }
 .social-checkbox small {
   display: block;
-  color: var(--muted);
-  font-size: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
   font-weight: 400;
   margin-top: 5px;
 }
@@ -361,8 +358,8 @@
 }
 .profile-preview > span:not(.social-avatar),
 .profile-preview > p {
-  color: var(--muted);
-  font-size: 11px;
+  color: var(--text-secondary);
+  font-size: 14px;
 }
 .community-layout {
   display: grid;
@@ -380,9 +377,9 @@
 }
 .sidebar-label {
   display: block;
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 1px;
-  color: var(--muted);
+  color: var(--text-secondary);
   padding: 0 12px 16px;
 }
 .board-list button {
@@ -390,10 +387,10 @@
   width: 100%;
   gap: 11px;
   align-items: center;
-  font-size: 12px;
+  font-size: 14px;
   padding: 12px;
   border-radius: 5px;
-  color: var(--muted);
+  color: var(--text-secondary);
   margin: 2px 0;
   text-align: left;
 }
@@ -406,19 +403,19 @@
   color: var(--text);
 }
 .community-about h3 {
-  font-size: 12px;
+  font-size: 16px;
   margin: 15px 0 11px;
 }
 .community-about p {
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.9;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.7;
 }
 .community-about > a {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 10px;
+  font-size: 14px;
   margin-top: 20px;
   color: var(--accent);
 }
@@ -446,8 +443,8 @@
   align-items: center;
   gap: 7px;
   white-space: nowrap;
-  color: var(--muted);
-  font-size: 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
 }
 .social-tabs button.selected {
   color: var(--text);
@@ -477,13 +474,14 @@
   gap: 8px;
   padding: 7px 10px;
   border-radius: 5px;
-  color: var(--muted);
+  color: var(--text-secondary);
 }
 .community-search input {
+  min-width: 0;
   border: 0;
   background: none;
   width: 100%;
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.9;
   outline: none;
 }
@@ -521,22 +519,22 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
-  color: var(--muted);
-  font-size: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
   min-height: 21px;
 }
 .post-author-name {
   color: var(--text);
   font-weight: 500;
-  font-size: 11px;
+  font-size: 14px;
 }
 .community-category {
   display: inline-flex;
   padding: 3px 7px;
   border: 1px solid var(--line);
   border-radius: 4px;
-  color: var(--muted);
-  font-size: 9px;
+  color: var(--text-secondary);
+  font-size: 12px;
   line-height: 1.4;
 }
 .post-card-meta > .community-category {
@@ -545,8 +543,8 @@
 .post-title {
   display: block;
   font-weight: 600;
-  font-size: 16px;
-  line-height: 1.65;
+  font-size: 18px;
+  line-height: 1.5;
   margin: 9px 0 7px;
   overflow-wrap: anywhere;
 }
@@ -554,9 +552,9 @@
   color: var(--accent);
 }
 .post-excerpt {
-  font-size: 11px;
-  line-height: 1.85;
-  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-secondary);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -565,9 +563,10 @@
 }
 .post-card-counts {
   display: flex;
+  flex-wrap: wrap;
   gap: 22px;
-  color: var(--muted);
-  font-size: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
   margin-top: 16px;
 }
 .post-card-counts > span {
@@ -589,21 +588,21 @@
   height: 68px;
   display: grid;
   place-items: center;
-  color: var(--muted);
+  color: var(--text-secondary);
   border-radius: 18px;
   background: var(--surface2);
   border: 1px solid var(--line);
   margin-bottom: 20px;
 }
 .community-empty h3 {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 500;
   margin-bottom: 12px;
 }
 .community-empty > div > p {
-  font-size: 11px;
-  line-height: 1.9;
-  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-secondary);
   max-width: 360px;
 }
 .community-pagination {
@@ -612,8 +611,8 @@
   justify-content: flex-end;
   gap: 10px;
   margin-top: 18px;
-  color: var(--muted);
-  font-size: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
 }
 .community-pagination span {
   margin-right: 8px;
@@ -634,8 +633,8 @@
   gap: 18px;
 }
 .join-prompt p {
-  color: var(--muted);
-  font-size: 12px;
+  color: var(--text-secondary);
+  font-size: 15px;
   line-height: 1.8;
 }
 .community-empty .join-prompt {
@@ -649,13 +648,13 @@
   margin-bottom: 22px;
 }
 .panel-title h2 {
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 500;
 }
 .panel-title h2 span {
   margin-left: 8px;
-  color: var(--muted);
-  font-size: 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
 }
 .community-composer {
   margin-bottom: 22px;
@@ -665,15 +664,16 @@
 }
 .editor-toggle {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 18px;
-  color: var(--muted);
+  color: var(--text-secondary);
   border-bottom: 1px solid var(--line);
   margin-bottom: -18px;
   padding: 0 0 10px;
 }
 .editor-toggle button {
-  font-size: 11px;
+  font-size: 14px;
   padding: 2px;
 }
 .editor-toggle button.selected {
@@ -681,7 +681,7 @@
 }
 .editor-toggle small {
   margin-left: auto;
-  font-size: 10px;
+  font-size: 12px;
 }
 .compose-preview {
   min-height: 225px;
@@ -715,19 +715,19 @@
   gap: 15px;
   align-items: center;
   flex-wrap: wrap;
-  font-size: 12px;
+  font-size: 14px;
 }
 .discussion-author > time {
-  color: var(--muted);
-  font-size: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
 }
 .delete-action {
   margin-left: auto;
 }
 .community-prose {
   overflow-wrap: anywhere;
-  font-size: 13px;
-  line-height: 1.9;
+  font-size: 16px;
+  line-height: 1.75;
 }
 .community-prose p {
   white-space: pre-wrap;
@@ -741,14 +741,16 @@
   overflow-x: auto;
 }
 .community-prose pre code {
+  font: 14px/1.65 var(--font-mono);
   white-space: pre;
 }
 .community-image-alt {
-  color: var(--muted);
+  color: var(--text-secondary);
   font-style: italic;
 }
 .discussion-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 11px;
   border-top: 1px solid var(--line);
@@ -762,8 +764,8 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 11px;
-  color: var(--muted);
+  font-size: 14px;
+  color: var(--text-secondary);
 }
 .discussion-actions > button.active {
   color: var(--accent);
@@ -771,7 +773,7 @@
   background: color-mix(in srgb, var(--accent) 7%, transparent);
 }
 .discussion-actions > button span {
-  font-size: 10px;
+  font-size: 13px;
   margin-left: 4px;
 }
 .discussion-actions > span {
@@ -779,8 +781,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 10px;
-  color: var(--muted);
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 .discussion-replies {
   margin-bottom: 22px;
@@ -804,22 +806,23 @@
 }
 .reply-heading {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
-  font-size: 11px;
+  font-size: 14px;
   margin-bottom: 15px;
 }
 .reply-heading > time,
 .reply-context {
-  font-size: 9px;
-  color: var(--muted);
+  font-size: 12px;
+  color: var(--text-secondary);
 }
 .reply-link {
-  color: var(--muted);
+  color: var(--text-secondary);
   display: flex;
   gap: 6px;
   align-items: center;
-  font-size: 10px;
+  font-size: 13px;
   margin-top: 15px;
   padding: 2px 0;
 }
@@ -827,21 +830,23 @@
   color: var(--accent);
 }
 .no-replies {
-  color: var(--muted);
-  font-size: 11px;
+  color: var(--text-secondary);
+  font-size: 15px;
   padding: 25px 0 5px;
 }
 .reply-composer .panel-title h3 {
-  font-size: 14px;
+  font-size: 18px;
 }
 .reply-composer .panel-title .person-link {
-  font-size: 11px;
+  font-size: 14px;
 }
 .reply-target {
   display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
   align-items: center;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: 14px;
   padding: 5px 10px;
   background: var(--surface2);
   margin-bottom: 14px;
@@ -863,7 +868,7 @@
   padding: 18px 22px;
   width: max-content;
   max-width: calc(100vw - 30px);
-  font-size: 12px;
+  font-size: 14px;
 }
 .button.danger {
   background: #aa4040;
@@ -891,7 +896,7 @@
   padding: 25px 31px;
 }
 .profile-cover span {
-  color: var(--muted);
+  color: var(--text-secondary);
   letter-spacing: -1px;
   font-size: 23px;
   font-weight: 600;
@@ -914,14 +919,14 @@
   flex: 1;
 }
 .profile-primary h1 {
-  font-size: 23px;
+  font-size: 26px;
   line-height: 1.5;
   overflow-wrap: anywhere;
   margin: -3px 0 4px;
 }
 .profile-handle {
-  font-size: 11px;
-  color: var(--muted);
+  font-size: 14px;
+  color: var(--text-secondary);
 }
 .profile-facts {
   display: flex;
@@ -933,25 +938,26 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--muted);
-  font-size: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
 }
 .profile-facts > .institution-badge {
   color: var(--green);
 }
 .profile-bio {
-  font-size: 12px;
-  line-height: 1.85;
+  font-size: 16px;
+  line-height: 1.75;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   margin-top: 17px;
 }
 .profile-edit {
   flex-shrink: 0;
-  font-size: 11px;
+  font-size: 14px;
 }
 .profile-stats {
   display: flex;
+  flex-wrap: wrap;
   gap: 32px;
   border-top: 1px solid var(--line);
   margin: 0 31px;
@@ -962,12 +968,12 @@
   align-items: center;
   gap: 8px;
   padding: 0;
-  font-size: 11px;
-  color: var(--muted);
+  font-size: 14px;
+  color: var(--text-secondary);
 }
 .profile-stats b {
   color: var(--text);
-  font-size: 17px;
+  font-size: 20px;
   font-weight: 500;
 }
 .profile-tabs {
@@ -975,7 +981,7 @@
   gap: 27px;
 }
 .profile-tabs button span {
-  font-size: 9px;
+  font-size: 12px;
   padding: 1px 5px;
   background: var(--surface2);
   border-radius: 4px;
@@ -989,8 +995,8 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 7px;
-  font-size: 10px;
-  color: var(--muted);
+  font-size: 13px;
+  color: var(--text-secondary);
   margin-bottom: 18px;
 }
 .activity-label > a {
@@ -998,7 +1004,7 @@
 }
 .activity-label > time {
   margin-left: auto;
-  font-size: 9px;
+  font-size: 12px;
 }
 .profile-activity > div:not(:last-child) {
   border-bottom: 1px solid var(--line);
@@ -1007,7 +1013,7 @@
   padding: 24px;
 }
 .profile-reply-card .community-prose {
-  font-size: 12px;
+  font-size: 15px;
 }
 .connection-card {
   display: flex;
@@ -1025,57 +1031,44 @@
 }
 .connection-card > div > a {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 9px;
 }
 .connection-card > div > a > b {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 500;
 }
 .connection-card > div > a > span {
-  color: var(--muted);
-  font-size: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
 }
 .connection-card .institution-badge {
   margin-top: 8px;
 }
 .connection-card p {
-  color: var(--muted);
-  font-size: 11px;
+  color: var(--text-secondary);
+  font-size: 14px;
   margin-top: 9px;
   line-height: 1.8;
   overflow-wrap: anywhere;
 }
 .connection-card > .button {
   flex-shrink: 0;
-  font-size: 10px;
+  font-size: 14px;
   padding: 7px 11px;
-}
-@media (max-width: 1200px) {
-  .nav-inner {
-    gap: 25px;
-  }
-  .topbar nav {
-    gap: 19px;
-  }
-  .nav-actions {
-    gap: 12px;
-  }
-  .nav-actions .connection {
-    display: none;
-  }
 }
 @media (max-width: 850px) {
   .social-page {
     padding: 26px 22px 45px;
   }
   .community-layout {
-    grid-template-columns: 170px minmax(0, 1fr);
+    grid-template-columns: 200px minmax(0, 1fr);
     gap: 18px;
   }
   .board-list button {
     padding: 10px 7px;
-    font-size: 11px;
+    font-size: 14px;
     gap: 8px;
   }
   .community-about {
@@ -1097,15 +1090,6 @@
   .post-card-layout {
     gap: 11px;
   }
-  .nav-inner {
-    gap: 18px;
-  }
-  .topbar nav {
-    gap: 16px;
-  }
-  .topbar nav button:last-child {
-    display: none;
-  }
 }
 @media (max-width: 640px) {
   .social-page {
@@ -1113,24 +1097,25 @@
   }
   .social-page-heading {
     align-items: flex-start;
+    flex-wrap: wrap;
     gap: 13px;
     padding-bottom: 22px;
   }
   .social-page-heading h1 {
-    font-size: 22px;
+    font-size: 24px;
   }
   .social-page-heading > .button {
     padding: 9px 10px;
-    font-size: 10px;
-    margin-top: 22px;
+    font-size: 14px;
+    margin-top: 0;
     white-space: nowrap;
   }
   .social-page-heading p {
-    font-size: 11px;
+    font-size: 15px;
   }
   .social-eyebrow {
-    font-size: 8px;
-    letter-spacing: 1px;
+    font-size: 12px;
+    letter-spacing: 0.6px;
   }
   .community-layout,
   .account-grid {
@@ -1154,23 +1139,25 @@
     width: auto;
     white-space: nowrap;
     padding: 8px;
-    font-size: 10px;
+    font-size: 14px;
   }
   .board-list button svg {
     width: 13px;
     height: 13px;
   }
   .community-search {
-    width: 185px;
+    width: 100%;
+    max-width: none;
   }
   .community-feed-toolbar {
+    flex-wrap: wrap;
     gap: 12px;
   }
   .social-tabs {
     gap: 18px;
   }
   .social-tabs button {
-    font-size: 11px;
+    font-size: 14px;
   }
   .post-card-meta > .community-category {
     margin-left: 0;
@@ -1184,19 +1171,19 @@
   .post-card-layout > a > .social-avatar {
     width: 29px !important;
     height: 29px !important;
-    font-size: 11px !important;
+    font-size: 13px !important;
   }
   .post-title {
-    font-size: 14px;
+    font-size: 18px;
   }
   .post-card-meta {
     gap: 6px;
   }
   .post-author-name {
-    font-size: 10px;
+    font-size: 14px;
   }
   .post-card-meta time {
-    font-size: 9px;
+    font-size: 12px;
   }
   .community-empty {
     min-height: 320px;
@@ -1208,6 +1195,11 @@
   .community-composer {
     padding: 20px;
   }
+  .social-form input,
+  .social-form select,
+  .community-search input {
+    font-size: 16px;
+  }
   .form-footer {
     flex-wrap: wrap;
     gap: 14px;
@@ -1216,7 +1208,7 @@
     padding: 23px 20px;
   }
   .discussion-heading h1 {
-    font-size: 22px;
+    font-size: 24px;
   }
   .discussion-author {
     gap: 10px;
@@ -1241,10 +1233,10 @@
   }
   .discussion-actions > button {
     padding: 7px 9px;
-    font-size: 10px;
+    font-size: 14px;
   }
   .discussion-actions > span {
-    font-size: 9px;
+    font-size: 13px;
   }
   .join-prompt {
     flex-direction: column;
@@ -1275,7 +1267,7 @@
     min-width: calc(100% - 94px);
   }
   .profile-primary h1 {
-    font-size: 20px;
+    font-size: 26px;
   }
   .profile-edit {
     margin-left: auto;
@@ -1285,11 +1277,11 @@
     gap: 21px;
   }
   .profile-stats button {
-    font-size: 10px;
+    font-size: 14px;
     gap: 6px;
   }
   .profile-stats b {
-    font-size: 15px;
+    font-size: 20px;
   }
   .profile-tabs {
     gap: 18px;
@@ -1298,7 +1290,7 @@
     gap: 4px;
   }
   .profile-tabs button span {
-    font-size: 8px;
+    font-size: 12px;
   }
   .connection-card {
     padding: 19px 17px;
@@ -1324,49 +1316,12 @@
   .settings-avatar {
     gap: 17px;
   }
-  .nav-inner {
-    gap: 14px;
-  }
-  .topbar nav {
-    gap: 14px;
-  }
-  .nav-actions {
-    gap: 9px;
-  }
   .sign-in-nav {
     padding: 5px 7px;
-    font-size: 10px;
+    font-size: 14px;
   }
 }
 @media (max-width: 430px) {
-  .topbar nav {
-    gap: 12px;
-  }
-  .topbar nav a,
-  .topbar nav button {
-    font-size: 10px;
-  }
-  .nav-inner {
-    gap: 12px;
-  }
-  .nav-actions {
-    gap: 7px;
-  }
-  .nav-actions .icon-button {
-    padding: 3px;
-  }
-  .language-toggle {
-    gap: 4px;
-  }
-  .language-toggle > svg {
-    display: none;
-  }
-  .brand {
-    font-size: 18px;
-  }
-  .brand-mark svg {
-    width: 20px;
-  }
   .profile-tabs {
     gap: 15px;
   }
@@ -1379,13 +1334,13 @@
   padding: 11px 15px;
   border-top: 1px solid var(--line);
   background: color-mix(in srgb, var(--accent) 6%, var(--surface));
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.7;
 }
 .practice-notice > span {
   flex: 1;
   min-width: 200px;
-  color: var(--muted);
+  color: var(--text-secondary);
   overflow-wrap: anywhere;
 }
 .practice-notice > a,
@@ -1395,7 +1350,7 @@
   border-radius: 4px;
   padding: 4px 7px;
   white-space: nowrap;
-  font-size: 10px;
+  font-size: 13px;
 }
 .editor-status > span:first-child {
   min-width: 0;
@@ -1410,14 +1365,14 @@
   border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
   border-radius: 4px;
   color: var(--accent);
-  font-size: 9px;
+  font-size: 12px;
   line-height: 1.6;
   white-space: nowrap;
   font-weight: 400;
 }
 .profile-facts > .test-account-badge {
   color: var(--accent);
-  font-size: 9px;
+  font-size: 12px;
 }
 .person-link > .test-account-badge {
   flex-shrink: 0;

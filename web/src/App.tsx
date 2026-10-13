@@ -24,7 +24,6 @@ import {
   Moon,
   Play,
   RotateCcw,
-  Settings2,
   Sun,
   Terminal,
   X,
@@ -46,6 +45,16 @@ import "./community.css";
 
 const difficulty = (d: string) =>
   ({ E: "Easy", M: "Medium", H: "Hard" })[d] || d;
+const editorFontSizes = [13, 14, 15, 16, 17, 18, 20];
+function initialEditorFontSize() {
+  try {
+    const saved = Number(localStorage.getItem("paperleet.editor.fontSize"));
+    if (editorFontSizes.includes(saved)) return saved;
+  } catch {
+    // The editor remains usable when browser storage is unavailable.
+  }
+  return 15;
+}
 function getId() {
   return decodeProblemHash(location.hash);
 }
@@ -341,7 +350,7 @@ function Workspace() {
     [running, setRunning] = useState(false),
     [toast, setToast] = useState(""),
     [guide, setGuide] = useState(false),
-    [font, setFont] = useState(13),
+    [font, setFont] = useState(initialEditorFontSize),
     [theme, setTheme] = useState(
       () => localStorage.getItem("paperleet.theme") || "dark",
     );
@@ -913,16 +922,31 @@ function Workspace() {
                       solution.py
                     </span>
                     <div>
-                      <button
-                        className="icon-button"
-                        title={t("切换字号", "Change font size")}
-                        aria-label={t("切换代码字号", "Change code font size")}
-                        onClick={() =>
-                          setFont(font === 13 ? 15 : font === 15 ? 17 : 13)
-                        }
-                      >
-                        <Settings2 size={14} />
-                      </button>
+                      <label className="editor-font-size">
+                        <span aria-hidden="true">Aa</span>
+                        <select
+                          className="editor-font-size-select"
+                          value={font}
+                          title={t("代码字号", "Code font size")}
+                          aria-label={t("代码字号", "Code font size")}
+                          onChange={(event) => {
+                            const size = Number(event.target.value);
+                            setFont(size);
+                            try {
+                              localStorage.setItem(
+                                "paperleet.editor.fontSize",
+                                String(size),
+                              );
+                            } catch {
+                              // Keep the selected size for this session.
+                            }
+                          }}
+                        >
+                          {editorFontSizes.map((size) => (
+                            <option key={size} value={size}>{size} px</option>
+                          ))}
+                        </select>
+                      </label>
                       <button
                         className="icon-button"
                         title={t("复制代码", "Copy code")}
