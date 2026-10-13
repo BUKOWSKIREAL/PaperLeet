@@ -37,7 +37,7 @@ def main(argv=None):
     ci_parser = commands.add_parser("ci", help="Verify references, mutant quality, repeatability, and timing")
     ci_parser.add_argument("--problem", action="append", help="Optionally run just one problem (repeatable)")
     ci_parser.add_argument("--repeats", type=int, default=3)
-    ci_parser.add_argument("--budget", type=float, default=120)
+    ci_parser.add_argument("--budget", type=float, default=300, help="Total wall-clock budget for the maintained catalog (seconds)")
     viz = commands.add_parser("vizdata", help="Generate reference visualization data")
     viz.add_argument("problem", help="Problem id or 'all'")
     commands.add_parser("export", help="Generate web catalog from problem packages")

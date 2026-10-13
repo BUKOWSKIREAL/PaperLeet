@@ -1,0 +1,104 @@
+id: diffusion/jit
+number: 17
+title: JiT：高维空间中的干净数据预测
+title_en: 'JiT: Clean Prediction in High Dimensions'
+paper:
+  title: 'Back to Basics: Let Denoising Generative Models Denoise'
+  arxiv: '2511.13720'
+  anchors:
+  - arXiv v1 §3.2 prediction and loss spaces
+  - §3.3 Figure 2 high-dimensional manifold toy
+  - Official Denoiser.forward
+  version: v1
+  authors: Tianhong Li, Kaiming He
+  venue: arXiv 2025
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: make_noisy
+  signature: 'make_noisy(clean: Tensor, noise: Tensor, t: Tensor) -> Tensor'
+- name: prediction_to_velocity
+  signature: 'prediction_to_velocity(prediction: Tensor, z: Tensor, t: Tensor, kind:
+    str = ''x'', eps: float = .01) -> Tensor'
+- name: velocity_loss
+  signature: 'velocity_loss(prediction: Tensor, clean: Tensor, noise: Tensor, t: Tensor,
+    kind: str = ''x'', eps: float = .01) -> Tensor'
+conventions:
+  seed: 42
+  dtype: Preserve floating input dtype/device; tests include float64.
+  loss: Unless stated otherwise, mean across batch and coordinates.
+tests:
+  T0: 1
+  T1: 1
+  T2: 3
+  T3: 1
+t3_budget_s: 10
+mutants:
+- id: m1_wrong_time_direction
+  bug: wrong time direction
+- id: m2_wrong_x_denominator
+  bug: wrong x denominator
+- id: m3_clean_space_loss
+  bug: clean space loss
+viz:
+- toy_experiment
+estimated_minutes: 35
+tags:
+- Generative Models
+- JiT
+- PyTorch
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2511.13720
+  - https://arxiv.org/abs/2511.13720v1
+  - https://github.com/LTH14/JiT/blob/cbc743a2ada5e9762697da2c83f8c4f8379e8c17/denoiser.py
+module:
+  goal: 实现干净数据预测与速度空间监督，在高维嵌入数据上比较 x/epsilon/v 输出。
+  goal_en: Implement clean-data prediction with velocity-space supervision and compare
+    x/epsilon/v outputs on embedded data.
+  scope: 实现 make_noisy, prediction_to_velocity, velocity_loss；toy.py 提供训练与可视化脚手架。
+  scope_en: Implement make_noisy, prediction_to_velocity, velocity_loss. toy.py provides
+    the training and visualization scaffold.
+  required_functions:
+  - make_noisy
+  - prediction_to_velocity
+  - velocity_loss
+  provided_functions: []
+  optional: false
+toy:
+  provenance: Paper experiment reimplementation, reduced
+  description: 根据 Figure 2 固定正交 2D→D 投影思想重实现，数据选用合成螺旋。默认 D=16、宽32、深3、160步；原文维度为2/8/16/512、宽256、深5。使用
+    toy.py 的 --impl 与 --full --steps 5000 可运行原维度/网络扫描；步数和螺旋数据为教学选择。短程结果不保证原论文排序，未找到原
+    toy 源码。 depth 计入输出层的全部 Linear 层。
+  description_en: Reimplements the fixed orthogonal 2D→D embedding idea in Figure
+    2 with synthetic spiral data. Default D=16, width=32, depth=3, 160 steps; the
+    original uses D=2/8/16/512 and width=256, depth=5. Run `python problems/diffusion/jit/toy.py
+    --impl problems/diffusion/jit/solution.py --full --steps 5000` for that dimension/architecture
+    sweep; the step count and spiral distribution are our choices. Short-run comparisons
+    are observations, not a guarantee of the paper ranking. No original toy source
+    was found. Depth counts all Linear layers including the output.
+  source: https://arxiv.org/html/2511.13720v1#S3.SS3
+  seed: 42
+  entrypoint: toy.py:run
+  full_reproduction: false
+calibration:
+  status: measured
+  seed: 42
+  device: CPU
+  threads: 2
+  machine: arm64
+  torch_version: 2.14.1
+  checked_at: '2026-10-13'
+  reference_duration_s: 0.174233
+  reference_metrics:
+    projection_orthogonality_error: 2.384185791015625e-07
+    x_initial_loss: 0.2144322395324707
+    x_final_loss: 0.1127084270119667
+    eps_initial_loss: 4.154421329498291
+    eps_final_loss: 0.7193431854248047
+    v_initial_loss: 1.0524120330810547
+    v_final_loss: 0.157854825258255
+  reference_tests_passed: 6
+  mutants_killed: 3

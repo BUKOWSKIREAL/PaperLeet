@@ -1,6 +1,7 @@
 """Workflow regressions: model output never becomes a public problem without human review."""
 import copy
 import json
+import os
 import sys
 import threading
 import time
@@ -14,6 +15,7 @@ from paperleet.submissions import Conflict, SubmissionStore
 from paperleet.submissions.checks import package_hash, static_checks
 from paperleet.submissions.model import ModelUnavailable, OpenAIProvider
 from paperleet.submissions.sandbox import OutputLimitError, Sandbox, _run_bounded, run_published
+from paperleet.submissions.artifacts import serialize_artifact, validate_report_artifacts
 
 
 @pytest.fixture
@@ -26,6 +28,23 @@ def candidate():
             "tests": [{"name": f"test_layer_{i}", "layer": f"T{i}", "code": f"def test_layer_{i}(impl):\n    assert impl.add({i}, 2) == {i + 2}\n"} for i in range(4)],
             "mutants": [{"name": "wrong_sign", "bug": "Subtracts.", "code": "def add(a, b):\n    return a - b\n"},
                         {"name": "extra_one", "bug": "Adds one.", "code": "def add(a, b):\n    return a + b + 1\n"}]}
+
+
+@pytest.fixture
+def toy_candidate(candidate):
+    candidate["toy"] = {"kind": "teaching_adaptation", "source_url": "https://example.com/paper",
+                        "locator": "Equation 1; synthetic test fixture", "adaptation": "Eight scalar addition inputs; no paper benchmark claims."}
+    candidate["tests"][-1]["code"] = '''import torch
+def test_layer_3(impl, artifact):
+    """Measure the submitted function on a deterministic synthetic sequence."""
+    inputs = torch.arange(8, dtype=torch.float32)
+    output = impl.add(inputs, 2)
+    artifact('addition_toy', {'kind': 'toy_experiment', 'title': 'Synthetic addition',
+                             'samples': torch.stack((inputs, output), dim=-1),
+                             'metrics': {'mean': output.mean()}})
+    torch.testing.assert_close(output, inputs + 2)
+'''
+    return candidate
 
 
 class FakeProvider:
@@ -351,3 +370,191 @@ def test_model_cannot_generate_without_retrieved_or_supplied_evidence(monkeypatc
     provider.request = lambda *args, **kwargs: {"value": "Unavailable", "sources": [], "response_id": "test"}
     with pytest.raises(ModelUnavailable, match="No accessible"):
         provider.generate({"title": "Paper", "paper_url": "https://example.com/paper"})
+
+
+def test_optional_artifact_contract_and_provenance(toy_candidate):
+    assert all(row['passed'] for row in static_checks(toy_candidate))
+    legacy = copy.deepcopy(toy_candidate)
+    legacy.pop('toy')
+    legacy['tests'][-1]['code'] = 'def test_layer_3(impl):\n    assert impl.add(3, 2) == 5\n'
+    assert all(row['passed'] for row in static_checks(legacy))
+    missing = copy.deepcopy(toy_candidate)
+    missing.pop('toy')
+    assert not all(row['passed'] for row in static_checks(missing))
+    unknown = copy.deepcopy(toy_candidate)
+    unknown['toy']['kind'] = 'official-looking'
+    assert not all(row['passed'] for row in static_checks(unknown))
+    uncited = copy.deepcopy(toy_candidate)
+    uncited['toy']['source_url'] = 'https://example.com/other-paper'
+    assert not all(row['passed'] for row in static_checks(uncited))
+    no_measurement = copy.deepcopy(toy_candidate)
+    no_measurement['tests'][-1]['code'] = legacy['tests'][-1]['code']
+    assert not all(row['passed'] for row in static_checks(no_measurement))
+
+
+@pytest.mark.parametrize('parameters', ['impl, request', 'impl, artifact, request', 'impl, artifact=None', 'impl, *args', 'impl, /', 'impl, **kwargs'])
+def test_generated_tests_cannot_request_other_fixtures(toy_candidate, parameters):
+    toy_candidate['tests'][-1]['code'] = f'def test_layer_3({parameters}):\n    assert impl.add(3, 2) == 5\n'
+    assert not all(row['passed'] for row in static_checks(toy_candidate))
+
+
+def test_tensor_artifacts_are_finite_detached_copies(toy_candidate):
+    from types import SimpleNamespace
+    import numpy as np
+    import torch
+    from paperleet.submissions.worker import Reporter
+    reporter = Reporter(toy_candidate['toy'])
+    item = SimpleNamespace()
+    points = torch.tensor([[1., 2.], [3., 4.]], requires_grad=True)
+    value = {'kind': 'toy_experiment', 'title': 'Measured output', 'samples': points,
+             'metrics': {'mean': points.mean(), 'count': np.int64(2)},
+             'loss_curve': np.array([[0., 2.], [1., .5]]),
+             'provenance': {'kind': 'invented'}}
+    reporter.save_artifact(item, 'actual_output', value)
+    artifact = item._paperleet_artifacts['actual_output']
+    assert artifact['samples'] == [[1., 2.], [3., 4.]]
+    assert artifact['metrics'] == {'mean': 2.5, 'count': 2}
+    assert artifact['provenance']['kind'] == 'teaching_adaptation'
+    assert artifact['provenance']['source'] == toy_candidate['toy']['source_url']
+    assert points.grad is None
+    with torch.no_grad():
+        points[0, 0] = 99
+    assert artifact['samples'][0][0] == 1
+    validate_report_artifacts([{'artifacts': item._paperleet_artifacts}])
+    with pytest.raises(ValueError, match='unique'):
+        reporter.save_artifact(item, 'actual_output', 1)
+
+
+@pytest.mark.parametrize('value', [float('nan'), float('inf'), {'x': float('-inf')}, 2**60,
+                                  {1: 'non-string key'}, {'key': 'x' * 4097}, list(range(4097))])
+def test_artifact_json_rejects_nonfinite_or_unbounded_data(value):
+    with pytest.raises(ValueError):
+        serialize_artifact(value)
+
+
+def test_artifact_depth_cycles_array_size_and_unsupported_objects():
+    import numpy as np
+    import torch
+    from paperleet.submissions.worker import numerical_artifact
+    cyclic = []; cyclic.append(cyclic)
+    deep = 1
+    for _ in range(14):
+        deep = [deep]
+    values = [cyclic, deep, object(), np.array([object()], dtype=object),
+              np.zeros(4097), torch.zeros(4097), torch.tensor([complex(1, 2)]), torch.tensor([float('nan')])]
+    for value in values:
+        with pytest.raises(ValueError):
+            serialize_artifact(value, numerical_artifact)
+
+
+def test_artifact_limits_apply_per_test_and_whole_report(toy_candidate):
+    from types import SimpleNamespace
+    from paperleet.submissions.worker import Reporter
+    reporter = Reporter(toy_candidate['toy'])
+    item = SimpleNamespace()
+    for i in range(4):
+        reporter.save_artifact(item, f'metric_{i}', i)
+    with pytest.raises(ValueError, match='four'):
+        reporter.save_artifact(item, 'fifth', 5)
+    large = {f'chunk_{i}': 'x' * 4000 for i in range(8)}
+    reporter.save_artifact(SimpleNamespace(), 'large', large)
+    combined = SimpleNamespace()
+    reporter.save_artifact(combined, 'first', large)
+    with pytest.raises(ValueError, match='32 KB'):
+        reporter.save_artifact(combined, 'second', large)
+    bounded_reporter = Reporter(toy_candidate['toy'])
+    for _ in range(8):
+        bounded_reporter.save_artifact(SimpleNamespace(), 'large', large)
+    with pytest.raises(ValueError, match='256 KB'):
+        bounded_reporter.save_artifact(SimpleNamespace(), 'large', large)
+    row = {'artifacts': {'large': large}}
+    with pytest.raises(ValueError, match='32 KB'):
+        validate_report_artifacts([{'artifacts': {'first': large, 'second': large}}])
+    with pytest.raises(ValueError, match='256 KB'):
+        validate_report_artifacts([copy.deepcopy(row) for _ in range(9)])
+    with pytest.raises(ValueError, match='provenance'):
+        Reporter().save_artifact(SimpleNamespace(), 'missing_provenance', 1)
+
+
+@pytest.mark.parametrize('failure', ['missing', 'empty', 'wrong_provenance'])
+def test_declared_toy_without_measured_reference_artifact_cannot_pass(toy_candidate, failure):
+    sandbox = FakeSandbox()
+    original = sandbox.run
+    def run(*args):
+        result = original(*args)
+        if failure != 'missing':
+            toy = toy_candidate['toy']
+            provenance = {'kind': toy['kind'], 'source': toy['source_url'],
+                          'locator': toy['locator'], 'adaptation': toy['adaptation']}
+            value = {'kind': 'toy_experiment', 'provenance': provenance}
+            if failure == 'wrong_provenance':
+                value['metrics'] = {'mean': 5.5}
+                value['provenance']['kind'] = 'author_toy'
+            next(row for row in result['tests'] if row['layer'] == 'T3')['artifacts'] = {'empty': value}
+        return result
+    sandbox.run = run
+    report = sandbox.validate(toy_candidate)
+    assert not report['passed']
+    assert all(not row['passed'] for row in report['checks'] if row['name'] in ('reference', 'reference_repeat'))
+    assert all('missing a measured T3' in row['detail'] for row in report['checks'] if row['name'] in ('reference', 'reference_repeat'))
+
+
+def test_artifact_context_is_snapshotted_and_host_rejects_invalid_report(toy_candidate, monkeypatch):
+    sandbox = Sandbox()
+    sandbox.capability = lambda: {'ready': True, 'image_id': 'sha256:pinned'}
+    def execute(args):
+        from pathlib import Path
+        mount = args[args.index('--mount') + 1]
+        directory = Path(mount.split('source=', 1)[1].split(',target=', 1)[0])
+        assert json.loads((directory / 'artifact_context.json').read_text()) == toy_candidate['toy']
+        return 0, 'PAPERLEET_RESULT={"exit_code":0,"tests":[{"artifacts":{"bad":NaN}}]}\n'
+    monkeypatch.setattr('paperleet.submissions.sandbox._run_bounded', execute)
+    monkeypatch.setattr('paperleet.submissions.sandbox.subprocess.run', lambda *args, **kwargs: None)
+    result = sandbox.run(toy_candidate, toy_candidate['solution'])
+    assert result['exit_code'] == 125 and result['tests'] == [] and 'error' in result
+
+
+def test_model_toy_prompt_keeps_test_generation_independent(toy_candidate):
+    provider, prompts = OpenAIProvider(), []
+    def request(prompt, schema=None, search=False):
+        prompts.append(prompt)
+        if search:
+            value = 'Equation 1; no author toy available. A synthetic sequence is a teaching adaptation.'
+        elif len(prompts) == 2:
+            value = {k: v for k, v in toy_candidate.items() if k not in ('tests', 'mutants')}
+            assert schema['properties']['toy']['properties']['kind']['enum'] == ['author_toy', 'paper_derived', 'teaching_adaptation']
+        else:
+            value = {k: toy_candidate[k] for k in ('tests', 'mutants')}
+        return {'value': value, 'sources': [{'url': 'https://example.com/paper'}], 'response_id': 'fixture'}
+    provider.request = request
+    candidate, _ = provider.generate({'title': 'Synthetic fixture', 'paper_url': 'https://example.com/paper'})
+    assert candidate == toy_candidate
+    assert 'original toy experiments' in prompts[0]
+    assert 'teaching_adaptation' in prompts[1]
+    assert 'real measured results' in prompts[2] and '(impl, artifact)' in prompts[2]
+    assert toy_candidate['solution'] not in prompts[2] and '"solution"' not in prompts[2]
+
+
+@pytest.mark.skipif(os.environ.get('PAPERLEET_DOCKER_HARNESS_TESTS') != '1', reason='Set PAPERLEET_DOCKER_HARNESS_TESTS=1 after building the submission image')
+def test_real_docker_toy_validation_and_published_artifact(toy_candidate, tmp_path):
+    sandbox = Sandbox()
+    assert sandbox.capability()['ready']
+    result = sandbox.validate(toy_candidate)
+    assert result['passed'], result
+    artifact = next(row for row in result['runs']['reference']['tests'] if row['layer'] == 'T3')['artifacts']['addition_toy']
+    assert artifact['samples'] == [[float(i), float(i + 2)] for i in range(8)]
+    assert artifact['metrics']['mean'] == 5.5
+    assert artifact['provenance']['kind'] == 'teaching_adaptation'
+    package = tmp_path / 'package'
+    package.mkdir()
+    (package / 'candidate.json').write_text(json.dumps(toy_candidate))
+    implementation = tmp_path / 'learner.py'
+    implementation.write_text(toy_candidate['solution'])
+    entry = {'directory': package, 'id': 'community/toy', 'package_hash': package_hash(toy_candidate)}
+    report = run_published(entry, implementation, ['T3'])
+    assert report['passed'] and report['tests'][0]['artifacts']['addition_toy'] == artifact
+    changed = copy.deepcopy(toy_candidate)
+    changed['toy']['adaptation'] = 'Changed after review'
+    (package / 'candidate.json').write_text(json.dumps(changed))
+    with pytest.raises(ValueError, match='changed'):
+        run_published(entry, implementation, ['T3'])

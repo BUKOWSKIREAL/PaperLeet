@@ -51,8 +51,12 @@ def test_job_rejects_unmaintained_packages_paths_and_resource_controls(payload):
         validate_job(payload)
 
 
-def test_manifest_covers_all_ten_packages_and_parametrized_tests():
-    assert len(CURATED_PROBLEMS) == 10
+def test_manifest_covers_curated_catalog_and_parametrized_tests():
+    from paperleet.paper_catalog import paper_catalog
+    from paperleet.catalog import problems
+    cards, _ = paper_catalog(problems())
+    assert CURATED_PROBLEMS == {module for card in cards for module in card.get("curated_module_ids", [])}
+    assert not any(module.startswith("community/") for module in CURATED_PROBLEMS)
     for identifier in CURATED_PROBLEMS:
         assert expected_tests(problem(identifier), ["T0", "T1", "T2", "T3"])
     assert sum(expected_tests(problem("diffusion/ddpm_sampling"), ["T3"]).values()) == 2

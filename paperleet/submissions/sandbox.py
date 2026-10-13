@@ -12,6 +12,7 @@ import time
 import uuid
 
 from .checks import package_hash, static_checks
+from .artifacts import validate_report_artifacts
 
 
 class OutputLimitError(RuntimeError):
@@ -72,6 +73,8 @@ class Sandbox:
             directory.chmod(0o755)
             (directory / "tests").mkdir(mode=0o755)
             (directory / "implementation.py").write_text(implementation, encoding="utf-8")
+            if candidate.get("toy"):
+                (directory / "artifact_context.json").write_text(json.dumps(candidate["toy"], allow_nan=False), encoding="utf-8")
             selected = set(layers or ["T0", "T1", "T2", "T3"])
             for test in candidate["tests"]:
                 if test["layer"] in selected:
@@ -88,6 +91,7 @@ class Sandbox:
                 marker = "PAPERLEET_RESULT="
                 rows = [line[len(marker):] for line in text.splitlines() if line.startswith(marker)]
                 result = json.loads(rows[-1]) if rows else {"exit_code": returncode or 125, "tests": []}
+                validate_report_artifacts(result.get("tests", []))
                 result["output"] = text[-20000:]
                 if returncode not in (0, 1) or not rows:
                     result["error"] = "Sandbox did not complete all tests."
@@ -96,7 +100,7 @@ class Sandbox:
                 return {"exit_code": 124, "tests": [], "error": "Sandbox exceeded the 90-second wall-clock limit.", "output": ""}
             except OutputLimitError:
                 return {"exit_code": 125, "tests": [], "error": "Sandbox exceeded the 1 MB output limit.", "output": ""}
-            except (OSError, ValueError):
+            except (OSError, ValueError, TypeError, AttributeError):
                 return {"exit_code": 125, "tests": [], "error": "Sandbox returned no valid test report.", "output": ""}
             finally:
                 # Killing the Docker client alone does not terminate a timed-out container.
@@ -125,11 +129,25 @@ class Sandbox:
         results = {}
         for label, source in [("reference", candidate["solution"]), ("reference_repeat", candidate["solution"]), ("starter", candidate["starter"])]:
             result = results[label] = self.run(candidate, source)
+            detail = f"{sum(bool(t.get('passed')) for t in result.get('tests', []))}/{expected} tests passed"
             if label == "starter":
                 passed = complete(result) and result["exit_code"] == 1 and any(not t["passed"] for t in result["tests"])
             else:
                 passed = complete(result) and result["exit_code"] == 0 and all(t["passed"] for t in result["tests"])
-            checks.append({"name": label, "passed": passed, "detail": f"{sum(bool(t.get('passed')) for t in result.get('tests', []))}/{expected} tests passed"})
+                if candidate.get("toy"):
+                    toy = candidate["toy"]
+                    provenance = {"kind": toy["kind"], "source": toy["source_url"],
+                                  "locator": toy["locator"], "adaptation": toy["adaptation"]}
+                    has_toy = any(
+                        isinstance(value, dict) and value.get("kind") == "toy_experiment"
+                        and value.get("provenance") == provenance
+                        and any(value.get(key) for key in ("metrics", "loss_curve", "samples"))
+                        for row in result.get("tests", []) if row.get("layer") == "T3"
+                        for value in row.get("artifacts", {}).values())
+                    passed = passed and has_toy
+                    if not has_toy:
+                        detail += "; missing a measured T3 toy artifact with the declared provenance"
+            checks.append({"name": label, "passed": passed, "detail": detail})
         for mutant in candidate["mutants"]:
             result = results[mutant["name"]] = self.run(candidate, mutant["code"])
             killed = complete(result) and result["exit_code"] == 1 and any(t.get("outcome") == "failed" and t.get("error_type") == "AssertionError" for t in result["tests"])

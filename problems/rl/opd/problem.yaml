@@ -1,0 +1,84 @@
+id: rl/opd
+number: 12
+title: 学生前缀上的 On-policy Distillation
+title_en: On-policy Distillation at Student Prefixes
+paper_id: gkd
+paper:
+  title: 'On-policy Distillation of Language Models: Learning from Self-Generated
+    Mistakes'
+  authors: Rishabh Agarwal et al.
+  venue: ICLR 2024
+  arxiv: 2306.13649v3
+  url: https://arxiv.org/abs/2306.13649v3
+  anchors:
+  - 'Section 3, Algorithm 1: GKD and student data fraction lambda'
+  - 'Section 3, Eqs. (2–4): token divergences on student-generated prefixes'
+  - 'Appendix A.7: forward/reverse KL interpretation (separate conceptual example)'
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: sample_student
+  signature: 'sample_student(transition_logits: Tensor, batch_size: int, length: int,
+    generator: torch.Generator) -> tuple[Tensor, Tensor]'
+- name: distillation_loss
+  signature: 'distillation_loss(student_logits: Tensor, teacher_logits: Tensor, mask:
+    Tensor, direction: str=''reverse'') -> Tensor'
+conventions:
+  scope: GKD with lambda=1 and explicit forward/reverse KL; a supplied three-token
+    Markov LM replaces large language models.
+  determinism: CPU, seed 42, two Torch threads; no downloads
+tests:
+  T0: 1
+  T1: 1
+  T2: 3
+  T3: 1
+t3_budget_s: 10
+mutants:
+- id: m1_reverse_direction
+  bug: Reverse KL uses the teacher distribution as weights.
+- id: m2_teacher_gradient
+  bug: Allow gradients into the teacher.
+- id: m3_bos_only
+  bug: Sample every token from BOS instead of the student prefix.
+- id: m4_mask_denominator
+  bug: Normalize over padding too.
+viz:
+- toy_experiment
+estimated_minutes: 35
+formula: L=\mathbb E_{y\sim p_S}[\frac1{|y|}\sum_t D_{KL}(p_S(\cdot|y_{<t})\Vert p_T(\cdot|y_{<t}))]
+tags:
+- Reinforcement Learning
+- Post-training
+- Distillation
+sources_verified: '2026-10-13'
+module:
+  goal: 从学生分布采样，在相同前缀上蒸馏教师全词表反馈。
+  goal_en: Sample from the student and distill full-vocabulary feedback at the same
+    prefixes.
+  scope: 选取 GKD 的 lambda=1 与明确方向的 KL；提供三 token Markov 语言模型代替大型语言模型。
+  scope_en: GKD with lambda=1 and explicit forward/reverse KL; a supplied three-token
+    Markov LM replaces large language models.
+  required_functions:
+  - sample_student
+  - distillation_loss
+  provided_functions: []
+  optional: false
+toy:
+  provenance: teaching_adaptation
+  source: https://arxiv.org/html/2306.13649v3#S3
+  adaptation: PaperLeet fixed-length categorical Markov model, not the original T5
+    or Gaussian-mixture experiment.
+  adaptation_zh: PaperLeet 定长分类 Markov 模型，不是原作 T5 或混合高斯实验。
+  seed: 42
+  device: cpu
+calibration:
+  seed: 42
+  threads: 2
+  dtype: float32
+  method: Three deterministic reference runs on CPU; independent T2 identities and
+    gradients plus four rejected mutants. Thresholds are explicit exercise requirements,
+    not reproduced paper benchmark scores.
+  reference_metrics:
+    final_kl: 3.814857336692512e-07
+  max_observed_t3_s: 0.050842000055126846

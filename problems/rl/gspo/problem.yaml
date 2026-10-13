@@ -1,0 +1,81 @@
+id: rl/gspo
+number: 11
+title: GSPO 序列比率与截断
+title_en: GSPO Sequence Ratios and Clipping
+paper_id: gspo
+paper:
+  title: Group Sequence Policy Optimization
+  authors: Chujie Zheng et al.
+  venue: arXiv 2025
+  arxiv: 2507.18071v1
+  url: https://arxiv.org/abs/2507.18071v1
+  anchors:
+  - 'Section 4.1, Eqs. (6–8): sequence objective and geometric importance ratio'
+  - 'Section 4.2, Eq. (11): equal token gradient weights'
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: sequence_ratio
+  signature: 'sequence_ratio(logp: Tensor, old_logp: Tensor, mask: Tensor) -> Tensor'
+- name: gspo_loss
+  signature: 'gspo_loss(logp: Tensor, old_logp: Tensor, advantages: Tensor, mask:
+    Tensor, clip_eps: float=0.2) -> Tensor'
+conventions:
+  scope: Two functions; group advantages, sampling and distributed RL are outside
+    this module.
+  determinism: CPU, seed 42, two Torch threads; no downloads
+tests:
+  T0: 1
+  T1: 1
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+mutants:
+- id: m1_arithmetic_ratio
+  bug: Average token ratios instead of the geometric sequence ratio.
+- id: m2_missing_length
+  bug: Omit response-length normalization.
+- id: m3_old_gradient
+  bug: Backpropagate into the behavior policy.
+- id: m4_wrong_clipping
+  bug: Maximize instead of minimize clipped surrogate.
+viz:
+- toy_experiment
+estimated_minutes: 25
+formula: s_i=\exp\left(\frac{\sum_t m_{it}(\log\pi_{it}-\log\pi^{old}_{it})}{\sum_t
+  m_{it}}\right)
+tags:
+- Reinforcement Learning
+- Sequence Policy Optimization
+sources_verified: '2026-10-13'
+module:
+  goal: 实现序列重要性比率和截断策略损失。
+  goal_en: Implement the sequence importance ratio and clipped policy loss.
+  scope: 只实现两个函数；组 advantage 计算、采样和分布式 RL 不属于本模块。
+  scope_en: Two functions; group advantages, sampling and distributed RL are outside
+    this module.
+  required_functions:
+  - sequence_ratio
+  - gspo_loss
+  provided_functions: []
+  optional: false
+toy:
+  provenance: teaching_adaptation
+  source: https://arxiv.org/html/2507.18071v1#S4.SS1
+  adaptation: Analytic three-response diagnostic written for PaperLeet; not Qwen training
+    results.
+  adaptation_zh: PaperLeet 自编的三回答解析实验，不是 Qwen 训练结果。
+  seed: 42
+  device: cpu
+calibration:
+  seed: 42
+  threads: 2
+  dtype: float32
+  method: Three deterministic reference runs on CPU; independent T2 identities and
+    gradients plus four rejected mutants. Thresholds are explicit exercise requirements,
+    not reproduced paper benchmark scores.
+  reference_metrics:
+    canceling_sequence_ratio: 1.0
+    loss: -0.46666669845581055
+  max_observed_t3_s: 0.002005999209359288

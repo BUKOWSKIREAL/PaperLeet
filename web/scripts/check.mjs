@@ -60,25 +60,29 @@ try {
         });
         assert(schedule.bars.every(Number.isFinite));
       }
-  const files = fs
-    .readdirSync("public/data")
-    .filter((name) => /^(rl|diffusion)-.*\.json$/.test(name));
-  assert.equal(
-    files.length,
-    10,
-    "Run paperleet vizdata all before checking the website.",
-  );
-  for (const file of files) {
+  const catalog = JSON.parse(fs.readFileSync("public/data/catalog.json", "utf8"));
+  const maintained = catalog.problems.filter((p) => !p.id.startsWith("community/"));
+  for (const problem of maintained) {
+    const file = problem.id.replaceAll("/", "-") + ".json";
+    assert(fs.existsSync(`public/data/${file}`), `${file}: run paperleet vizdata all`);
     const data = JSON.parse(fs.readFileSync(`public/data/${file}`, "utf8"));
-    const html = renderToString(
-      React.createElement(Lab, {
-        problem: { id: data.id || data.problem, vizData: data },
-      }),
-    );
+    const html = renderToString(React.createElement(Lab, {problem: {...problem, vizData: data}}));
     assert(!html.includes("NaN"), `${file} renders invalid numeric values`);
-    assert(html.includes("INTERACTIVE LAB"), `${file} has no visualization`);
+    assert(html.includes(data.kind === "toy_experiment" ? "参考实验" : "INTERACTIVE LAB"), `${file} has no visualization`);
+    if (data.kind === "toy_experiment") {
+      assert(html.includes("我的运行结果"), `${file} must distinguish submitted code from reference data`);
+      assert(data.provenance, `${file} must explain toy provenance`);
+    }
     console.log(`PASS ${file}`);
   }
+  const publishedToy = renderToString(React.createElement(Lab, {
+    problem: {id: "community/toy", title: "Reviewed toy", vizData: null},
+    report: {problem: "community/toy", tests: [{id: "test_behavior", layer: "T3", passed: true,
+      artifacts: {experiment: {kind: "toy_experiment", loss_curve: [[0, 1], [1, .1]], metrics: {error: .1}}}}]},
+  }));
+  assert(publishedToy.includes("test_behavior") && publishedToy.includes("loss_curve"));
+  assert(publishedToy.includes("我的运行结果") && !publishedToy.includes(">参考实验</button>"),
+    "Published toys without static previews must show actual judged artifacts, not an empty reference view");
 
   const packed = Buffer.alloc(8);
   [1000, -2000, 32767, -32768].forEach((value, i) =>
@@ -258,7 +262,7 @@ try {
       },
     }),
   );
-  assert(output.includes("你的采样结果与真实分布"));
+  assert(output.includes("你的实现与参考对照"));
   assert(output.includes("60.0"));
   for (const data of [
     { curve: [{ step: 0, loss: 1 }, null] },

@@ -1,5 +1,6 @@
 import { useLabText } from "./labI18n";
 import { useState } from "react";
+import { useI18n } from "./i18n";
 import { difficultyAdvantage, dpoObjective, tokenGradient } from "./concepts";
 import type { Aggregation } from "./concepts";
 
@@ -761,8 +762,27 @@ function asPoints(v: unknown): Point[] | null {
     return null;
   return v as Point[];
 }
-export function ArtifactCharts({ data }: { data: Record<string, unknown> }) {
+function NamedArtifactCharts({ value }: { value: unknown }) {
+  if (!Array.isArray(value)) return null;
+  return <>{value.map((chart, index) => {
+    if (!chart || typeof chart !== "object" || !Array.isArray(chart.x) || !Array.isArray(chart.series)) return null;
+    const series = chart.series.filter((s: any) => s && typeof s.name === "string" && Array.isArray(s.values) && s.values.length === chart.x.length && s.values.every((v: unknown) => typeof v === "number" && Number.isFinite(v)));
+    if (!series.length) return null;
+    if (chart.kind === "line" && chart.x.every((v: unknown) => typeof v === "number" && Number.isFinite(v))) return <section key={index}><h4>{String(chart.title || "")}</h4><Chart series={series.map((s: any) => s.values.map((y: number, i: number) => [chart.x[i], y]))} labels={series.map((s: any) => s.name)} xLabel={typeof chart.x_label === "string" ? chart.x_label : "step"} yLabel={typeof chart.y_label === "string" ? chart.y_label : "value"} /></section>;
+    if (chart.kind === "bar") return <section key={index}><h4>{String(chart.title || "")}</h4>{series.map((s: any) => <div key={s.name}><h4>{s.name}</h4><Bars values={s.values} labels={chart.x.map(String)} /></div>)}</section>;
+    return null;
+  })}</>;
+}
+
+export function ArtifactCharts({ data, referenceRun = false, implementationLabel }: { data: Record<string, unknown>; referenceRun?: boolean; implementationLabel?: string }) {
   const tx = useLabText();
+  const { t } = useI18n();
+  // Named charts and metrics are the presentation contract; the same raw
+  // series may also be present as diagnostics for tests and downloaded reports.
+  if (Array.isArray(data.charts) && data.charts.length && data.metrics) {
+    data = Object.fromEntries(Object.entries(data).filter(([key]) =>
+      ["charts", "metrics", "samples", "reference_samples", "provenance"].includes(key)));
+  }
   const samples = asPoints(data.samples),
     reference = asPoints(data.reference_samples),
     mmd =
@@ -777,12 +797,13 @@ export function ArtifactCharts({ data }: { data: Record<string, unknown> }) {
         : null;
   return (
     <div className="artifact-list">
+      <NamedArtifactCharts value={data.charts} />
       {samples && reference && (
         <section>
-          <h4>{tx("你的采样结果与真实分布")}</h4>
+          <h4>{implementationLabel ? t("本次实验与参考对照", "Experiment and reference") : referenceRun ? t("参考实验与目标", "Reference experiment and target") : t("你的实现与参考对照", "Your implementation and reference")}</h4>
           <Scatter
             sets={[samples, reference]}
-            labels={[tx("你的实现"), tx("真实分布")]}
+            labels={[implementationLabel || (referenceRun ? t("参考实现", "Reference implementation") : tx("你的实现")), t("目标 / 参考", "Target / reference")]}
           />
         </section>
       )}
@@ -812,6 +833,7 @@ export function ArtifactCharts({ data }: { data: Record<string, unknown> }) {
       {Object.entries(data)
         .filter(
           ([key]) =>
+            key !== "x_label" && key !== "charts" &&
             !(
               samples &&
               reference &&
@@ -828,7 +850,7 @@ export function ArtifactCharts({ data }: { data: Record<string, unknown> }) {
                   <Chart
                     series={[p]}
                     labels={[key]}
-                    xLabel="step"
+                    xLabel={typeof data.x_label === "string" ? data.x_label : "step"}
                     yLabel={key}
                   />
                 ) : (
@@ -910,7 +932,7 @@ export function ArtifactCharts({ data }: { data: Record<string, unknown> }) {
             return (
               <details key={key} open>
                 <summary>{key}</summary>
-                <ArtifactCharts data={value as Record<string, unknown>} />
+                <ArtifactCharts data={value as Record<string, unknown>} referenceRun={referenceRun} implementationLabel={implementationLabel} />
               </details>
             );
           return (

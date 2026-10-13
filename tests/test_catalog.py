@@ -169,3 +169,18 @@ def test_required_and_provided_functions_cannot_overlap():
 
 def test_arxiv_source_versions_share_identity():
     assert source_key({"arxiv": "2006.11239"}) == source_key({"url": "https://arxiv.org/html/2006.11239v2"})
+
+
+def test_categories_export_bilingual_labels_and_reject_unknown_ids(tmp_path, monkeypatch):
+    monkeypatch.setenv("PAPERLEET_ROOT", str(tmp_path))
+    package(tmp_path, "rl/demo", 1)
+    definition = {"id": "demo", "number": 1, "module_ids": ["rl/demo"], "category": "reinforcement-learning"}
+    manifest = tmp_path / "papers.yaml"
+    manifest.write_text(yaml.safe_dump({"papers": [definition]}))
+    exported = json.loads(export_catalog().read_text())
+    assert exported["categories"] == [{"id": "reinforcement-learning", "name": "强化学习", "name_en": "Reinforcement Learning"}]
+    assert exported["papers"][0]["category"] == "reinforcement-learning"
+    definition["category"] = "typo"
+    manifest.write_text(yaml.safe_dump({"papers": [definition]}))
+    with pytest.raises(ValueError, match="unknown paper category"):
+        export_catalog()

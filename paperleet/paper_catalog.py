@@ -6,6 +6,16 @@ import yaml
 
 from paperleet.catalog import root
 
+CATEGORIES = (
+    {"id": "reinforcement-learning", "name": "强化学习", "name_en": "Reinforcement Learning"},
+    {"id": "post-training", "name": "后训练与微调", "name_en": "Post-training & Fine-tuning"},
+    {"id": "generative-models", "name": "扩散与生成模型", "name_en": "Diffusion & Generative Models"},
+    {"id": "architecture", "name": "架构与推理", "name_en": "Architecture & Inference"},
+    {"id": "optimization", "name": "优化算法", "name_en": "Optimization"},
+    {"id": "representation", "name": "表征学习", "name_en": "Representation Learning"},
+    {"id": "community", "name": "社区精选", "name_en": "Community Selections"},
+)
+
 
 def source_key(paper: dict) -> str:
     """Recognize arXiv abs/PDF/version links as the same paper."""
@@ -38,6 +48,7 @@ def paper_catalog(entries: list[dict]) -> tuple[list[dict], dict[str, str]]:
             "authors": metadata.get("authors", ""), "venue": metadata.get("venue", ""),
             "url": metadata.get("url") or ("https://arxiv.org/abs/" + str(metadata["arxiv"]) if metadata.get("arxiv") else ""),
             "arxiv": metadata.get("arxiv"), "tags": entry.get("tags", []),
+            "category": "community",
             "summary": "实现这篇论文选定的核心模块。",
             "summary_en": "Implement selected core modules from this paper.",
             "scope": "完成下列核心模块即可完成本篇练习。",
@@ -50,6 +61,8 @@ def paper_catalog(entries: list[dict]) -> tuple[list[dict], dict[str, str]]:
         if not isinstance(definition, dict):
             raise ValueError("papers.yaml: each paper must be an object")
         identifier, number = definition.get("id"), definition.get("number")
+        if definition.get("category", "community") not in {item["id"] for item in CATEGORIES}:
+            raise ValueError(f"{identifier}: unknown paper category")
         if not isinstance(identifier, str) or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", identifier) or identifier in by_id:
             raise ValueError("papers.yaml: paper ids must be unique lowercase slugs")
         if type(number) is not int or number < 1 or number in numbers:

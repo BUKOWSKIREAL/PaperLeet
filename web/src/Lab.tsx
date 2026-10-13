@@ -1,10 +1,12 @@
 import { useLabText } from "./labI18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pause, Play, RotateCcw } from "lucide-react";
-import type { Problem } from "./types";
+import type { Problem, Report } from "./types";
+import { useI18n } from "./i18n";
 import { decodeViz } from "./vizData";
 import { scheduleData } from "./concepts";
 import {
+  ArtifactCharts,
   Bars,
   Chart,
   DPO,
@@ -1045,12 +1047,31 @@ function FlowLab({ data }: { data: Data }) {
     </>
   );
 }
-export default function Lab({ problem }: { problem: Problem }) {
+function ToyExperiment({ problem, report, data }: { problem: Problem; report?: Report; data: Data }) {
+  const { t } = useI18n();
+  const hasReference = data.kind === "toy_experiment";
+  const [view, setView] = useState(hasReference ? "reference" : "yours");
+  const results = report?.problem === problem.id ? report.tests.filter((test) => test.layer === "T3" && test.artifacts && Object.keys(test.artifacts).length) : [];
+  const { id: _id, problem: _problem, kind: _kind, title, provenance, ...artifacts } = data;
+  return <section className="toy-experiment">
+    <h3>{problem.title || title}</h3>
+    <p>{hasReference ? t("这是小规模核心算法实验。参考曲线由参考实现生成；你的实验结果来自运行测试时执行的代码。", "A small experiment for the core algorithm. Reference plots use the reference implementation; your results come from the code executed by Run all tests.") : t("以下曲线和指标来自你的最近一次 T3 运行。", "These curves and metrics come from your latest T3 run.")}</p>
+    {provenance && <details className="toy-provenance"><summary>{t("实验出处与改编范围", "Experiment source and adaptation")}</summary><ArtifactCharts data={typeof provenance === "object" ? provenance : { provenance }} referenceRun /></details>}
+    <div className="toy-view-tabs" role="group" aria-label={t("实验结果来源", "Experiment result source")}>
+      {hasReference && <button aria-pressed={view === "reference"} onClick={() => setView("reference")}>{t("参考实验", "Reference experiment")}</button>}
+      <button aria-pressed={view === "yours"} onClick={() => setView("yours")}>{t("我的运行结果", "My run results")}</button>
+    </div>
+    {view === "reference" ? <ArtifactCharts data={artifacts} referenceRun /> : results?.length ? results.map((test) => <section key={test.nodeid || test.id}><h4>{test.id} · {test.passed ? t("通过", "Passed") : t("未通过", "Failed")}</h4><ArtifactCharts data={test.artifacts!} /></section>) : <p className="notice">{t("先在编辑器完成实现并运行全部测试；T3 产生的曲线和指标会显示在这里。", "Complete your implementation and run all tests. Curves and metrics produced by T3 will appear here.")}</p>}
+  </section>;
+}
+
+export default function Lab({ problem, report }: { problem: Problem; report?: Report }) {
   const tx = useLabText();
   const data = useMemo(
     () => decodeViz(problem.vizData || {}) as Data,
     [problem.vizData],
   );
+  if (data.kind === "toy_experiment" || (!problem.vizData && report?.tests.some((test) => test.layer === "T3" && test.artifacts && Object.keys(test.artifacts).length))) return <ToyExperiment problem={problem} report={report} data={data} />;
   return (
     <>
       <div className="lab-heading">

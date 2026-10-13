@@ -1,0 +1,100 @@
+id: diffusion/drifting
+number: 18
+title: Drifting：成对漂移场与冻结目标
+title_en: 'Drifting: Pairwise Field and Frozen Targets'
+paper:
+  title: Generative Modeling via Drifting
+  arxiv: '2602.04770'
+  anchors:
+  - arXiv v2 §3 drifting field and fixed-point loss
+  - §5.1 Figure 3 bimodal toy
+  - Official notebook compute_drift and drifting_loss
+  version: v2
+  authors: Mingyang Deng, He Li, Tianhong Li, Yilun Du, Kaiming He
+  venue: arXiv 2026
+type: implement
+parent: null
+difficulty: H
+functions:
+- name: drift_field
+  signature: 'drift_field(generated: Tensor, positive: Tensor, temperature: float
+    = .2) -> Tensor'
+- name: drifting_loss
+  signature: 'drifting_loss(generated: Tensor, positive: Tensor, temperature: float
+    = .2) -> Tensor'
+conventions:
+  seed: 42
+  dtype: Preserve floating input dtype/device; tests include float64.
+  loss: Unless stated otherwise, mean across batch and coordinates.
+tests:
+  T0: 1
+  T1: 1
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+mutants:
+- id: m1_row_only_kernel
+  bug: row only kernel
+- id: m2_attraction_only
+  bug: attraction only
+- id: m3_unfrozen_target
+  bug: unfrozen target
+- id: m4_self_pairs_unmasked
+  bug: self pairs unmasked
+viz:
+- toy_experiment
+estimated_minutes: 35
+tags:
+- Generative Models
+- Drifting
+- PyTorch
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2602.04770
+  - https://arxiv.org/abs/2602.04770v2
+  - https://github.com/lambertae/lambertae.github.io/blob/a7fa4baae52abbab2aaeb57136d557caee79ff39/projects/drifting/notebooks/drifting_model_demo.ipynb
+  - https://github.com/lambertae/drifting/tree/8861066430db11d2fb0858d042c7845b99df49f1
+module:
+  goal: 实现距离核漂移场及 stop-gradient 目标，训练一次前向即可采样的生成器。
+  goal_en: Implement the distance-kernel drifting field and its stop-gradient target;
+    train a generator with one-pass inference.
+  scope: 实现 drift_field, drifting_loss；toy.py 提供训练与可视化脚手架。
+  scope_en: Implement drift_field, drifting_loss. toy.py provides the training and
+    visualization scaffold.
+  required_functions:
+  - drift_field
+  - drifting_loss
+  provided_functions: []
+  optional: false
+toy:
+  provenance: Official toy adaptation
+  description: 改编作者 Swiss-roll/checkerboard notebook：从 noise32→3×256、batch2048、2000步缩为
+    noise8→2×48、生成96/正样本128、260步、temperature=.2，适合CPU判题。不含预训练特征、CFG或图像基准；论文 Figure
+    3 的双峰实验是另一个实验。 归一化核改用 logsumexp，移除 notebook 的绝对乘积下限，以避免共同指数下溢。
+  description_en: Adapts the authors’ Swiss-roll/checkerboard notebook. Reduced from
+    noise32→3×256, batch2048, 2000 steps to noise8→2×48, generated96/positive128,
+    260 steps and temperature .2 for CPU grading. No pretrained features, CFG, or
+    image benchmarks. Paper Figure 3 is a separate bimodal experiment. The normalized
+    kernel uses logsumexp instead of the notebook’s absolute product floor to avoid
+    common exponential underflow.
+  source: https://github.com/lambertae/lambertae.github.io/blob/a7fa4baae52abbab2aaeb57136d557caee79ff39/projects/drifting/notebooks/drifting_model_demo.ipynb
+  seed: 42
+  entrypoint: toy.py:run
+  full_reproduction: false
+calibration:
+  status: measured
+  seed: 42
+  device: CPU
+  threads: 2
+  machine: arm64
+  torch_version: 2.14.1
+  checked_at: '2026-10-13'
+  reference_duration_s: 0.296974
+  reference_metrics:
+    swiss_roll_initial_mmd: 0.5629020929336548
+    swiss_roll_final_mmd: 0.009205996990203857
+    checkerboard_initial_mmd: 0.7540277242660522
+    checkerboard_final_mmd: 0.013855159282684326
+  reference_tests_passed: 7
+  mutants_killed: 4

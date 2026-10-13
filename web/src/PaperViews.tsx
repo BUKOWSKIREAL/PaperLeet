@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "./i18n";
 import { layers, status } from "./types";
-import type { Paper, Problem, Saved } from "./types";
+import type { Category, Paper, Problem, Saved } from "./types";
 
 type Practice = { problems: Problem[]; saved: Record<string, Saved> };
 export function paperModules(paper: Paper, problems: Problem[]) {
@@ -60,12 +60,13 @@ function TestingCard({ onGuide }: { onGuide: () => void }) {
   </section>;
 }
 
-export function PaperLibrary({ papers, problems, saved, onGuide }: Practice & { papers: Paper[]; onGuide: () => void }) {
+export function PaperLibrary({ papers, categories, problems, saved, onGuide }: Practice & { papers: Paper[]; categories: Category[]; onGuide: () => void }) {
   const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [diff, setDiff] = useState("all");
   const [state, setState] = useState("all");
   const [tag, setTag] = useState("all");
+  const [category, setCategory] = useState("all");
   const practice = { problems, saved };
   const tags = [...new Set(papers.flatMap((paper) => paper.tags))];
   const completed = papers.filter((p) => paperProgress(p, practice).state === "done").length;
@@ -75,11 +76,12 @@ export function PaperLibrary({ papers, problems, saved, onGuide }: Practice & { 
     const modules = paperModules(paper, problems);
     const searchable = [paper.number, paper.title, paper.short_title, paper.summary, paper.summary_en, ...paper.tags,
       ...modules.flatMap((p) => [p.title, p.translations?.en?.title, p.module.goal, p.module.goal_en])].join(" ").toLowerCase();
-    return (diff === "all" || modules.some((p) => p.difficulty === diff)) &&
+    return (category === "all" || paper.category === category) &&
+      (diff === "all" || modules.some((p) => p.difficulty === diff)) &&
       (state === "all" || paperProgress(paper, practice).state === state) &&
       (tag === "all" || paper.tags.includes(tag)) && searchable.includes(query.trim().toLowerCase());
   });
-  function clear() { setQuery(""); setDiff("all"); setState("all"); setTag("all"); }
+  function clear() { setQuery(""); setDiff("all"); setState("all"); setTag("all"); setCategory("all"); }
   return <main className="home paper-library">
     <div className="home-intro">
       <div>
@@ -89,15 +91,22 @@ export function PaperLibrary({ papers, problems, saved, onGuide }: Practice & { 
       </div>
       <a className="button subtle" href="#/submit"><Plus size={15} />{t("提交论文", "Submit paper")}</a>
     </div>
+    <div className="paper-categories" aria-label={t("论文分类", "Paper categories")}>
+      <button aria-pressed={category === "all"} onClick={() => { setCategory("all"); setTag("all"); }}>
+        <span>{t("全部论文", "All papers")}</span><b>{papers.length}</b>
+      </button>
+      {categories.map((item) => <button key={item.id} aria-pressed={category === item.id} onClick={() => { setCategory(item.id); setTag("all"); }}>
+        <span>{t(item.name, item.name_en)}</span><b>{papers.filter((paper) => paper.category === item.id).length}</b>
+      </button>)}
+    </div>
     <div className="home-columns">
       <div className="main-column">
         <section className="problem-list">
-          <div className="list-title"><h2>{t("全部论文", "All papers")} <span>{papers.length}</span></h2><span>Python · PyTorch</span></div>
-          <div className="paper-tag-filters" aria-label={t("主题筛选", "Filter by topic")}>
-            <button className={tag === "all" ? "selected" : ""} onClick={() => setTag("all")}>{t("全部", "All topics")}</button>
-            {tags.map((name) => <button key={name} className={tag === name ? "selected" : ""} onClick={() => setTag(name)}>{name}</button>)}
-          </div>
+          <div className="list-title"><h2>{category === "all" ? t("全部论文", "All papers") : categories.filter((item) => item.id === category).map((item) => t(item.name, item.name_en))} <span>{filtered.length}</span></h2><span>Python · PyTorch</span></div>
           <div className="filter-bar">
+            <div className="select-wrap"><select aria-label={t("主题筛选", "Filter by topic")} value={tag} onChange={(e) => setTag(e.target.value)}>
+              <option value="all">{t("全部主题", "All topics")}</option>{tags.filter((name) => papers.some((paper) => (category === "all" || paper.category === category) && paper.tags.includes(name))).map((name) => <option key={name}>{name}</option>)}
+            </select><ChevronDown size={12} /></div>
             <div className="select-wrap"><ListFilter size={14} /><select aria-label={t("模块难度筛选", "Filter module difficulty")} value={diff} onChange={(e) => setDiff(e.target.value)}>
               <option value="all">{t("全部难度", "All difficulties")}</option><option value="E">Easy</option><option value="M">Medium</option><option value="H">Hard</option>
             </select><ChevronDown size={12} /></div>

@@ -1,5 +1,7 @@
 import { parseReport } from "./reports";
 
+export type Category = { id: string; name: string; name_en: string };
+
 export type Paper = {
   id: string;
   number: number;
@@ -11,6 +13,7 @@ export type Paper = {
   url: string;
   arxiv?: string;
   tags: string[];
+  category: string;
   summary: string;
   summary_en: string;
   scope: string;

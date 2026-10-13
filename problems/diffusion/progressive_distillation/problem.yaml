@@ -1,0 +1,102 @@
+id: diffusion/progressive_distillation
+number: 26
+title: Progressive Distillation：教师两步压成学生一步
+title_en: 'Progressive Distillation: Two Teacher Steps to One'
+paper:
+  title: Progressive Distillation for Fast Sampling of Diffusion Models
+  arxiv: '2202.00512'
+  anchors:
+  - arXiv v1 §3 Progressive distillation
+  - Algorithm 2 and Appendix B distillation target
+  version: v1
+  authors: Tim Salimans, Jonathan Ho
+  venue: ICLR 2022
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: ddim_step
+  signature: 'ddim_step(noisy: Tensor, clean_prediction: Tensor, alpha_t: Tensor,
+    sigma_t: Tensor, alpha_s: Tensor, sigma_s: Tensor) -> Tensor'
+- name: distilled_target
+  signature: 'distilled_target(noisy: Tensor, teacher_endpoint: Tensor, alpha_t: Tensor,
+    sigma_t: Tensor, alpha_s: Tensor, sigma_s: Tensor) -> Tensor'
+- name: distillation_loss
+  signature: 'distillation_loss(prediction: Tensor, target: Tensor, weight: Tensor)
+    -> Tensor'
+- name: teacher_pair
+  signature: 'teacher_pair(teacher, noisy: Tensor, t: Tensor, midpoint: Tensor, end:
+    Tensor) -> Tensor'
+conventions:
+  seed: 42
+  dtype: Preserve floating input dtype/device; tests include float64.
+  loss: Unless stated otherwise, mean across batch and coordinates.
+tests:
+  T0: 1
+  T1: 1
+  T2: 3
+  T3: 1
+t3_budget_s: 10
+mutants:
+- id: m1_omits_ratio_term
+  bug: omits ratio term
+- id: m2_wrong_ddim_sign
+  bug: wrong ddim sign
+- id: m3_target_has_gradient
+  bug: target has gradient
+- id: m4_drops_loss_weight
+  bug: drops loss weight
+viz:
+- toy_experiment
+estimated_minutes: 35
+tags:
+- Generative Models
+- Progressive Distillation
+- PyTorch
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2202.00512
+  - https://arxiv.org/abs/2202.00512v1
+  - https://github.com/google-research/google-research/tree/0a1b0fe7298a58bca6dcb47112379d829bc0c0a5/diffusion_distillation
+module:
+  goal: 求出使学生一步 DDIM 精确匹配教师两步的干净数据目标，并训练学生。
+  goal_en: Derive the exact clean prediction that makes one student DDIM step match
+    two teacher steps, then learn it.
+  scope: 实现 ddim_step, distilled_target, distillation_loss；toy.py 提供训练与可视化脚手架。
+  scope_en: Implement ddim_step, distilled_target, distillation_loss. toy.py provides
+    the training and visualization scaffold.
+  required_functions:
+  - ddim_step
+  - distilled_target
+  - distillation_loss
+  provided_functions:
+  - teacher_pair
+  optional: false
+toy:
+  provenance: PaperLeet teaching adaptation
+  description: 固定仿射去噪教师在余弦调度下走两步 DDIM，小型线性学生学习解出的目标，一次前向匹配终点。演示精确蒸馏代数，不代表图像质量或多阶段反复减半。
+  description_en: A fixed affine denoiser teacher takes two cosine-schedule DDIM steps;
+    a tiny linear student learns the solved target and matches the endpoint in one
+    evaluation. Demonstrates the exact distillation algebra, not image quality or
+    repeated multi-stage halving.
+  source: https://github.com/google-research/google-research/tree/0a1b0fe7298a58bca6dcb47112379d829bc0c0a5/diffusion_distillation
+  seed: 42
+  entrypoint: toy.py:run
+  full_reproduction: false
+calibration:
+  status: measured
+  seed: 42
+  device: CPU
+  threads: 2
+  machine: arm64
+  torch_version: 2.14.1
+  checked_at: '2026-10-13'
+  reference_duration_s: 0.036018
+  reference_metrics:
+    initial_endpoint_mse: 0.45990246534347534
+    endpoint_mse: 2.192473633200187e-14
+    teacher_calls_per_sample: 2
+    student_calls_per_sample: 1
+  reference_tests_passed: 6
+  mutants_killed: 4

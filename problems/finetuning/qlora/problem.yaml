@@ -1,0 +1,90 @@
+id: finetuning/qlora
+number: 15
+title: QLoRA NF4 分块与可训练 Adapter
+title_en: QLoRA NF4 Blocks and Trainable Adapters
+paper_id: qlora
+paper:
+  title: 'QLoRA: Efficient Finetuning of Quantized LLMs'
+  authors: Tim Dettmers, Artidoro Pagnoni, Ari Holtzman, Luke Zettlemoyer
+  venue: NeurIPS 2023
+  arxiv: 2305.14314v1
+  url: https://arxiv.org/abs/2305.14314v1
+  anchors:
+  - 'Section 3: NormalFloat4 and frozen quantized base with LoRA'
+  - 'Appendix E: asymmetric NF4 with exact zero'
+  - 'bitsandbytes 0.43.3 functional.py get_4bit_type: pinned 16-level NF4 codebook'
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: nf4_quantize
+  signature: 'nf4_quantize(weight: Tensor, block_size: int=64) -> tuple[Tensor, Tensor]'
+- name: nf4_dequantize
+  signature: 'nf4_dequantize(codes: Tensor, scales: Tensor, block_size: int=64) ->
+    Tensor'
+- name: qlora_linear
+  signature: 'qlora_linear(x: Tensor, codes: Tensor, scales: Tensor, a: Tensor, b:
+    Tensor, alpha: float=1.0, block_size: int=64, bias: Tensor | None=None) -> Tensor'
+conventions:
+  scope: Three CPU functions. Code indices are unpacked uint8 for inspectability;
+    packed 4-bit storage, double quantization and paged optimizers are outside scope.
+  determinism: CPU, seed 42, two Torch threads; no downloads
+tests:
+  T0: 1
+  T1: 1
+  T2: 3
+  T3: 1
+t3_budget_s: 10
+mutants:
+- id: m1_uniform_codebook
+  bug: Replace NF4 with uniform levels.
+- id: m2_global_scale
+  bug: Use global absmax for each block.
+- id: m3_train_scales
+  bug: Allow gradients into frozen scales.
+- id: m4_missing_rank_scale
+  bug: Forget adapter rank normalization.
+viz:
+- toy_experiment
+estimated_minutes: 40
+formula: W\approx s_b C_{q(W/s_b)},\qquad y=x\mathrm{dequant}(W)^\top+\frac\alpha
+  r xA^\top B^\top
+tags:
+- Post-training
+- Quantization
+- Parameter-efficient Fine-tuning
+sources_verified: '2026-10-13'
+module:
+  goal: 实现分块 NF4 量化，在冻结量化基座上训练 adapter。
+  goal_en: Implement block NF4 quantization and train adapters through a frozen quantized
+    base.
+  scope: 三个 CPU 函数；索引用未打包 uint8 便于观察，不包含 4-bit 打包存储、双重量化和分页优化器。
+  scope_en: Three CPU functions. Code indices are unpacked uint8 for inspectability;
+    packed 4-bit storage, double quantization and paged optimizers are outside scope.
+  required_functions:
+  - nf4_quantize
+  - nf4_dequantize
+  - qlora_linear
+  provided_functions: []
+  optional: false
+toy:
+  provenance: teaching_adaptation
+  source: https://arxiv.org/html/2305.14314v1#S3
+  adaptation: PaperLeet synthetic regression with unpacked NF4 indices; does not measure
+    full QLoRA memory savings.
+  adaptation_zh: PaperLeet 未打包 NF4 索引合成回归；不衡量完整 QLoRA 显存节省。
+  seed: 42
+  device: cpu
+calibration:
+  seed: 42
+  threads: 2
+  dtype: float32
+  method: Three deterministic reference runs on CPU; independent T2 identities and
+    gradients plus four rejected mutants. Thresholds are explicit exercise requirements,
+    not reproduced paper benchmark scores.
+  reference_metrics:
+    final_mse: 9.025426095377043e-08
+    quantization_rmse: 0.024020861834287643
+    code_count: 48
+    scale_count: 3
+  max_observed_t3_s: 0.03341037512291223

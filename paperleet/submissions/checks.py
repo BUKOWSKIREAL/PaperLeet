@@ -6,6 +6,8 @@ import json
 import re
 from urllib.parse import urlparse
 
+from .artifacts import TOY_KINDS
+
 ALLOWED_IMPORTS = {"math", "typing", "numpy", "torch", "pytest", "collections", "itertools", "functools", "random", "statistics", "dataclasses"}
 FORBIDDEN_CALLS = {"eval", "exec", "compile", "open", "input", "__import__", "getattr", "setattr", "delattr", "globals", "locals", "vars", "breakpoint", "exit", "quit"}
 FORBIDDEN_ATTRIBUTES = {"save", "load", "loadtxt", "savetxt", "fromfile", "tofile", "memmap", "system", "popen", "settrace", "skip", "xfail", "skipif", "fixture", "parametrize", "main"}
@@ -78,6 +80,16 @@ def static_checks(candidate):
             https_url(row["source_url"], required=True)
             if not row.get("claim") or not row.get("locator"):
                 raise ValueError("Evidence must have a claim and equation/section/code locator")
+        toy = candidate.get("toy")
+        if toy is not None:
+            if not isinstance(toy, dict) or toy.get("kind") not in TOY_KINDS:
+                raise ValueError("Toy provenance must be author_toy, paper_derived or teaching_adaptation")
+            for field in ("source_url", "locator", "adaptation"):
+                if not isinstance(toy.get(field), str) or not toy[field].strip() or len(toy[field].encode()) > 4096:
+                    raise ValueError(f"Toy provenance requires bounded nonempty {field}")
+            https_url(toy["source_url"], required=True)
+            if toy["source_url"] not in {row["source_url"] for row in evidence}:
+                raise ValueError("Toy provenance must point to a cited evidence source")
 
     def interface():
         functions = candidate.get("functions", [])
@@ -115,7 +127,7 @@ def static_checks(candidate):
             raise ValueError("Provide 4–16 tests covering all four layers")
         if {row.get("layer") for row in tests} != {"T0", "T1", "T2", "T3"}:
             raise ValueError("Tests must cover T0, T1, T2 and T3")
-        names = set()
+        names, toy_tests = set(), 0
         for row in tests:
             name = row["name"]
             if not re.fullmatch(r"test_[a-z0-9_]+", name) or name in names:
@@ -123,12 +135,25 @@ def static_checks(candidate):
             names.add(name)
             tree = python_tree(row["code"], name + ".py")
             fns = [n for n in tree.body if isinstance(n, ast.FunctionDef)]
-            if len(fns) != 1 or fns[0].name != name or [a.arg for a in fns[0].args.args] != ["impl"] or fns[0].decorator_list:
-                raise ValueError(f"{name}: one test function accepting impl and no decorators is required")
+            if len(fns) != 1 or fns[0].name != name or fns[0].decorator_list:
+                raise ValueError(f"{name}: one test function accepting impl and optional artifact, without decorators, is required")
+            args = fns[0].args
+            fixtures = [a.arg for a in args.args]
+            if (fixtures not in (["impl"], ["impl", "artifact"]) or args.posonlyargs or args.kwonlyargs
+                    or args.vararg or args.kwarg or args.defaults or args.kw_defaults):
+                raise ValueError(f"{name}: only (impl) or (impl, artifact) fixtures are supported")
+            if "artifact" in fixtures:
+                if not candidate.get("toy"):
+                    raise ValueError(f"{name}: artifact fixture requires declared toy provenance")
+                if not any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id == "artifact" for n in ast.walk(fns[0])):
+                    raise ValueError(f"{name}: requested artifact fixture must save measured output")
+                toy_tests += row["layer"] == "T3"
             if not any(isinstance(n, ast.Assert) or (isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and n.func.attr.startswith("assert")) for n in ast.walk(fns[0])):
                 raise ValueError(f"{name}: no assertion")
             if not any(isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) and isinstance(n.func.value, ast.Name) and n.func.value.id == "impl" for n in ast.walk(fns[0])):
                 raise ValueError(f"{name}: must invoke impl")
+        if candidate.get("toy") and not toy_tests:
+            raise ValueError("A declared toy requires a T3 test that records an artifact from impl")
         return f"{len(tests)} independently generated tests across T0–T3"
 
     def mutation_contract():

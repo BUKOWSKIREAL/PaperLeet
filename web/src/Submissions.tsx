@@ -17,6 +17,7 @@ import {
 import { useI18n } from "./i18n";
 import { useAccount } from "./social";
 import { Highlight, Prose } from "./App";
+import { ArtifactCharts } from "./Visuals";
 
 type Candidate = {
   title: string;
@@ -65,6 +66,7 @@ type Submission = {
           passed: boolean;
           message?: string;
           why?: string;
+          artifacts?: Record<string, unknown>;
         }[];
       }
     >;
@@ -870,6 +872,7 @@ export default function Submissions({
                                 </summary>
                                 {row.why && <p>{row.why}</p>}
                                 {row.message && <pre>{row.message}</pre>}
+                                {row.artifacts && <ArtifactCharts data={row.artifacts} referenceRun={name.startsWith("reference")} implementationLabel={name} />}
                               </details>
                             ))}
                             {result.output && <pre>{result.output}</pre>}

@@ -1,0 +1,91 @@
+id: diffusion/meanflow
+number: 16
+title: MeanFlow：平均速度与 JVP 目标
+title_en: 'MeanFlow: Average Velocity and JVP Targets'
+paper:
+  title: Mean Flows for One-step Generative Modeling
+  arxiv: '2505.13447'
+  anchors:
+  - arXiv v1 §3 MeanFlow identity and stop-gradient training objective
+  - Official forward_with_loss and sample
+  version: v1
+  authors: Zhengyang Geng, Mingyang Deng, Xingjian Bai, J. Zico Kolter, Kaiming He
+  venue: arXiv 2025
+type: implement
+parent: null
+difficulty: H
+functions:
+- name: meanflow_target
+  signature: 'meanflow_target(model, z: Tensor, r: Tensor, t: Tensor, velocity: Tensor)
+    -> tuple[Tensor, Tensor]'
+- name: meanflow_loss
+  signature: 'meanflow_loss(model, clean: Tensor, noise: Tensor, r: Tensor, t: Tensor)
+    -> Tensor'
+- name: one_step
+  signature: 'one_step(model, noise: Tensor) -> Tensor'
+conventions:
+  seed: 42
+  dtype: Preserve floating input dtype/device; tests include float64.
+  loss: Unless stated otherwise, mean across batch and coordinates.
+tests:
+  T0: 1
+  T1: 1
+  T2: 3
+  T3: 1
+t3_budget_s: 10
+mutants:
+- id: m1_wrong_jvp_time
+  bug: wrong jvp time
+- id: m2_target_has_gradient
+  bug: target has gradient
+- id: m3_reverse_sampling
+  bug: reverse sampling
+viz:
+- toy_experiment
+estimated_minutes: 35
+tags:
+- Generative Models
+- MeanFlow
+- PyTorch
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2505.13447
+  - https://arxiv.org/abs/2505.13447v1
+  - https://github.com/Gsunshine/py-meanflow/blob/1f6d72d94247c8fdeb89489acca1a8007a6baf6c/meanflow/models/meanflow.py
+module:
+  goal: 实现平均速度的全导数目标、冻结目标损失，以及一次前向采样。
+  goal_en: Implement the total-derivative average-velocity target and its frozen-target
+    loss, then sample in one call.
+  scope: 实现 meanflow_target, meanflow_loss, one_step；toy.py 提供训练与可视化脚手架。
+  scope_en: Implement meanflow_target, meanflow_loss, one_step. toy.py provides the
+    training and visualization scaffold.
+  required_functions:
+  - meanflow_target
+  - meanflow_loss
+  - one_step
+  provided_functions: []
+  optional: false
+toy:
+  provenance: PaperLeet teaching adaptation
+  description: 使用解析单点数据族与学员 JVP 目标学习中心；这是机制演示，不声称是原论文低维实验。
+  description_en: An analytic point-data family learns its center using the learner
+    JVP target. This is a mechanism demonstration, not a low-dimensional experiment
+    claimed by the paper.
+  source: https://github.com/Gsunshine/py-meanflow/blob/1f6d72d94247c8fdeb89489acca1a8007a6baf6c/meanflow/models/meanflow.py
+  seed: 42
+  entrypoint: toy.py:run
+  full_reproduction: false
+calibration:
+  status: measured
+  seed: 42
+  device: CPU
+  threads: 2
+  machine: arm64
+  torch_version: 2.14.1
+  checked_at: '2026-10-13'
+  reference_duration_s: 0.166954
+  reference_metrics:
+    endpoint_mse: 7.447428629347996e-08
+  reference_tests_passed: 6
+  mutants_killed: 3

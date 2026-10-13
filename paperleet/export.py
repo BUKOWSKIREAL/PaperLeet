@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 from paperleet.catalog import problems, root
-from paperleet.paper_catalog import paper_catalog, module_scope
+from paperleet.paper_catalog import CATEGORIES, paper_catalog, module_scope
 from paperleet.judge.loader import load_implementation
 
 
@@ -86,6 +86,7 @@ def export_catalog():
     destination = root() / "web" / "public" / "data" / "catalog.json"
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_suffix(".json.tmp")
-    temporary.write_text(json.dumps({"papers": papers, "problems": catalog}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    categories = [category for category in CATEGORIES if any(paper["category"] == category["id"] for paper in papers)]
+    temporary.write_text(json.dumps({"categories": categories, "papers": papers, "problems": catalog}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     temporary.replace(destination)
     return destination

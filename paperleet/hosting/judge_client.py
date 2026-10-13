@@ -16,7 +16,23 @@ from paperleet.judge.runner import normalize_layers
 
 CURATED_PROBLEMS = frozenset(("rl/gae", "rl/ppo_clip", "rl/dpo", "rl/grpo", "rl/dr_grpo",
     "diffusion/schedules", "diffusion/param_conversion", "diffusion/ddpm_sampling",
-    "diffusion/ddim", "diffusion/flow_matching"))
+    "diffusion/ddim", "diffusion/flow_matching",
+    'rl/gspo',
+    'rl/opd',
+    'rl/dapo',
+    'finetuning/lora',
+    'finetuning/qlora',
+    'diffusion/meanflow',
+    'diffusion/jit',
+    'diffusion/drifting',
+    'diffusion/dmd',
+    'diffusion/dmd2',
+    'diffusion/consistency',
+    'architecture/attention',
+    'optimization/adamw',
+    'architecture/flash_attention',
+    'representation/clip',
+    'diffusion/progressive_distillation'))
 MAX_CODE_BYTES = 128 * 1024
 MAX_REQUEST_BYTES = 256 * 1024
 MAX_REPORT_BYTES = 2 * 1024 * 1024
@@ -46,7 +62,7 @@ def validate_job(payload):
         raise ValueError("Expected problem, code, and optional layers")
     identifier, code = payload.get("problem"), payload.get("code")
     if not isinstance(identifier, str) or identifier not in CURATED_PROBLEMS:
-        raise ValueError("Hosted judging currently supports the ten maintained modules only")
+        raise ValueError("Hosted judging currently supports the maintained modules included in this release only")
     if not isinstance(code, str) or not code.strip() or len(code.encode("utf-8")) > MAX_CODE_BYTES:
         raise ValueError("Code must contain 1–131072 UTF-8 bytes")
     layers = payload.get("layers")

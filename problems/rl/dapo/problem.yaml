@@ -1,0 +1,82 @@
+id: rl/dapo
+number: 13
+title: DAPO 动态筛选与 Token 目标
+title_en: DAPO Dynamic Filtering and Token Objective
+paper_id: dapo
+paper:
+  title: 'DAPO: An Open-Source LLM Reinforcement Learning System at Scale'
+  authors: Qiying Yu et al.
+  venue: arXiv 2025
+  arxiv: 2503.14476v1
+  url: https://arxiv.org/abs/2503.14476v1
+  anchors:
+  - 'Section 3, Eqs. (8–11): token normalization, asymmetric clipping and dynamic
+    sampling'
+  - Sections 3.1–3.3; Section 4.1 clip_low=.2 and clip_high=.28
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: dynamic_group_mask
+  signature: 'dynamic_group_mask(rewards: Tensor) -> Tensor'
+- name: dapo_loss
+  signature: 'dapo_loss(logp: Tensor, old_logp: Tensor, advantages: Tensor, mask:
+    Tensor, clip_low: float=0.2, clip_high: float=0.28) -> Tensor'
+conventions:
+  scope: Two bounded core functions. Oversampling orchestration, overlong reward shaping,
+    and distributed training are not reproduced.
+  determinism: CPU, seed 42, two Torch threads; no downloads
+tests:
+  T0: 1
+  T1: 1
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+mutants:
+- id: m1_symmetric_clip
+  bug: Use the lower width for both sides.
+- id: m2_response_mean
+  bug: Normalize within each response then average.
+- id: m3_keep_all_success
+  bug: Retain all-success groups.
+- id: m4_old_gradient
+  bug: Allow gradients into the behavior policy.
+viz:
+- toy_experiment
+estimated_minutes: 25
+formula: L=-\frac{\sum_{i,t}m_{it}\min(r_{it}A_i,\mathrm{clip}(r_{it},1-\epsilon_l,1+\epsilon_h)A_i)}{\sum_{i,t}m_{it}}
+tags:
+- Reinforcement Learning
+- Post-training
+- Policy Gradient
+sources_verified: '2026-10-13'
+module:
+  goal: 筛选有效组，实现非对称的按 token 归一化截断目标。
+  goal_en: Retain informative groups and implement asymmetric token-normalized clipping.
+  scope: 两个有界核心函数；不复现超采样调度、超长奖励整形和分布式训练。
+  scope_en: Two bounded core functions. Oversampling orchestration, overlong reward
+    shaping, and distributed training are not reproduced.
+  required_functions:
+  - dynamic_group_mask
+  - dapo_loss
+  provided_functions: []
+  optional: false
+toy:
+  provenance: teaching_adaptation
+  source: https://arxiv.org/html/2503.14476v1#S3
+  adaptation: PaperLeet synthetic binary-reward groups and ratio sweep; no AIME reproduction.
+  adaptation_zh: PaperLeet 二元奖励组与比率扫描，不是 AIME 复现。
+  seed: 42
+  device: cpu
+calibration:
+  seed: 42
+  threads: 2
+  dtype: float32
+  method: Three deterministic reference runs on CPU; independent T2 identities and
+    gradients plus four rejected mutants. Thresholds are explicit exercise requirements,
+    not reproduced paper benchmark scores.
+  reference_metrics:
+    retained_groups: 1
+    upper_plateau_loss: -1.2799999713897705
+    lower_plateau_loss: 0.800000011920929
+  max_observed_t3_s: 0.010441125021316111

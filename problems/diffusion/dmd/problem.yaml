@@ -1,0 +1,121 @@
+id: diffusion/dmd
+number: 19
+title: DMD：分数差分布蒸馏
+title_en: 'DMD: Score-Difference Distillation'
+paper:
+  title: One-step Diffusion with Distribution Matching Distillation
+  arxiv: '2311.18828'
+  anchors:
+  - arXiv v1 §3 distribution matching gradient and regression regularization
+  - Figure 3 distribution matching illustration
+  version: v1
+  authors: Tianwei Yin, Michaël Gharbi, Richard Zhang, Eli Shechtman, Fredo Durand,
+    William T. Freeman, Taesung Park
+  venue: CVPR 2024
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: score_difference
+  signature: 'score_difference(real_score: Tensor, fake_score: Tensor, weight: Tensor)
+    -> Tensor'
+- name: dmd_loss
+  signature: 'dmd_loss(generated: Tensor, gradient: Tensor, paired_target: Tensor,
+    regression_weight: float = .1) -> Tensor'
+- name: fake_score_loss
+  signature: 'fake_score_loss(model, generated: Tensor, noise: Tensor, sigma: Tensor)
+    -> Tensor'
+conventions:
+  seed: 42
+  dtype: Preserve floating input dtype/device; tests include float64.
+  loss: Unless stated otherwise, mean across batch and coordinates.
+tests:
+  T0: 1
+  T1: 1
+  T2: 3
+  T3: 2
+t3_budget_s: 10
+mutants:
+- id: m1_score_sign
+  bug: score sign
+- id: m2_matching_target_not_frozen
+  bug: matching target not frozen
+- id: m3_fake_updates_generator
+  bug: fake updates generator
+- id: m4_drops_regression
+  bug: drops regression
+viz:
+- toy_experiment
+estimated_minutes: 35
+tags:
+- Generative Models
+- DMD
+- PyTorch
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2311.18828
+  - https://arxiv.org/abs/2311.18828v1
+  - https://github.com/tianweiy/DMD2/blob/8d8fa55633d47cfb81bbc7a892e7248f9518763f/main/edm/edm_guidance.py
+module:
+  goal: 实现分布匹配生成器梯度、配对回归与独立的 fake-score 更新。
+  goal_en: Implement the distribution-matching generator gradient, paired regression,
+    and separate fake-score update.
+  scope: 实现 score_difference, dmd_loss, fake_score_loss；toy.py 提供训练与可视化脚手架。
+  scope_en: Implement score_difference, dmd_loss, fake_score_loss. toy.py provides
+    the training and visualization scaffold.
+  required_functions:
+  - score_difference
+  - dmd_loss
+  - fake_score_loss
+  provided_functions: []
+  optional: false
+toy:
+  provenance: PaperLeet teaching adaptation
+  description: 平移二维高斯生成器和可训练高斯 fake score 展示分数符号、梯度隔离与配对回归。这不是论文 Figure 3 双峰原代码，而是用解析分数隔离相同分布匹配机制。第二个
+    T3 与参考预览增加 **Figure 3 启发的双峰改编实验**：解析双高斯学生的两个中心都从右侧附近出发，比较仅真实分数、分数差匹配、匹配加配对 MSE
+    回归。这里教师和 fake score 都使用解析混合分数以隔离生成器梯度；第一个高斯 T3 单独验证 fake score 训练。CPU 运行600步，噪声
+    sigma 从1.5降至0.6，目标中心为 (-1.8,0)/(1.8,0)，分量标准差 .25，报告每个模式占比和覆盖数。这些配置与曲线是 PaperLeet
+    重实现，不是原 Figure 3 数据或源码。
+  description_en: A shifted 2D Gaussian generator and trainable Gaussian fake score
+    expose score signs, gradient isolation, and paired regression. This is not the
+    paper’s Figure 3 bimodal source code; it isolates the same distribution-matching
+    mechanism with analytic scores.The second T3 experiment and the reference preview
+    add a **Figure-3-inspired bimodal adaptation**. An analytic two-Gaussian student
+    begins with both means near the right mode. Compare real-score-only, score-difference
+    distribution matching, and matching plus paired MSE regression. Teacher and fake
+    scores are exact mixture scores here, so this experiment isolates generator gradients;
+    the first Gaussian T3 separately trains the fake score. Use noise sigma 1.5→0.6
+    over 600 CPU updates, target centers (-1.8,0)/(1.8,0), and component std .25.
+    Report both mode proportions and covered-mode count. These settings and curves
+    are PaperLeet’s reimplementation, not original Figure 3 data or source code.
+  source: https://arxiv.org/abs/2311.18828v1
+  seed: 42
+  entrypoint: toy.py:run_bimodal
+  full_reproduction: false
+calibration:
+  status: measured
+  seed: 42
+  device: CPU
+  threads: 2
+  machine: arm64
+  torch_version: 2.14.1
+  checked_at: '2026-10-13'
+  reference_duration_s: 0.452155
+  reference_metrics:
+    mean_error: 0.007440583780407906
+    fake_mean_tracking_error: 0.01646539755165577
+    real_score_only_covered_modes: 1
+    real_score_only_left_fraction: 0.0
+    real_score_only_right_fraction: 0.9921875
+    real_score_only_center_error: 1.7814031839370728
+    matching_covered_modes: 2
+    matching_left_fraction: 0.5
+    matching_right_fraction: 0.4921875
+    matching_center_error: 5.96082486481464e-07
+    matching_regression_covered_modes: 2
+    matching_regression_left_fraction: 0.5
+    matching_regression_right_fraction: 0.4921875
+    matching_regression_center_error: 5.960540647720336e-07
+  reference_tests_passed: 7
+  mutants_killed: 4

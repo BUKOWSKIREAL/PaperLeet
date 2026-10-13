@@ -1,0 +1,101 @@
+id: diffusion/consistency
+number: 21
+title: Consistency Models：边界与教师目标
+title_en: 'Consistency Models: Boundary and Teacher Targets'
+paper:
+  title: Consistency Models
+  arxiv: '2303.01469'
+  anchors:
+  - arXiv v1 §3 consistency function boundary parameterization
+  - §4 consistency distillation and EMA target
+  - Official get_scalings_for_boundary_condition
+  version: v1
+  authors: Yang Song, Prafulla Dhariwal, Mark Chen, Ilya Sutskever
+  venue: ICML 2023
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: consistency_function
+  signature: 'consistency_function(model, noisy: Tensor, sigma: Tensor, sigma_min:
+    float = .002, sigma_data: float = .5) -> Tensor'
+- name: consistency_loss
+  signature: 'consistency_loss(prediction: Tensor, target_prediction: Tensor) -> Tensor'
+- name: update_ema
+  signature: 'update_ema(online, target, decay: float = .95) -> None'
+- name: teacher_euler
+  signature: 'teacher_euler(noisy: Tensor, denoised: Tensor, sigma: Tensor, next_sigma:
+    Tensor) -> Tensor'
+conventions:
+  seed: 42
+  dtype: Preserve floating input dtype/device; tests include float64.
+  loss: Unless stated otherwise, mean across batch and coordinates.
+tests:
+  T0: 1
+  T1: 1
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+mutants:
+- id: m1_no_boundary_shift
+  bug: no boundary shift
+- id: m2_unfrozen_target
+  bug: unfrozen target
+- id: m3_ema_reversed
+  bug: ema reversed
+- id: m4_skip_input_scaling
+  bug: skip input scaling
+viz:
+- toy_experiment
+estimated_minutes: 35
+tags:
+- Generative Models
+- Consistency Models
+- PyTorch
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2303.01469
+  - https://arxiv.org/abs/2303.01469v1
+  - https://github.com/openai/consistency_models/blob/e32b69ee436d518377db86fb2127a3972d0d8716/cm/karras_diffusion.py
+module:
+  goal: 实现保持边界的 consistency 函数、冻结相邻时间目标的损失与 EMA 更新。
+  goal_en: Implement a boundary-preserving consistency function, stop-gradient pair
+    loss, and EMA target update.
+  scope: 实现 consistency_function, consistency_loss, update_ema；toy.py 提供训练与可视化脚手架。
+  scope_en: Implement consistency_function, consistency_loss, update_ema. toy.py provides
+    the training and visualization scaffold.
+  required_functions:
+  - consistency_function
+  - consistency_loss
+  - update_ema
+  provided_functions:
+  - teacher_euler
+  optional: false
+toy:
+  provenance: PaperLeet teaching adaptation
+  description: 单点数据教师使概率流 Euler 步精确。小型 MLP 蒸馏验证边界和目标梯度路径，无需预训练模型。一半训练对使用 EMA 网络的正相邻
+    sigma/2 目标；另一半连接严格 sigma_min 边界。
+  description_en: A point-data teacher makes its probability-flow Euler step exact.
+    Small MLP distillation exercises the boundary and target routing without pretrained
+    models. Half the training pairs use positive adjacent sigma/2 targets from the
+    EMA network; half anchor the exact sigma_min boundary.
+  source: https://github.com/openai/consistency_models/blob/e32b69ee436d518377db86fb2127a3972d0d8716/cm/karras_diffusion.py
+  seed: 42
+  entrypoint: toy.py:run
+  full_reproduction: false
+calibration:
+  status: measured
+  seed: 42
+  device: CPU
+  threads: 2
+  machine: arm64
+  torch_version: 2.14.1
+  checked_at: '2026-10-13'
+  reference_duration_s: 0.210303
+  reference_metrics:
+    endpoint_mse: 0.0011556086828932166
+    boundary_error: 0.0
+    nonboundary_target_fraction: 0.5
+  reference_tests_passed: 7
+  mutants_killed: 4

@@ -1,0 +1,98 @@
+id: diffusion/dmd2
+number: 20
+title: DMD2：双时间尺度与对抗更新
+title_en: 'DMD2: Two-Time-Scale and Adversarial Updates'
+paper:
+  title: Improved Distribution Matching Distillation for Fast Image Synthesis
+  arxiv: '2405.14867'
+  anchors:
+  - arXiv v1 §3 two-time-scale updates and GAN loss
+  - Official EDM compute_generator_clean_cls_loss and compute_guidance_clean_cls_loss
+  version: v1
+  authors: Tianwei Yin, Michaël Gharbi, Taesung Park, Richard Zhang, Eli Shechtman,
+    Fredo Durand, William T. Freeman
+  venue: arXiv 2024
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: generator_due
+  signature: 'generator_due(completed_critic_updates: int, critic_per_generator: int
+    = 5) -> bool'
+- name: adversarial_losses
+  signature: 'adversarial_losses(real_logits: Tensor, fake_logits: Tensor) -> tuple[Tensor,
+    Tensor]'
+- name: generator_loss
+  signature: 'generator_loss(generated: Tensor, gradient: Tensor, fake_logits: Tensor,
+    gan_weight: float = .1) -> Tensor'
+conventions:
+  seed: 42
+  dtype: Preserve floating input dtype/device; tests include float64.
+  loss: Unless stated otherwise, mean across batch and coordinates.
+tests:
+  T0: 1
+  T1: 1
+  T2: 3
+  T3: 1
+t3_budget_s: 10
+mutants:
+- id: m1_equal_update_frequency
+  bug: equal update frequency
+- id: m2_gan_wrong_sign
+  bug: gan wrong sign
+- id: m3_no_gan_generator
+  bug: no gan generator
+- id: m4_target_not_frozen
+  bug: target not frozen
+viz:
+- toy_experiment
+estimated_minutes: 35
+tags:
+- Generative Models
+- DMD2
+- PyTorch
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2405.14867
+  - https://arxiv.org/abs/2405.14867v1
+  - https://github.com/tianweiy/DMD2/blob/8d8fa55633d47cfb81bbc7a892e7248f9518763f/main/edm/edm_guidance.py
+module:
+  goal: 在分布匹配基础上实现 critic/生成器更新比例和非饱和 GAN 项。
+  goal_en: Implement the critic-to-generator update ratio and non-saturating GAN contribution
+    on top of distribution matching.
+  scope: 实现 generator_due, adversarial_losses, generator_loss；toy.py 提供训练与可视化脚手架。
+  scope_en: Implement generator_due, adversarial_losses, generator_loss. toy.py provides
+    the training and visualization scaffold.
+  required_functions:
+  - generator_due
+  - adversarial_losses
+  - generator_loss
+  provided_functions: []
+  optional: false
+toy:
+  provenance: PaperLeet teaching adaptation
+  description: 非配对平移高斯 toy 将 fake-score 和判别器训练5次再更新学生1次，展示调度、GAN梯度方向与移除配对回归。用高斯分数参数替代预训练扩散特征。
+  description_en: An unpaired shifted-Gaussian toy jointly trains a fake score and
+    discriminator for five updates per student update. It demonstrates scheduling,
+    GAN gradient direction, and removal of paired regression. Uses scalar Gaussian
+    score parameters rather than pretrained diffusion features.
+  source: https://github.com/tianweiy/DMD2/blob/8d8fa55633d47cfb81bbc7a892e7248f9518763f/main/edm/edm_guidance.py
+  seed: 42
+  entrypoint: toy.py:run
+  full_reproduction: false
+calibration:
+  status: measured
+  seed: 42
+  device: CPU
+  threads: 2
+  machine: arm64
+  torch_version: 2.14.1
+  checked_at: '2026-10-13'
+  reference_duration_s: 0.276563
+  reference_metrics:
+    mean_error: 0.021260952576994896
+    critic_updates: 1000
+    generator_updates: 200
+  reference_tests_passed: 6
+  mutants_killed: 4

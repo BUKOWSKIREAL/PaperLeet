@@ -866,24 +866,13 @@ h3 {
 }
 .workspace-view {
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 .workspace-view .topbar {
-  height: 54px;
   flex-shrink: 0;
-}
-.workspace-view .nav-inner {
-  max-width: none;
-  padding: 0 23px;
-  gap: 43px;
-}
-.workspace-view .brand {
-  font-size: 19px;
-}
-.workspace-view .brand-mark svg {
-  width: 22px;
 }
 .workspace-toolbar {
   height: 44px;
@@ -3498,4 +3487,26 @@ h3 {
   .workspace-toolbar > .back-link { max-width: 34%; font-size: 10px; }
   .workspace-toolbar > b { font-size: 10px; }
   .problem-navigation { gap: 3px; }
+}
+
+/* Keep navigation geometry stable when Continue opens the editor. */
+.topbar .continue-link { min-width: 76px; justify-content: center; }
+html { scrollbar-gutter: stable; }
+.paper-categories { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; }
+.paper-categories button { display: flex; align-items: center; gap: 14px; padding: 12px 15px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--muted); text-align: left; }
+.paper-categories button b { font: 11px "IBM Plex Mono", monospace; color: var(--muted); }
+.paper-categories button[aria-pressed="true"], .toy-view-tabs button[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+.paper-library .filter-bar { flex-wrap: wrap; }
+.paper-library .select-wrap { max-width: 100%; }
+.paper-library .select-wrap select { max-width: 215px; }
+.toy-experiment > p { color: var(--muted); line-height: 1.75; margin: 12px 0 18px; }
+.toy-provenance { margin: 15px 0; color: var(--muted); overflow-wrap: anywhere; }
+.toy-provenance summary { cursor: pointer; color: var(--text); }
+.toy-view-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
+.toy-view-tabs button { border: 1px solid var(--line); padding: 8px 12px; border-radius: 6px; }
+@media (max-width: 850px) { .workspace-view { height: auto; min-height: 100dvh; } }
+@media (max-width: 520px) {
+  .paper-categories { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .paper-categories button { padding: 10px; font-size: 11px; justify-content: space-between; gap: 6px; }
+  .topbar .continue-link { min-width: 63px; }
 }

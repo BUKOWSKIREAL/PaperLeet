@@ -23,5 +23,21 @@ COPY problems/diffusion/param_conversion/ ./problems/diffusion/param_conversion/
 COPY problems/diffusion/ddpm_sampling/ ./problems/diffusion/ddpm_sampling/
 COPY problems/diffusion/ddim/ ./problems/diffusion/ddim/
 COPY problems/diffusion/flow_matching/ ./problems/diffusion/flow_matching/
+COPY problems/rl/gspo/ ./problems/rl/gspo/
+COPY problems/rl/opd/ ./problems/rl/opd/
+COPY problems/rl/dapo/ ./problems/rl/dapo/
+COPY problems/finetuning/lora/ ./problems/finetuning/lora/
+COPY problems/finetuning/qlora/ ./problems/finetuning/qlora/
+COPY problems/diffusion/meanflow/ ./problems/diffusion/meanflow/
+COPY problems/diffusion/jit/ ./problems/diffusion/jit/
+COPY problems/diffusion/drifting/ ./problems/diffusion/drifting/
+COPY problems/diffusion/dmd/ ./problems/diffusion/dmd/
+COPY problems/diffusion/dmd2/ ./problems/diffusion/dmd2/
+COPY problems/diffusion/consistency/ ./problems/diffusion/consistency/
+COPY problems/architecture/attention/ ./problems/architecture/attention/
+COPY problems/optimization/adamw/ ./problems/optimization/adamw/
+COPY problems/architecture/flash_attention/ ./problems/architecture/flash_attention/
+COPY problems/representation/clip/ ./problems/representation/clip/
+COPY problems/diffusion/progressive_distillation/ ./problems/diffusion/progressive_distillation/
 USER 65534:65534
 ENTRYPOINT ["python", "-m", "paperleet.hosting.worker"]

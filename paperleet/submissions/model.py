@@ -12,11 +12,16 @@ def object_schema(fields):
 STRING = {"type": "string"}
 FUNCTION = object_schema({"name": STRING, "signature": STRING})
 EVIDENCE = object_schema({"claim": STRING, "source_url": STRING, "locator": STRING})
+TOY = object_schema({
+    "kind": {"type": "string", "enum": ["author_toy", "paper_derived", "teaching_adaptation"]},
+    "source_url": STRING, "locator": STRING, "adaptation": STRING,
+})
 IMPLEMENTATION_SCHEMA = object_schema({
     **{key: STRING for key in ("title", "title_en", "summary", "readme", "readme_en", "starter", "solution", "notes", "notes_en")},
     "difficulty": {"type": "string", "enum": ["E", "M", "H"]},
     "functions": {"type": "array", "items": FUNCTION},
     "evidence": {"type": "array", "items": EVIDENCE},
+    "toy": TOY,
 })
 TEST_SCHEMA = object_schema({
     "tests": {"type": "array", "items": object_schema({"name": STRING, "layer": {"type": "string", "enum": ["T0", "T1", "T2", "T3"]}, "code": STRING})},
@@ -91,6 +96,10 @@ class OpenAIProvider:
         research = self.request("Read the submitted paper and, if supplied, official code. Use web search to open these exact sources. "
                                 "Return a concise evidence dossier: equations, tensor shapes, conventions, official implementation paths, "
                                 "license observations, and any unavailable source. Never invent inaccessible content. "
+                                "Look specifically for original toy experiments in figures, appendices and author notebooks: record exact source URL, "
+                                "paper version/figure/section, code path and commit if available, data distribution, model, training budget, "
+                                "metrics and what mathematical contribution the toy tests. If no original toy is accessible, say so and propose "
+                                "a clearly labeled small teaching adaptation. Do not present an illustrative plot as available runnable code. "
                                 "The exercise must be one small meaningful implementation (under 100 lines, tests under 15 seconds).\n" + json.dumps(source_input), search=True)
         source_urls = {row.get("url") for row in research["sources"] if isinstance(row.get("url"), str) and row["url"].startswith("https://")}
         if submission.get("excerpt", "").strip():
@@ -102,19 +111,33 @@ class OpenAIProvider:
                                       "starter and solution export the same functions; starter raises NotImplementedError in every required function. "
                                       "Only use math, typing, numpy, torch, collections, itertools, functools, random, statistics or dataclasses. "
                                       "Evidence must use exact URLs from available_source_urls and precise locators. No CLI instructions or running external code. "
+                                      "Declare toy provenance: author_toy only for a verified author-provided runnable toy; paper_derived for an original "
+                                      "implementation reconstructed from a paper experiment; teaching_adaptation for a new educational task. "
+                                      "Its source_url must also occur in evidence. Locator must identify the exact evidence; adaptation must describe "
+                                      "all reductions or changes, including data/model/steps, or explicitly state unchanged. Do not claim to reproduce "
+                                      "large-model benchmarks. Explain toy provenance and the measurement in both languages. "
                                       "Address supplied human revision feedback, checking scientific claims against the paper rather than treating feedback as source facts.\n" +
                                       json.dumps({"submission": source_input, "evidence_dossier": research["value"], "available_source_urls": sorted(source_urls)}), IMPLEMENTATION_SCHEMA)
         candidate = implementation["value"]
-        if not candidate.get("evidence") or any(row.get("source_url") not in source_urls for row in candidate["evidence"]):
+        if (not candidate.get("evidence") or any(row.get("source_url") not in source_urls for row in candidate["evidence"])
+                or (candidate.get("toy") and candidate["toy"].get("source_url") not in source_urls)):
             raise ModelUnavailable("The generated claims did not cite the retrieved sources. Regenerate or add a precise paper excerpt.")
         # Independent call intentionally cannot see the proposed implementation or its notes.
-        contract = {k: candidate[k] for k in ("title_en", "readme_en", "functions", "evidence")}
+        contract = {k: candidate[k] for k in ("title_en", "readme_en", "functions", "evidence", "toy") if k in candidate}
         testing = self.request("Independently design tests and plausible bug implementations from the paper and contract, without a reference implementation. "
                                "Return at least 4 and at most 16 tests, including all layers T0 interface, T1 analytically known values, T2 invariants, T3 toy behavior. "
                                "Each test name is a Python identifier starting test_. Each code field is a complete standalone Python module with exactly one "
-                               "function named name accepting only fixture impl; call impl.<function>. Put a docstring explaining why. Use plain assert or numpy/torch testing. "
+                               "function named name accepting (impl) or (impl, artifact); call impl.<function>. Put a docstring explaining why. Use plain assert or numpy/torch testing. "
                                "Do not parametrize, mark skip/xfail, define fixtures, import a reference, use disk/network, or catch AssertionError. All helper code should live inside the test. "
                                "Each test must invoke at least one impl function. Use deterministic fixed inputs; total CPU under 15s. "
+                               "At least one T3 test must run the declared toy using impl and save real measured results with artifact(name, value). "
+                               "Do not emit invented curves, precomputed reference answers as learner outputs, or success-shaped placeholders. "
+                               "Use value={kind:'toy_experiment', title:..., metrics:{...}, loss_curve:[[step,measured_loss],...]} and optionally "
+                               "samples:[[x,y],...], reference_samples:[[x,y],...]. Include only applicable fields; scatter points and curve values "
+                               "must come from this test run. Provenance is injected by the trusted worker from the declared toy metadata. "
+                               "Finite JSON values, NumPy arrays and detached CPU tensors are supported. At most 4 unique artifact names per test, "
+                               "32 KB combined per test, 256 KB across the report, 4096 nodes per artifact, depth 12; use at most 500 plotted "
+                               "points and explicitly downsample if needed. Keep real assertions on metrics or behavior independently of plotting. "
                                "Provide 2–4 complete mutant modules implementing ALL required functions, each with one plausible mathematical bug. "
                                "Allowed imports math, typing, numpy, torch, pytest, collections, itertools, functools, random, statistics, dataclasses.\n" +
                                json.dumps({"contract": contract, "evidence_dossier": research["value"]}), TEST_SCHEMA)

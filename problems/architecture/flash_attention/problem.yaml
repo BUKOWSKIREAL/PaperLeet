@@ -1,0 +1,71 @@
+id: architecture/flash_attention
+number: 24
+title: 在线 Softmax 与分块注意力
+title_en: Online Softmax and Block Attention
+paper:
+  title: 'FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness'
+  authors: Tri Dao, Daniel Y. Fu, Stefano Ermon, Atri Rudra, Christopher Ré
+  venue: NeurIPS 2022
+  arxiv: '2205.14135'
+  anchors:
+  - 'Section 3.1: tiling and online softmax'
+  - 'Algorithm 1: FlashAttention forward pass'
+  official_code: https://github.com/Dao-AILab/flash-attention
+paper_id: flash-attention
+type: implement
+parent: null
+difficulty: H
+functions:
+- name: online_softmax_update
+  signature: 'online_softmax_update(scores: Tensor, values: Tensor, row_max: Tensor, normalizer: Tensor, numerator:
+    Tensor) -> tuple[Tensor, Tensor, Tensor]'
+- name: block_attention
+  signature: 'block_attention(q: Tensor, k: Tensor, v: Tensor, block_size: int=16) -> tuple[Tensor, Tensor]'
+module:
+  goal: 用在线 softmax 合并 score 分块，得到精确 attention 和 log-sum-exp。
+  goal_en: Merge score tiles with online softmax to recover exact attention and log-sum-exp.
+  scope: 只实现 online_softmax_update；双向分块遍历与最终归一化已提供。CPU 教学实现不复现 GPU 加速。
+  scope_en: Implement only online_softmax_update; query/key tiling and final normalization are supplied. This
+    CPU teaching implementation does not reproduce GPU acceleration.
+  required_functions:
+  - online_softmax_update
+  provided_functions:
+  - block_attention
+  optional: false
+conventions:
+  seed: 42
+  dtype: Preserve input dtype; numerical and gradient tests use float64.
+  device: CPU; no downloads or pretrained weights
+tests:
+  T0: 1
+  T1: 1
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 25
+tags:
+- Attention
+- Efficiency
+- Online Softmax
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2205.14135
+  - https://github.com/Dao-AILab/flash-attention
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/abs/2205.14135
+  anchor: 'Section 3.1: tiling and online softmax'
+  adaptation: PaperLeet synthetic CPU experiment; no claim of reproducing the paper training benchmarks.
+mutants:
+- id: m1_no_numerator_rescale
+  bug: 旧 weighted sum 未随新最大值缩放
+- id: m2_no_normalizer_rescale
+  bug: 旧 normalizer 未随新最大值缩放
+- id: m3_ignore_previous_max
+  bug: 块最大值替代累计最大值
+- id: m4_detach_history
+  bug: 切断早期分块的梯度

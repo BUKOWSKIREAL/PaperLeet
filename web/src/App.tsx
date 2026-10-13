@@ -33,7 +33,7 @@ import {
 import { ArtifactCharts } from "./Visuals";
 import Visuals from "./Lab";
 import { isPassed, layers, status } from "./types";
-import type { Paper, Problem, Report } from "./types";
+import type { Category, Paper, Problem, Report } from "./types";
 import { PaperDetail, PaperLibrary, paperModules } from "./PaperViews";
 import { decodeProblemHash, parseReport } from "./reports";
 import { LocaleProvider, useI18n } from "./i18n";
@@ -128,7 +128,7 @@ export function Prose({
         href,
         `https://local/problems/${problemId}/README.md`,
       ).pathname;
-      const match = /\/problems\/(rl|diffusion)\/([^/]+)\/README.md$/.exec(
+      const match = /\/problems\/([a-z_]+)\/([^/]+)\/README(?:\.en)?\.md$/.exec(
         resolved,
       );
       if (match) return <a href={`#/${match[1]}/${match[2]}`}>{children}</a>;
@@ -332,6 +332,7 @@ function Workspace() {
   const testAuth = capabilities?.auth_mode === "test";
   const runController = useRef<AbortController | undefined>(undefined);
   const [problems, setProblems] = useState<Problem[]>([]),
+    [categories, setCategories] = useState<Category[]>([]),
     [papers, setPapers] = useState<Paper[]>([]),
     [loadError, setLoadError] = useState(""),
     [id, setId] = useState(getId),
@@ -382,6 +383,7 @@ function Workspace() {
       .then((data) => {
         setProblems(Array.isArray(data) ? data : data.problems);
         setPapers(Array.isArray(data.papers) ? data.papers : []);
+        setCategories(Array.isArray(data.categories) ? data.categories : []);
         setLoadError("");
       })
       .catch((e) => setLoadError(e.message));
@@ -392,6 +394,7 @@ function Workspace() {
       setId(getId());
       setTab("description");
       setRightTab("code");
+      window.scrollTo(0, 0);
     };
     window.addEventListener("hashchange", h);
     return () => window.removeEventListener("hashchange", h);
@@ -516,13 +519,14 @@ function Workspace() {
               {t("论文题库", "Papers")}
             </a>
             <button
-              className={problem ? "active" : ""}
+              className={`continue-link ${problem ? "active" : ""}`}
               onClick={() => {
                 if (!problem) {
-                  const next =
-                    problems.find(
-                      (p) => status(p, saved[p.id]) === "started",
-                    ) || problems[0];
+                  const next = selectedPaper
+                    ? siblingModules.find((p) => !p.module.optional && status(p, saved[p.id]) !== "done") || siblingModules[0]
+                    : problems.filter((p) => status(p, saved[p.id]) === "started")
+                        .sort((a, b) => (saved[b.id]?.updated || "").localeCompare(saved[a.id]?.updated || ""))[0]
+                      || problems[0];
                   if (next) location.hash = `/${next.number}`;
                 }
               }}
@@ -615,6 +619,7 @@ function Workspace() {
           />
         ) : (
           <PaperLibrary
+            categories={categories}
             papers={papers}
             problems={problems}
             saved={saved}
@@ -693,11 +698,11 @@ function Workspace() {
                   </button>
                 ))}
               </div>
-              <div className="description-scroll">
+              <div className="description-scroll" key={problem.id}>
                 {tab === "tests" ? (
                   <ReportView report={current.report} problem={problem} />
                 ) : tab === "lab" ? (
-                  <Visuals key={problem.id} problem={problem} />
+                  <Visuals key={problem.id} problem={problem} report={current.report} />
                 ) : tab === "notes" ? (
                   status(problem, current) !== "done" ? (
                     <div className="empty-state">
@@ -843,7 +848,7 @@ function Workspace() {
                       </section>
                     )}
                     {tab === "explanation" && (
-                      <Visuals key={problem.id} problem={problem} />
+                      <Visuals key={problem.id} problem={problem} report={current.report} />
                     )}
                     {locale === "en" && !problem.translations?.en && (
                       <div className="notice">
@@ -863,9 +868,9 @@ function Workspace() {
                       >
                         <FlaskConical size={21} />
                         <span>
-                          <b>{t("把公式放进实验台", "Explore the formulas")}</b>
+                          <b>{problem.vizData?.kind === "toy_experiment" ? t("查看核心算法实验", "Explore the core experiment") : t("把公式放进实验台", "Explore the formulas")}</b>
                           <small>
-                            {t(
+                            {problem.vizData?.kind === "toy_experiment" ? t("对比参考实现与自己的运行结果", "Compare the reference with your run results") : t(
                               "调整参数，观察结果怎样变化",
                               "Adjust parameters and see what changes",
                             )}
@@ -898,7 +903,7 @@ function Workspace() {
               </div>
               {rightTab === "lab" ? (
                 <div className="editor-lab">
-                  <Visuals key={problem.id} problem={problem} />
+                  <Visuals key={problem.id} problem={problem} report={current.report} />
                 </div>
               ) : (
                 <>

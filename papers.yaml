@@ -1,6 +1,7 @@
 # Paper numbers are public library IDs; module numbers remain stable CLI IDs.
 papers:
   - id: gae
+    category: reinforcement-learning
     number: 1
     short_title: GAE
     year: 2016
@@ -11,6 +12,7 @@ papers:
     scope_en: "Implement the backward GAE recurrence and episode boundary handling."
     module_ids: [rl/gae]
   - id: ppo
+    category: reinforcement-learning
     number: 2
     short_title: PPO
     year: 2017
@@ -21,6 +23,7 @@ papers:
     scope_en: "Implement the clipped surrogate and its gradient behavior; value loss, normalization, and diagnostics are supplied."
     module_ids: [rl/ppo_clip]
   - id: dpo
+    category: post-training
     number: 3
     short_title: DPO
     year: 2023
@@ -31,6 +34,7 @@ papers:
     scope_en: "Implement the preference loss and implicit rewards; token alignment and sequence log-probability calculation are supplied."
     module_ids: [rl/dpo]
   - id: deepseekmath
+    category: reinforcement-learning
     number: 4
     short_title: DeepSeekMath · GRPO
     year: 2024
@@ -41,6 +45,7 @@ papers:
     scope_en: "Focus on the paper's GRPO module: group-relative advantages, clipped objectives, and response-level aggregation."
     module_ids: [rl/grpo]
   - id: dr-grpo
+    category: reinforcement-learning
     number: 5
     short_title: Dr. GRPO
     year: 2025
@@ -51,6 +56,7 @@ papers:
     scope_en: "Implement two corrections: remove group standard-deviation scaling and normalize by a fixed generation budget."
     module_ids: [rl/dr_grpo]
   - id: ddpm
+    category: generative-models
     number: 6
     short_title: DDPM
     year: 2020
@@ -61,16 +67,18 @@ papers:
     scope_en: "Implement closed-form forward noising, the Gaussian posterior, and an epsilon-parameterized reverse step; schedules and sampling loops are supplied."
     module_ids: [diffusion/schedules, diffusion/ddpm_sampling]
   - id: progressive-distillation
+    category: generative-models
     number: 7
     short_title: Progressive Distillation
     year: 2022
     tags: [Diffusion, Parameterization]
-    summary: 逐步将多步采样器蒸馏为更少步数的学生；这里选取其中的 v 参数化技术。
-    summary_en: "Progressively distill a sampler into students with fewer steps; the selected module studies its v-parameterization technique."
-    scope: 实现 v 参数化与 x₀、epsilon 的转换。当前模块覆盖这一支撑技术；蒸馏目标和训练流程尚未收录。
-    scope_en: "Implement v-parameterization and conversions to x0 and epsilon. This module covers that supporting technique; the distillation objective and training procedure are not included."
-    module_ids: [diffusion/param_conversion]
+    summary: 把教师的两步确定性更新蒸馏为学生的一步更新，逐轮减少采样步数。
+    summary_en: "Distill two deterministic teacher steps into one student step, progressively reducing the sampling budget."
+    scope: 先实现 v 参数化转换，再推导两步教师到一步学生的蒸馏目标并验证更新。
+    scope_en: "Implement v-parameterization conversions, then derive and validate the two-teacher-step to one-student-step distillation target."
+    module_ids: [diffusion/param_conversion, diffusion/progressive_distillation]
   - id: ddim
+    category: generative-models
     number: 8
     short_title: DDIM
     year: 2021
@@ -81,6 +89,7 @@ papers:
     scope_en: "Implement the DDIM update and clean endpoint; timestep selection, loops, and inversion exploration code are supplied."
     module_ids: [diffusion/ddim]
   - id: flow-matching
+    category: generative-models
     number: 9
     short_title: Flow Matching
     year: 2023
@@ -90,3 +99,168 @@ papers:
     scope: 实现条件路径、目标速度和 CFM 回归损失；时间采样、Euler 积分和训练辅助代码已提供。
     scope_en: "Implement the conditional path, target velocity, and CFM regression loss; time sampling, Euler integration, and training helpers are supplied."
     module_ids: [diffusion/flow_matching]
+  - id: gspo
+    number: 10
+    category: reinforcement-learning
+    short_title: GSPO
+    year: 2025
+    tags: [Policy Optimization, Sequence Ratios]
+    summary: 在回答级别构造长度归一化的重要性比率，再截断策略目标。
+    summary_en: Construct length-normalized sequence importance ratios and clip the policy objective at the response level.
+    scope: 实现序列概率比与 GSPO 损失，验证掩码、截断区域和梯度。
+    scope_en: Implement sequence ratios and the GSPO loss; test masking, clipping regions, and gradients.
+    module_ids: [rl/gspo]
+  - id: gkd
+    number: 11
+    category: post-training
+    short_title: GKD · On-policy Distillation
+    year: 2023
+    tags: [Distillation, Student Rollouts]
+    summary: 在学生自己生成的前缀上查询教师分布，减少训练与生成时的分布偏移。
+    summary_en: Query the teacher on student-generated prefixes to reduce the mismatch between training and generation.
+    scope: 实现学生 rollout 和全词表散度；在小型自回归模型上验证。OPD 在此指 on-policy distillation。
+    scope_en: Implement student rollouts and full-vocabulary divergence in a tiny autoregressive model. OPD here means on-policy distillation.
+    module_ids: [rl/opd]
+  - id: dapo
+    number: 12
+    category: reinforcement-learning
+    short_title: DAPO
+    year: 2025
+    tags: [Policy Optimization, Dynamic Sampling]
+    summary: 通过动态保留有效回答组、非对称截断和 token 级聚合改进策略优化。
+    summary_en: Improve policy optimization with informative-group filtering, asymmetric clipping, and token-level aggregation.
+    scope: 实现组筛选与 token 级目标；采样系统和分布式训练不在本模块范围。
+    scope_en: Implement group filtering and the token-level objective; sampling infrastructure and distributed training are outside this module.
+    module_ids: [rl/dapo]
+  - id: lora
+    number: 13
+    category: post-training
+    short_title: LoRA
+    year: 2022
+    tags: [Low-rank Adaptation, Parameter Efficiency]
+    summary: 冻结预训练权重，以低秩矩阵乘积学习增量。
+    summary_en: Freeze pretrained weights and learn an update through a low-rank matrix product.
+    scope: 实现低秩增量和线性前向，验证冻结边界及小型回归学习。
+    scope_en: Implement the low-rank update and linear forward pass; verify frozen parameters and a small regression experiment.
+    module_ids: [finetuning/lora]
+  - id: qlora
+    number: 14
+    category: post-training
+    short_title: QLoRA
+    year: 2023
+    tags: [Quantization, Low-rank Adaptation]
+    summary: 在量化的冻结基座上训练低秩适配器，以减少微调内存。
+    summary_en: Train low-rank adapters on a quantized frozen base to reduce fine-tuning memory.
+    scope: 实现分块 NF4 量化、反量化与适配器前向；不模拟双重量化或分页优化器。
+    scope_en: Implement blockwise NF4 quantization, dequantization, and adapter forward; double quantization and paged optimizers are outside this exercise.
+    module_ids: [finetuning/qlora]
+  - id: meanflow
+    number: 15
+    category: generative-models
+    short_title: MeanFlow
+    year: 2025
+    tags: [One-step Generation, JVP]
+    summary: 用瞬时速度和平均速度之间的恒等式学习区间流，以一步生成样本。
+    summary_en: Learn an interval flow using the identity between instantaneous and average velocities for one-step generation.
+    scope: 实现平均流的 JVP 目标和梯度边界，并运行小型生成实验。
+    scope_en: Implement the average-flow JVP target and gradient boundaries, then run a small generative experiment.
+    module_ids: [diffusion/meanflow]
+  - id: jit
+    number: 16
+    category: generative-models
+    short_title: JiT
+    year: 2025
+    tags: [Denoising, Data Prediction]
+    summary: 直接预测干净数据，在不同预测空间和损失空间之间显式转换。
+    summary_en: Predict clean data directly and explicitly convert between prediction and loss spaces.
+    scope: 实现 x-prediction 到速度的转换与去噪目标，使用论文启发的低维流形嵌入实验。
+    scope_en: Implement data-to-velocity conversion and the denoising objective with a paper-derived embedded-manifold experiment.
+    module_ids: [diffusion/jit]
+  - id: drifting
+    number: 17
+    category: generative-models
+    short_title: Drifting Models
+    year: 2026
+    tags: [One-step Generation, Distribution Matching]
+    summary: 构造吸引真实样本、排斥生成样本的漂移场，并用停止梯度的目标训练生成器。
+    summary_en: Construct a drifting field that attracts real samples and repels generated samples, then train a generator against a stopped-gradient target.
+    scope: 实现漂移场与停止梯度损失，在小型二维分布上验证生成器行为。
+    scope_en: Implement the drifting field and stopped-gradient loss, and verify generator behavior on a small two-dimensional distribution.
+    module_ids: [diffusion/drifting]
+  - id: dmd
+    number: 18
+    category: generative-models
+    short_title: DMD
+    year: 2024
+    tags: [Distillation, Score Matching]
+    summary: 用真实分布和生成分布的 score 差构造生成器的分布匹配更新。
+    summary_en: Use the score difference between real and generated distributions to construct a distribution-matching generator update.
+    scope: 实现 score 差目标与配对回归项，用解析双峰分布检查模式覆盖。
+    scope_en: Implement the score-difference target and paired regression term; inspect mode coverage using an analytic bimodal distribution.
+    module_ids: [diffusion/dmd]
+  - id: dmd2
+    number: 19
+    category: generative-models
+    short_title: DMD2
+    year: 2024
+    tags: [Distillation, Two-timescale Updates]
+    summary: 通过更快的假 score 更新和对抗辅助训练，去除 DMD 的配对回归要求。
+    summary_en: Remove DMD's paired-regression requirement using faster fake-score updates and adversarial auxiliary training.
+    scope: 实现双时间尺度更新与辅助目标，在小型实验中验证参数更新边界。
+    scope_en: Implement two-timescale updates and auxiliary objectives; verify parameter-update boundaries in a small experiment.
+    module_ids: [diffusion/dmd2]
+  - id: consistency
+    number: 20
+    category: generative-models
+    short_title: Consistency Models
+    year: 2023
+    tags: [Consistency, Distillation]
+    summary: 让同一生成轨迹上的不同噪声状态映射到一致的干净端点。
+    summary_en: Map noisy states along the same generative trajectory to a consistent clean endpoint.
+    scope: 实现边界参数化和相邻时刻的一致性蒸馏损失。
+    scope_en: Implement the boundary parameterization and adjacent-time consistency-distillation loss.
+    module_ids: [diffusion/consistency]
+  - id: transformer
+    number: 21
+    category: architecture
+    short_title: Transformer
+    year: 2017
+    tags: [Attention, Sequence Models]
+    summary: 用缩放点积注意力按内容组合序列信息。
+    summary_en: Combine sequence information by content using scaled dot-product attention.
+    scope: 实现缩放、掩码和 softmax 注意力；因果掩码及实验脚手架已提供。
+    scope_en: Implement scaling, masking, and softmax attention; causal masks and experiment scaffolding are supplied.
+    module_ids: [architecture/attention]
+  - id: adamw
+    number: 22
+    category: optimization
+    short_title: AdamW
+    year: 2019
+    tags: [Optimization, Weight Decay]
+    summary: 将权重衰减与自适应梯度更新分离。
+    summary_en: Decouple weight decay from the adaptive gradient update.
+    scope: 实现矩估计、偏差修正与解耦权重衰减的一步更新。
+    scope_en: Implement moment estimates, bias correction, and a decoupled weight-decay step.
+    module_ids: [optimization/adamw]
+  - id: flash-attention
+    number: 23
+    category: architecture
+    short_title: FlashAttention
+    year: 2022
+    tags: [Attention, Online Softmax]
+    summary: 利用在线 softmax 分块精确累积注意力，避免物化完整注意力矩阵。
+    summary_en: Accumulate exact attention in blocks with online softmax without materializing the full attention matrix.
+    scope: 实现分块递推与重缩放。这是 CPU 算法练习，不评价 GPU kernel 性能。
+    scope_en: Implement blockwise recurrence and rescaling. This CPU algorithm exercise does not benchmark GPU kernels.
+    module_ids: [architecture/flash_attention]
+  - id: clip
+    number: 24
+    category: representation
+    short_title: CLIP
+    year: 2021
+    tags: [Contrastive Learning, Multimodal]
+    summary: 用对称的批内对比损失对齐图像和文本表征。
+    summary_en: Align image and text representations using a symmetric in-batch contrastive objective.
+    scope: 实现特征归一化、温度缩放和双向对比损失，使用小型配对检索实验。
+    scope_en: Implement feature normalization, temperature scaling, and bidirectional contrastive loss with a tiny paired-retrieval experiment.
+    module_ids: [representation/clip]

@@ -1,0 +1,71 @@
+id: representation/clip
+number: 25
+title: 对称对比学习
+title_en: Symmetric Contrastive Learning
+paper:
+  title: Learning Transferable Visual Models From Natural Language Supervision
+  authors: Alec Radford et al.
+  venue: ICML 2021
+  arxiv: '2103.00020'
+  anchors:
+  - 'Figure 3: symmetric contrastive training pseudocode'
+  - 'Section 2.5: learned temperature and scale clipping at 100'
+  official_code: https://github.com/openai/CLIP
+paper_id: clip
+type: implement
+parent: null
+difficulty: E
+functions:
+- name: contrastive_logits
+  signature: 'contrastive_logits(image_features: Tensor, text_features: Tensor, logit_scale: Tensor) -> Tensor'
+- name: clip_loss
+  signature: 'clip_loss(image_features: Tensor, text_features: Tensor, logit_scale: Tensor) -> Tensor'
+module:
+  goal: 实现特征归一化、可学习温度和双向图文对比损失。
+  goal_en: Implement feature normalization, learnable temperature, and the symmetric image-text contrastive
+    objective.
+  scope: 实现 contrastive_logits 与 clip_loss；配对向量训练循环已提供，不训练完整图文编码器。
+  scope_en: Implement contrastive_logits and clip_loss; paired-vector training is provided, without training
+    full image/text encoders.
+  required_functions:
+  - contrastive_logits
+  - clip_loss
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: Preserve input dtype; numerical and gradient tests use float64.
+  device: CPU; no downloads or pretrained weights
+tests:
+  T0: 1
+  T1: 1
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 15
+tags:
+- Representation Learning
+- Multimodal
+- Contrastive Learning
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2103.00020
+  - https://github.com/openai/CLIP
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/abs/2103.00020
+  anchor: 'Figure 3: symmetric contrastive training pseudocode'
+  adaptation: PaperLeet synthetic CPU experiment; no claim of reproducing the paper training benchmarks.
+mutants:
+- id: m1_omit_normalization
+  bug: 未归一化图像特征
+- id: m2_one_direction
+  bug: 只优化 image-to-text
+- id: m3_scale_not_exponentiated
+  bug: 将 log scale 当作 scale
+- id: m4_no_scale_cap
+  bug: 未限制逆温度上限

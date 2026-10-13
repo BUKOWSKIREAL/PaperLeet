@@ -61,7 +61,7 @@ def mutate(entry, report_path=None):
     return report
 
 
-def ci(repeats=3, identifiers=None, budget=120):
+def ci(repeats=3, identifiers=None, budget=300):
     started = time.perf_counter()
     entries = [entry for entry in problems() if not identifiers or entry["id"] in identifiers]
     if not entries:
