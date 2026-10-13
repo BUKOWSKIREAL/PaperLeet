@@ -1,0 +1,94 @@
+id: rl/glm5_offpolicy
+number: 32
+title: GLM-5：异步 RL 的双边重要性采样
+title_en: 'GLM-5: Double-sided Off-policy Correction'
+paper_id: glm-5
+paper:
+  title: 'GLM-5: from Vibe Coding to Agentic Engineering'
+  authors: GLM-5 Team et al.
+  venue: arXiv 2026
+  arxiv: 2602.15763v2
+  url: https://arxiv.org/abs/2602.15763v2
+  official_code: https://github.com/zai-org/GLM-5
+  anchors:
+  - Section 4.1.2, Optimizing Asynchronous Training Stability, Eqs. (3-5)
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: masked_is_weights
+  signature: 'masked_is_weights(logp: Tensor, rollout_logp: Tensor, mask: Tensor, clip_low: float=0.2,
+    clip_high: float=0.2) -> Tensor'
+- name: offpolicy_loss
+  signature: 'offpolicy_loss(logp: Tensor, rollout_logp: Tensor, advantages: Tensor, mask: Tensor, clip_low:
+    float=0.2, clip_high: float=0.2) -> Tensor'
+module:
+  goal: 计算双边区间内的重要性权重，实现冻结权重的 token 级策略梯度目标。
+  goal_en: Compute double-sided masked importance weights and a detached-weight token-level policy-gradient
+    objective.
+  scope: 两个数值函数；原文严格边界加显式 stop-gradient 约定，不复现异步调度与代码智能体。
+  scope_en: Two numerical functions with the report’s strict boundaries and an explicit stop-gradient
+    convention; no asynchronous scheduler or coding agent.
+  required_functions:
+  - masked_is_weights
+  - offpolicy_loss
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  device: CPU; no downloads or pretrained weights
+  dtype: Preserve float32/float64; oracle tests and toys use float64.
+  boundaries: Strict inequalities from Eq. (5); unlike the inclusive endpoints of pinned Slime importance_weights(mode="mis").
+  gradient: Detach importance weights, rollout scores and advantages; keep only the direct current-logp
+    score-function gradient.
+  reduction: Mean over all original valid tokens, including ratio-rejected tokens; not a conditional mean
+    over survivors.
+tests:
+  T0: 1
+  T1: 1
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 25
+tags:
+- Reinforcement Learning
+- Post-training
+- Importance Sampling
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2602.15763v2
+  - https://github.com/zai-org/GLM-5
+  - https://github.com/THUDM/slime/blob/05e3b017fed9e02de418c2fbac9d75602a534be5/slime/backends/megatron_utils/loss.py
+  - https://github.com/THUDM/slime/blob/05e3b017fed9e02de418c2fbac9d75602a534be5/slime/utils/ppo_utils.py
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/abs/2602.15763v2
+  anchor: Section 4.1.2, Optimizing Asynchronous Training Stability, Eqs. (3-5)
+  adaptation: PaperLeet deterministic CPU synthetic experiment; not an author-provided toy or large-model
+    benchmark.
+mutants:
+- id: m1_clamp_outliers
+  bug: Clamp weights instead of dropping outliers
+- id: m2_inclusive_bounds
+  bug: Include the strict interval endpoints
+- id: m3_weight_gradient
+  bug: Differentiate through importance weights
+- id: m4_retained_mean
+  bug: Normalize by retained rather than original valid tokens
+calibration:
+  seed: 42
+  threads: 2
+  dtype: float64
+  method: Three deterministic CPU reference runs and four rejected small-diff mutants; independent algebraic
+    and gradient oracles. Thresholds are exercise requirements, not paper benchmark scores.
+  reference_metrics:
+    initial_reward: 0.0
+    final_reward: 0.9628611780336895
+    max_gradient_error: 3.469446951953614e-18
+    max_weight_error: 2.220446049250313e-16
+    rollout_refresh_interval: 5
+  observed_reference_t3_s: 0.014342208043672144

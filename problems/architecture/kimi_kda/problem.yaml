@@ -1,0 +1,75 @@
+id: architecture/kimi_kda
+number: 33
+title: Kimi K3：有界衰减与 Delta 记忆
+title_en: 'Kimi K3: Bounded Decay and Delta Memory'
+paper:
+  title: 'Kimi K3: Open Frontier Intelligence'
+  authors: Kimi Team
+  venue: arXiv 2026
+  arxiv: 2607.24653v2
+  anchors:
+  - Section 2.1.1, Eqs.1/5 and Figure 3(a)
+  official_code: https://github.com/MoonshotAI/Kimi-K3
+  url: https://arxiv.org/abs/2607.24653v2
+paper_id: kimi-k3
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: bounded_decay
+  signature: 'bounded_decay(logits: Tensor, log_scale: Tensor, lower_bound: float
+    = -5.) -> Tensor'
+- name: recurrent_kda
+  signature: 'recurrent_kda(q: Tensor, k: Tensor, v: Tensor, alpha: Tensor, beta:
+    Tensor, initial_state: Tensor | None = None) -> tuple[Tensor, Tensor]'
+module:
+  goal: 实现逐通道遗忘与 delta-rule 写入，理解 K3 如何更新和读取有限状态记忆。
+  goal_en: Implement channel-wise retention and delta-rule writes, then read the updated
+    recurrent memory.
+  scope: 只实现 bounded_decay 和 recurrent_kda；投影、卷积、输出门和 GPU kernel 不在本题范围。
+  scope_en: Implement bounded_decay and recurrent_kda only; projections, convolutions,
+    output gates and GPU kernels are outside this exercise.
+  required_functions:
+  - bounded_decay
+  - recurrent_kda
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: Preserve floating dtype/device and autograd; numerical tests use float64.
+  device: CPU; no model downloads or pretrained weights
+tests:
+  T0: 1
+  T1: 1
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 25
+tags:
+- Kimi K3
+- KDA
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2607.24653v2
+  - https://arxiv.org/html/2607.24653v2
+  - https://github.com/MoonshotAI/Kimi-K3
+  - https://github.com/MoonshotAI/FlashKDA
+toy:
+  kind: paper_derived
+  source: https://arxiv.org/html/2607.24653v2
+  anchor: Section 2.1.1, Eqs.1/5 and Figure 3(a)
+  adaptation: Redraw Figure 3(a) with A=0, g_min=-5 and logits [-10,10]; separately
+    add a four-token memory-overwrite teaching example, not an original paper experiment.
+mutants:
+- id: m1_unbounded_decay
+  bug: Retains Kimi Linear unbounded softplus instead of K3 bounded gate.
+- id: m2_skip_key_correction
+  bug: Uses additive memory writes instead of the delta-rule prediction correction.
+- id: m3_read_old_state
+  bug: Reads decayed state before the current token write.
+- id: m4_shared_channel_decay
+  bug: Uses one channel retention factor for every key channel.

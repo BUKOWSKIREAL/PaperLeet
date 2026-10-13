@@ -42,6 +42,11 @@ COPY problems/architecture/positionwise_ffn/ ./problems/architecture/positionwis
 COPY problems/optimization/adamw/ ./problems/optimization/adamw/
 COPY problems/architecture/flash_attention/ ./problems/architecture/flash_attention/
 COPY problems/representation/clip/ ./problems/representation/clip/
+COPY problems/optimization/muon_split/ ./problems/optimization/muon_split/
+COPY problems/rl/glm5_offpolicy/ ./problems/rl/glm5_offpolicy/
+COPY problems/architecture/kimi_kda/ ./problems/architecture/kimi_kda/
+COPY problems/architecture/block_attention_residual/ ./problems/architecture/block_attention_residual/
+COPY problems/architecture/situ_glu/ ./problems/architecture/situ_glu/
 COPY problems/diffusion/progressive_distillation/ ./problems/diffusion/progressive_distillation/
 USER 65534:65534
 ENTRYPOINT ["python", "-m", "paperleet.hosting.worker"]

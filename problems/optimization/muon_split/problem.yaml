@@ -1,0 +1,84 @@
+id: optimization/muon_split
+number: 31
+title: Muon Split：逐头矩阵正交化
+title_en: 'Muon Split: Head-wise Orthogonalization'
+paper_id: glm-5
+paper:
+  title: 'GLM-5: from Vibe Coding to Agentic Engineering'
+  authors: GLM-5 Team et al.
+  venue: arXiv 2026
+  arxiv: 2602.15763v2
+  url: https://arxiv.org/abs/2602.15763v2
+  official_code: https://github.com/zai-org/GLM-5
+  anchors:
+  - 'Section 2.1, Multi-latent Attention: Muon Split on W^UQ, W^UK, W^UV'
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: headwise_orthogonalize
+  signature: 'headwise_orthogonalize(matrix: Tensor, num_heads: int) -> Tensor'
+module:
+  goal: 按注意力输出头拆分矩阵，各自求极分解因子后拼回。
+  goal_en: Split an attention projection matrix by output head, compute each polar factor, and merge.
+  scope: 只实现逐头正交化；使用精确 SVD 的教学近似，非完整 Muon 优化器或 GLM 训练。
+  scope_en: Implement only head-wise orthogonalization, using an exact-SVD teaching model; not the full
+    Muon optimizer or GLM training.
+  required_functions:
+  - headwise_orthogonalize
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  device: CPU; no downloads or pretrained weights
+  dtype: Preserve float32/float64; oracle tests and toys use float64.
+  polar: Exact SVD partial polar with relative rank cutoff max(head_dim,input_dim)*eps(dtype)*sigma_max.
+    Declared exercise convention, not an asserted production GLM implementation.
+  gradient: Autograd required only for full-rank blocks with distinct singular values; rank-boundary/repeated-singular-value
+    derivatives excluded, forward remains defined.
+tests:
+  T0: 1
+  T1: 1
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 25
+tags:
+- Optimization
+- Muon
+- Attention
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2602.15763v2
+  - https://github.com/zai-org/GLM-5
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/abs/2602.15763v2
+  anchor: 'Section 2.1, Multi-latent Attention: Muon Split on W^UQ, W^UK, W^UV'
+  adaptation: PaperLeet deterministic CPU synthetic experiment; not an author-provided toy or large-model
+    benchmark.
+mutants:
+- id: m1_whole_matrix
+  bug: Orthogonalize the whole matrix jointly
+- id: m2_column_heads
+  bug: Split columns instead of output-head rows
+- id: m3_frobenius_only
+  bug: Use scalar Frobenius normalization
+- id: m4_nullspace_update
+  bug: Invent updates in zero singular directions
+calibration:
+  seed: 42
+  threads: 2
+  dtype: float64
+  method: Three deterministic CPU reference runs and four rejected small-diff mutants; independent algebraic
+    and gradient oracles. Thresholds are exercise requirements, not paper benchmark scores.
+  reference_metrics:
+    max_headwise_error: 0.0
+    first_head_norm_min: 1.4142135623730951
+    first_head_norm_max: 1.4142135623730951
+    whole_matrix_first_norm_min: 0.0014142128552668443
+  observed_reference_t3_s: 0.0027303340611979365

@@ -264,3 +264,26 @@ papers:
     scope: 实现特征归一化、温度缩放和双向对比损失，使用小型配对检索实验。
     scope_en: Implement feature normalization, temperature scaling, and bidirectional contrastive loss with a tiny paired-retrieval experiment.
     module_ids: [representation/clip]
+  - id: glm-5
+    number: 25
+    category: architecture
+    short_title: GLM-5
+    year: 2026
+    tags: [Technical Report, Muon, Asynchronous RL]
+    summary: 从 GLM-5 技术报告中提取按注意力头正交化的优化更新，以及异步强化学习的重要性采样修正。
+    summary_en: Extract head-wise orthogonalized updates and asynchronous-RL importance corrections from the GLM-5 technical report.
+    scope: 两题分别实现 Muon Split 的逐头正交化与双边重要性采样策略损失，使用可复现的 CPU 教学实验。
+    scope_en: Implement Muon Split's per-head orthogonalization and a double-sided importance-sampling policy loss in two independent CPU exercises.
+    module_ids: [optimization/muon_split, rl/glm5_offpolicy]
+  - id: kimi-k3
+    number: 26
+    category: architecture
+    short_title: Kimi K3
+    year: 2026
+    tags: [Technical Report, Linear Attention, Attention Residuals, Activation]
+    summary: 实现 Kimi K3 在序列、深度和激活值三个维度的核心机制：KDA、块级注意力残差与 SiTU-GLU。
+    summary_en: >-
+      Implement Kimi K3's core mechanisms for sequence mixing, depth aggregation, and bounded activations: KDA, Block AttnRes, and SiTU-GLU.
+    scope: 三题分别实现有界衰减与 delta-rule 递推、跨层残差注意力聚合、SiTU 门控激活，并重绘论文中的门函数与激活曲线。
+    scope_en: Independently implement bounded decay and delta-rule recurrence, attention over residual blocks, and SiTU gating; recreate the report's decay and activation curves.
+    module_ids: [architecture/kimi_kda, architecture/block_attention_residual, architecture/situ_glu]

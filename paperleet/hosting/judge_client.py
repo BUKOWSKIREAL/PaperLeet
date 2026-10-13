@@ -36,6 +36,11 @@ CURATED_PROBLEMS = frozenset(("rl/gae", "rl/ppo_clip", "rl/dpo", "rl/grpo", "rl/
     'optimization/adamw',
     'architecture/flash_attention',
     'representation/clip',
+    'optimization/muon_split',
+    'rl/glm5_offpolicy',
+    'architecture/kimi_kda',
+    'architecture/block_attention_residual',
+    'architecture/situ_glu',
     'diffusion/progressive_distillation'))
 MAX_CODE_BYTES = 128 * 1024
 MAX_REQUEST_BYTES = 256 * 1024

@@ -3634,8 +3634,8 @@ html { scrollbar-gutter: stable; }
 .toy-provenance summary { cursor: pointer; color: var(--text); }
 .toy-view-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
 .toy-view-tabs button { border: 1px solid var(--line); padding: 8px 12px; border-radius: 6px; }
-@media (max-width: 850px) {
-  .workspace-view { height: auto; min-height: 100dvh; }
+@media (max-width: 850px) { .workspace-view { height: auto; min-height: 100dvh; } }
+@media (max-width: 900px) {
   .topbar { height: auto; min-height: 92px; }
   .nav-inner, .workspace-view .nav-inner { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 10px; padding: 0 24px; }
   .brand { grid-column: 1; grid-row: 1; height: 48px; font-size: 20px; }

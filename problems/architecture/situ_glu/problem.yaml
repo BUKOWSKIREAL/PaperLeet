@@ -1,0 +1,73 @@
+id: architecture/situ_glu
+number: 35
+title: SiTU-GLU 平滑有界激活
+title_en: SiTU-GLU Smooth Bounded Activation
+paper:
+  title: 'Kimi K3: Open Frontier Intelligence'
+  authors: Kimi Team
+  venue: arXiv 2026
+  arxiv: '2607.24653'
+  url: https://arxiv.org/abs/2607.24653v2
+  anchors:
+  - 'Section 2.3.2, Eq. (12): independently capped gate and up branches'
+  - 'Figure 4: scalar activation curves on [-10, 100]'
+  - 'Appendix B, Eqs. (18)-(19): local approximation and coordinate-wise bound'
+paper_id: kimi-k3
+type: implement
+parent: null
+difficulty: E
+functions:
+- name: softcap
+  signature: 'softcap(x: Tensor, beta: float) -> Tensor'
+- name: situ_glu
+  signature: 'situ_glu(gate: Tensor, up: Tensor, beta1: float = 4.0, beta2: float = 25.0) -> Tensor'
+module:
+  goal: 平滑限制门控与 up 分支，在保留局部 SwiGLU 行为的同时控制异常激活。
+  goal_en: Smoothly cap both activation branches while retaining local SwiGLU behavior.
+  scope: 只实现 softcap 和已投影张量上的 SiTU-GLU；不实现 MoE 路由或完整 FFN。
+  scope_en: Implement softcap and SiTU-GLU on projected tensors; MoE routing and the full FFN are outside this module.
+  required_functions:
+  - softcap
+  - situ_glu
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: Preserve input dtype/device and autograd; float32 and float64 CPU inputs.
+  device: CPU; no pretrained weights or downloads
+  branches: Same-shaped finite floating tensors; no input mutation; arbitrary leading dimensions including empty tensors.
+  caps: Finite positive Python scalars; invalid caps raise ValueError (validation supplied in starter).
+tests:
+  T0: 2
+  T1: 2
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 15
+tags:
+- Activation
+- Gated FFN
+- Numerical Stability
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2607.24653v2
+  - https://arxiv.org/html/2607.24653v2#S2.SS3.SSS2
+  - https://arxiv.org/html/2607.24653v2#A2
+toy:
+  kind: paper_derived
+  source: https://arxiv.org/html/2607.24653v2#S2.SS3.SSS2
+  anchor: 'Figure 4 and Eq. (12); Appendix B, Eqs. (18)-(19)'
+  adaptation: Independently recompute the scalar responses with both branches equal to x on the published domain [-10, 100]; add a sampled near-origin view and numerical checks. No copied figure or model-training reproduction.
+mutants:
+- id: m1_capped_sigmoid
+  bug: 将已经 softcap 的 gate 送进 sigmoid，改变原始 sigmoid 因子
+- id: m2_uncapped_up
+  bug: 不限制 up 分支，输出失去全局上界
+- id: m3_hard_clamp
+  bug: 用硬截断替代平滑 tanh，改变边界附近及之外的梯度
+- id: m4_detached_up
+  bug: 对 up 分支 detach，数值正确但阻断输入梯度

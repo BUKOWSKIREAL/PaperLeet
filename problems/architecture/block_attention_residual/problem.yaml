@@ -1,0 +1,75 @@
+id: architecture/block_attention_residual
+number: 34
+title: Kimi K3：Block Attention Residuals
+title_en: 'Kimi K3: Block Attention Residuals'
+paper:
+  title: 'Kimi K3: Open Frontier Intelligence'
+  authors: Kimi Team
+  venue: arXiv 2026
+  arxiv: 2607.24653v2
+  anchors:
+  - Section 2.2, Eqs.8–10; official Attention-Residuals README pseudocode
+  official_code: https://github.com/MoonshotAI/Kimi-K3
+  url: https://arxiv.org/abs/2607.24653v2
+paper_id: kimi-k3
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: assemble_sources
+  signature: 'assemble_sources(embedding: Tensor, completed_blocks: list[Tensor],
+    partial_block: Tensor | None = None) -> Tensor'
+- name: depth_attention
+  signature: 'depth_attention(sources: Tensor, query: Tensor, norm_weight: Tensor,
+    eps: float = 1e-6) -> tuple[Tensor, Tensor]'
+module:
+  goal: 组装深度来源，让可学习查询选择早期层表示，并聚合未经归一化的原值。
+  goal_en: Assemble depth sources, select earlier representations with a learned query,
+    and aggregate original values.
+  scope: 只实现 assemble_sources 与 depth_attention；完整 Transformer、残差块累加与层投影由外部提供。
+  scope_en: Implement assemble_sources and depth_attention; the full Transformer,
+    block accumulation and layer projections are external.
+  required_functions:
+  - assemble_sources
+  - depth_attention
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: Preserve floating dtype/device and autograd; numerical tests use float64.
+  device: CPU; no model downloads or pretrained weights
+tests:
+  T0: 1
+  T1: 1
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 25
+tags:
+- Kimi K3
+- Attention Residuals
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2607.24653v2
+  - https://arxiv.org/html/2607.24653v2
+  - https://github.com/MoonshotAI/Kimi-K3
+  - https://github.com/MoonshotAI/Attention-Residuals/blob/master/README.md
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/html/2607.24653v2
+  anchor: Section 2.2, Eqs.8–10; official Attention-Residuals README pseudocode
+  adaptation: Three synthetic depth sources and a query-strength sweep demonstrate
+    the operator; this is not a reported paper experiment or trained model.
+mutants:
+- id: m1_drop_partial_block
+  bug: Omits the current partial block from the available depth sources.
+- id: m2_normalize_values
+  bug: Aggregates normalized keys instead of original source values.
+- id: m3_scale_attention
+  bug: Introduces Transformer sqrt(d) scaling absent from AttnRes.
+- id: m4_softmax_tokens
+  bug: Normalizes across sequence positions instead of depth.

@@ -1,6 +1,6 @@
 # Core curriculum and toy experiments
 
-Initial expansion validated locally on 2026-10-13: **24 papers, 26 modules, and six categories**. The Transformer follow-up below extends this to **30 modules**. Existing paper and module IDs remain stable.
+Initial expansion validated locally on 2026-10-13: **24 papers, 26 modules, and six categories**. The Transformer follow-up extends this to 30 modules, and the GLM-5 / Kimi K3 follow-up reaches **26 papers and 35 modules**. Existing paper and module IDs remain stable.
 
 ## Selection and scope
 
@@ -41,3 +41,22 @@ The new modules follow [Attention Is All You Need, §§3.1–3.5](https://arxiv.
 - Catalog and hosted protocol regression: **57 passed, 33 skipped**. After rebuilding the worker image, all **four new reference implementations passed live Docker judging** in 13.40 seconds.
 - `npm run check` and the production build pass. The renderer check now requires every named toy chart to appear, catching incompatible chart data that would otherwise silently disappear.
 - Chrome confirms one Transformer paper with five module cards, the 27 → 28 module navigation, and visible multi-head and LayerNorm experiment charts. No practice submission or account data was modified for this browser check.
+
+## Typography follow-up
+
+Compared the rendered [LeetCode Two Sum workspace](https://leetcode.com/problems/two-sum/description/) with PaperLeet. The interface now uses a system font stack with explicit Chinese fallbacks, 15 px description text, 24 px problem titles, stronger secondary text, and consistent line spacing. Code defaults to 15 px and has an accessible 13–20 px selector that remembers the preference.
+
+`npm run check` and the production build passed. Chrome checks covered English/Chinese, dark/light themes, the paper library, problem workspace, and community. The code size remained 18 px after reload and was restored to 15 px. At 390 px and 850 px, the header and page widths match the viewport; narrow screens use two navigation rows. The original English/dark preference and default viewport were restored after checking.
+
+## GLM-5 and Kimi K3 follow-up
+
+Two technical reports extend the catalog to **26 papers and 35 modules**. GLM-5 is paper 25 with Muon Split (31) and asynchronous-RL importance correction (32). Kimi K3 is paper 26 with bounded KDA recurrence (33), Block Attention Residuals (34), and SiTU-GLU (35). Both report cards are grouped under Architecture & Inference; module paths retain their algorithm categories.
+
+Sources are pinned to [GLM-5 v2](https://arxiv.org/abs/2602.15763v2) and [Kimi K3 v2](https://arxiv.org/abs/2607.24653v2). Muon Split uses an explicitly declared exact partial-polar teaching model, since the report does not specify the full optimizer implementation. GLM's importance correction follows the strict bounds in Eq. 5; the statement distinguishes these from the inclusive bounds in the pinned Slime implementation and explains detached correction weights. KDA uses channel-wise decay before the delta update, AttnRes normalizes only the keys, and SiTU applies sigmoid to the uncapped gate.
+
+KDA's Figure 3(a) and SiTU's Figure 4 curves are independently recomputed from the report equations. Memory overwrite, depth selection, head-scale sweeps, and the stale-rollout bandit are explicitly labeled teaching adaptations. Every graded toy calls the submitted functions and emits measured artifacts. This is maintained curriculum work; it does not bypass the human approval step for community Submit Paper candidates or claim full-model reproduction.
+
+- New packages: **37 distinct reference checks, 555 variant-test executions across three repeats, 20/20 mutants caught**. Package reports are `reports/ci-glm5.json`, `reports/ci-kimi-core.json`, and `reports/ci-kimi-situ.json`.
+- Full 35-package `paperleet ci`: **3,963 executions, 258 reference checks per repeat, 142/142 mutants caught, three consistent repeats, 127.99 seconds**, with no quality or performance-budget issues. Independent review found the default MIS endpoint rounding issue before this run; float32/float64 regression checks now cover default and asymmetric bounds.
+- Catalog and hosted-protocol regression: **57 passed, 38 skipped** (opt-in Docker checks). The rebuilt worker then passed **all five new reference implementations in live Docker**, 18.04 seconds.
+- All 35 preview checks, practice/account checks, and the production build pass. Chrome confirms GLM-5 has modules 31–32, Kimi K3 has modules 33–35, and all four SiTU charts render in Lab. A final navigation check found and fixed the 870 px breakpoint gap; page/header widths now match at 870 px and 901 px as well. No account, practice submission, or user database was changed by these browser checks.
