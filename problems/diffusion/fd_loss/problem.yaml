@@ -1,0 +1,87 @@
+id: diffusion/fd_loss
+number: 53
+title: FD-loss 可微 Fréchet 损失
+title_en: FD-loss Differentiable Fréchet Objective
+paper:
+  title: Representation Fréchet Loss for Visual Generation
+  authors: Jiawei Yang, Zhengyang Geng, Xuan Ju, Yonglong Tian, Yue Wang
+  venue: arXiv 2026
+  arxiv: '2604.28190'
+  url: https://arxiv.org/abs/2604.28190
+  anchors:
+  - 'Section 3.1, Eq. (2): Gaussian Fréchet distance'
+  - 'Section 3.2, Eq. (6): stopped normalization across representations'
+  - 'Appendix B.3: real covariance square root and symmetric eigvalsh'
+paper_id: fd-loss
+difficulty: M
+functions:
+- name: frechet_distance
+  signature: 'frechet_distance(mean: Tensor, covariance: Tensor, reference_mean: Tensor, reference_covariance: Tensor)
+    -> Tensor'
+- name: normalized_fd_loss
+  signature: 'normalized_fd_loss(distances: Tensor, weights: Tensor, eps: float = 0.01) -> Tensor'
+type: implement
+parent: null
+module:
+  goal: 对总体高斯统计计算可微 Fréchet 距离，并实现停止分母梯度的表征损失归一化。
+  goal_en: Differentiate Gaussian population Fréchet distance and normalize representation losses with a stopped
+    denominator.
+  scope: 实现 Eq.(2)、Eq.(6) 与附录 B.3 的对称矩阵迹算法；提供 EMA、二维生成器和优化循环，不训练图像表征网络。
+  scope_en: Implement Eq. (2), Eq. (6), and the symmetric trace algorithm from Appendix B.3. EMA, the 2D generator
+    and the optimizer loop are provided; no image representation model is trained.
+  required_functions:
+  - frechet_distance
+  - normalized_fd_loss
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: CPU float32/float64; preserve dtype/device and inputs
+  device: CPU; no downloads or pretrained weights
+  shape: mean/reference_mean (D,); covariance/reference_covariance (D,D); distances/weights (R,), R>=1.
+  covariance: Finite symmetric PSD covariances for forward values. Gradient guarantees require BOTH generated and
+    reference covariances SPD; repeated positive eigenvalues are covered.
+  autograd: Only generated mean/covariance and distance numerators receive gradients. Reference statistics, weights
+    and normalization denominators are detached inside the functions.
+  numerics: Use the symmetric reference-root sandwich and eigvalsh; clamp only numerical negative eigenvalues to
+    zero before sqrt. No diagonal jitter, elementwise matrix root or final FD clipping.
+  normalization: Sum weights * distance / (stopgrad(distance)+eps), eps>0; do not divide by the sum of weights.
+    Allow tiny negative FD roundoff while the denominator stays positive.
+  dtype_boundary: Preserve CPU float32/float64 instead of the official final float32 cast; do not mutate inputs.
+tests:
+  T0: 2
+  T1: 2
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 35
+tags:
+- Distribution Matching
+- Fréchet Distance
+- Generative Post-training
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2604.28190
+  - https://github.com/Jiawei-Yang/FD-Loss/blob/5c03b8112fec8b9432631e4ce053c0d918cc24bc/frechet_distance/losses.py
+  - https://github.com/Jiawei-Yang/FD-Loss/blob/5c03b8112fec8b9432631e4ce053c0d918cc24bc/main_fd.py
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/abs/2604.28190
+  anchor: 'Section 3.1, Eq. (2): Gaussian Fréchet distance; Section 3.2, Eq. (6): stopped normalization across representations;
+    Appendix B.3: real covariance square root and symmetric eigvalsh'
+  adaptation: A five-parameter affine 2D generator is post-trained with supplied EMA moments and submitted FD/normalization.
+    Four symmetric noise points give exact current moments; an independent 2x2 identity evaluates progress. No ImageNet,
+    pretrained generator or image quality claim.
+mutants:
+- id: m1_drop_generated_correlation
+  bug: 距离的矩阵交叉项忽略生成协方差的非对角元素
+- id: m2_nonsymmetric_eigvalsh
+  bug: 把非对称协方差乘积直接交给 eigvalsh
+- id: m3_differentiate_denominator
+  bug: 归一化分母没有停止梯度
+- id: m4_train_reference
+  bug: 真实参考统计没有冻结

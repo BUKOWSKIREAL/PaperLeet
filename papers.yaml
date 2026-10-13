@@ -433,3 +433,25 @@ papers:
     scope_en: Positive/negative beta implicit velocities, the two-branch objective, and tiny training.
     module_ids:
     - diffusion/diffusion_nft
+  - id: var
+    number: 39
+    category: generative-models
+    short_title: VAR
+    year: 2024
+    tags: [Visual Autoregression, Next-scale Prediction, Residual Quantization]
+    summary: 按从粗到细的尺度顺序生成视觉 token，并在同一尺度内并行预测。
+    summary_en: Generate visual tokens from coarse to fine, predicting tokens within each scale in parallel.
+    scope: 下一尺度的条件输入与注意力掩码，以及多尺度残差量化与重建。
+    scope_en: Next-scale conditioning and attention masks, plus multiscale residual quantization and reconstruction.
+    module_ids: [architecture/var_next_scale, representation/var_tokenizer]
+  - id: fd-loss
+    number: 40
+    category: generative-models
+    short_title: FD-Loss
+    year: 2026
+    tags: [Distribution Matching, Feature Moments, Post-training, Autograd]
+    summary: 以历史特征统计估计更大的样本总体，只对当前 batch 反传 Fréchet 距离。
+    summary_en: Estimate a larger feature population from historical statistics while backpropagating Fréchet distance through the current batch only.
+    scope: 原始一阶与二阶矩的 EMA、协方差恢复、可微 Fréchet 距离和多表征损失归一化。
+    scope_en: EMA of raw first and second moments, covariance recovery, differentiable Fréchet distance, and multi-representation loss normalization.
+    module_ids: [diffusion/fd_population, diffusion/fd_loss]

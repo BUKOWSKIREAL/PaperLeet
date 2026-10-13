@@ -55,6 +55,10 @@ CURATED_PROBLEMS = frozenset(("rl/gae", "rl/ppo_clip", "rl/dpo", "rl/grpo", "rl/
     'representation/moge_alignment',
     'diffusion/daps',
     'diffusion/diffusion_nft',
+    'architecture/var_next_scale',
+    'representation/var_tokenizer',
+    'diffusion/fd_population',
+    'diffusion/fd_loss',
     'diffusion/progressive_distillation'))
 MAX_CODE_BYTES = 128 * 1024
 MAX_REQUEST_BYTES = 256 * 1024

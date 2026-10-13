@@ -62,5 +62,9 @@ COPY problems/finetuning/svdquant/ ./problems/finetuning/svdquant/
 COPY problems/representation/moge_alignment/ ./problems/representation/moge_alignment/
 COPY problems/diffusion/daps/ ./problems/diffusion/daps/
 COPY problems/diffusion/diffusion_nft/ ./problems/diffusion/diffusion_nft/
+COPY problems/architecture/var_next_scale/ ./problems/architecture/var_next_scale/
+COPY problems/representation/var_tokenizer/ ./problems/representation/var_tokenizer/
+COPY problems/diffusion/fd_population/ ./problems/diffusion/fd_population/
+COPY problems/diffusion/fd_loss/ ./problems/diffusion/fd_loss/
 USER 65534:65534
 ENTRYPOINT ["python", "-m", "paperleet.hosting.worker"]

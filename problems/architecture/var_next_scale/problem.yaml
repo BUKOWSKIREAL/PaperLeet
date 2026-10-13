@@ -1,0 +1,86 @@
+id: architecture/var_next_scale
+number: 50
+title: VAR 下一尺度预测
+title_en: VAR Next-Scale Prediction
+paper:
+  title: 'Visual Autoregressive Modeling: Scalable Image Generation via Next-Scale
+    Prediction'
+  authors: Keyu Tian et al.
+  venue: NeurIPS 2024
+  arxiv: '2404.02905'
+  url: https://arxiv.org/html/2404.02905v2
+  anchors:
+  - 'Section 3.2: next-scale prediction'
+  - 'Algorithms 1–2: residual multiscale VQ'
+  - 'Figure 4: training inputs and block causal mask'
+paper_id: var
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: scale_causal_mask
+  signature: 'scale_causal_mask(scales: list[int], device=None) -> Tensor'
+- name: next_scale_inputs
+  signature: 'next_scale_inputs(token_maps: list[Tensor], codebook: Tensor, projections:
+    Tensor) -> Tensor'
+- name: lift_codes
+  signature: 'lift_codes(tokens: Tensor, codebook: Tensor, projection: Tensor, full_size:
+    int) -> Tensor'
+module:
+  goal: 构造只依赖更低尺度 token 的输入，以及尺度内双向、尺度间因果的可见性矩阵。
+  goal_en: Build lower-scale teacher inputs and a scale-causal visibility matrix.
+  scope: 冻结 tokenizer，插值与投影 helper 已提供；仅实现输入构造和 mask，不训练完整 Transformer。
+  scope_en: Frozen tokenizer helpers are provided; implement teacher inputs and masking,
+    without a full Transformer.
+  required_functions:
+  - scale_causal_mask
+  - next_scale_inputs
+  provided_functions:
+  - lift_codes
+  optional: false
+conventions:
+  seed: 42
+  dtype: Finite CPU float32/float64 inputs, shared dtype/device; frozen tokenizer
+    outputs require no gradients.
+  scales: Strictly increasing square resolutions, starting at 1; largest scale equals
+    full latent size.
+  projection: Supplied Phi is a fixed C×C channel map after bicubic upsampling, a
+    teaching simplification of trained spatial convolution.
+  codebook: Shared [V,C] Euclidean codebook; exact nearest-distance ties select the
+    lowest index.
+tests:
+  T0: 2
+  T1: 2
+  T2: 3
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 30
+tags:
+- Autoregressive
+- Multi-scale
+- Attention Mask
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/html/2404.02905v2
+  - https://github.com/FoundationVision/VAR/blob/main/models/quant.py
+  - https://github.com/FoundationVision/VAR/blob/main/models/var.py
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/html/2404.02905v2
+  anchor: Section 3.2 and Algorithms 1–2; official models/quant.py
+  adaptation: Small fixed latent maps and codebooks with supplied channel projections
+    replace the trained spatial projection layers. No image dataset, pretrained VAE,
+    or ImageNet reproduction.
+mutants:
+- id: m1_token_causal
+  bug: Uses raster-token causality within each scale.
+- id: m2_future_visible
+  bug: Reverses the scale inequality.
+- id: m3_latest_only
+  bug: Drops earlier residual contributions.
+- id: m4_target_leak
+  bug: Builds each input from its own target scale.

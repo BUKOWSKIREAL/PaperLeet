@@ -1,0 +1,85 @@
+id: diffusion/fd_population
+number: 52
+title: FD-loss 总体矩与 EMA
+title_en: FD-loss Population Moments and EMA
+paper:
+  title: Representation Fréchet Loss for Visual Generation
+  authors: Jiawei Yang, Zhengyang Geng, Xuan Ju, Yonglong Tian, Yue Wang
+  venue: arXiv 2026
+  arxiv: '2604.28190'
+  url: https://arxiv.org/abs/2604.28190
+  anchors:
+  - 'Section 3.2, Eqs. (3)-(5): raw feature moments and EMA covariance'
+  - 'Algorithm 1: stopped history, current-batch gradients; Appendix B.3: warm start'
+paper_id: fd-loss
+difficulty: M
+functions:
+- name: batch_moments
+  signature: 'batch_moments(features: Tensor) -> tuple[Tensor, Tensor]'
+- name: ema_population_stats
+  signature: 'ema_population_stats(features: Tensor, old_mean: Tensor, old_second: Tensor, beta: float) -> tuple[Tensor,
+    Tensor, Tensor]'
+type: implement
+parent: null
+module:
+  goal: 通过原始一阶、二阶矩保留总体信息，只让当前微批次接收梯度。
+  goal_en: Track population information through raw first and second moments while differentiating only the current
+    microbatch.
+  scope: 实现论文默认 EMA 统计估计器；提供确定性特征流。FIFO 队列、多 GPU、图像特征提取与生成器不在本题范围内。
+  scope_en: Implement the default EMA statistics estimator with a supplied deterministic feature stream. FIFO queues,
+    multiple GPUs, image feature extraction and a generator are outside this module.
+  required_functions:
+  - batch_moments
+  - ema_population_stats
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: CPU float32/float64; preserve dtype/device and inputs
+  device: CPU; no downloads or pretrained weights
+  shape: features (B,D), B>=1, D>=1; history mean (D,), raw second moment (D,D).
+  moments: 'Population convention: divide both batch moments by B; raw second moment is E[xx^T], not covariance.
+    No Bessel correction.'
+  beta: Finite beta in [0,1]; endpoints included as limiting cases for tests.
+  autograd: Detach both historical tensors inside ema_population_stats. Returned mean, raw second and covariance
+    remain differentiable through current features.
+  state: Inputs are not mutated; caller persists returned mean and raw second moment with detach after computing
+    gradients.
+  history: History represents finite valid population moments; covariance = raw second - outer(mean,mean).
+tests:
+  T0: 2
+  T1: 2
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 25
+tags:
+- Distribution Matching
+- Fréchet Distance
+- Generative Post-training
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2604.28190
+  - https://github.com/Jiawei-Yang/FD-Loss/blob/5c03b8112fec8b9432631e4ce053c0d918cc24bc/frechet_distance/queue.py
+  - https://github.com/Jiawei-Yang/FD-Loss/blob/5c03b8112fec8b9432631e4ce053c0d918cc24bc/frechet_distance/judges.py
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/abs/2604.28190
+  anchor: 'Section 3.2, Eqs. (3)-(5): raw feature moments and EMA covariance; Algorithm 1: stopped history, current-batch
+    gradients; Appendix B.3: warm start'
+  adaptation: Forty alternating microbatches from two shifted 2D components, warm-started from the known eight-point
+    population, compare batch and EMA moment error. This is a teaching construction, not a paper figure or ImageNet
+    run.
+mutants:
+- id: m1_centered_second
+  bug: 把原始二阶矩错写为中心化协方差
+- id: m2_reverse_decay
+  bug: 把历史和当前微批次的 EMA 权重调换
+- id: m3_train_history
+  bug: 历史一阶和二阶矩没有停止梯度
+- id: m4_center_at_batch_mean
+  bug: 协方差错误地减去当前批次均值外积
