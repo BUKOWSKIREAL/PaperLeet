@@ -38,6 +38,10 @@ import { PaperDetail, PaperLibrary, paperModules } from "./PaperViews";
 import { decodeProblemHash, parseReport, parseSaved } from "./reports";
 import { LocaleProvider, useI18n } from "./i18n";
 import Submissions from "./Submissions";
+import Community, { UserProfile } from "./Community";
+import Account from "./Account";
+import { AccountNav, AccountProvider } from "./social";
+import "./community.css";
 
 const STORAGE = "paperleet.workspace.v1";
 const difficulty = (d: string) =>
@@ -318,7 +322,7 @@ function ReportView({
 export default function App() {
   return (
     <LocaleProvider>
-      <Workspace />
+      <AccountProvider><Workspace /></AccountProvider>
     </LocaleProvider>
   );
 }
@@ -346,6 +350,9 @@ function Workspace() {
     locale === "en" && p.translations?.en ? { ...p, ...p.translations.en } : p;
   const problem = sourceProblem ? localize(sourceProblem) : undefined;
   const submissionPage = id === "submit";
+  const communityPage = id === "community" || id.startsWith("community/");
+  const accountPage = id === "account";
+  const profileUsername = id.startsWith("u/") ? id.slice(2) : "";
   const current = problem ? saved[problem.id] || {} : {};
   const selectedPaper = papers.find((paper) =>
     problem ? paper.id === problem.paper_id : id === `papers/${paper.id}`,
@@ -510,7 +517,7 @@ function Workspace() {
         <div className="nav-inner">
           <Brand />
           <nav>
-            <a className={!problem && !submissionPage ? "active" : ""} href="#">
+            <a className={!problem && !submissionPage && !communityPage && !accountPage && !profileUsername ? "active" : ""} href="#">
               {t("论文题库", "Papers")}
             </a>
             <button
@@ -529,6 +536,9 @@ function Workspace() {
             </button>
             <a className={submissionPage ? "active" : ""} href="#/submit">
               {t("提交论文", "Submit paper")}
+            </a>
+            <a className={communityPage || profileUsername ? "active" : ""} href="#/community">
+              {t("社区", "Community")}
             </a>
             <button onClick={() => setGuide(true)}>
               {t("使用指南", "Guide")}
@@ -564,10 +574,17 @@ function Workspace() {
             >
               {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
             </button>
+            <AccountNav />
           </div>
         </div>
       </header>
-      {submissionPage ? (
+      {communityPage ? (
+        <Community postId={id === "community" ? undefined : id.slice("community/".length)} />
+      ) : accountPage ? (
+        <Account />
+      ) : profileUsername ? (
+        <UserProfile key={profileUsername} username={profileUsername} />
+      ) : submissionPage ? (
         <Submissions onPublished={loadCatalog} />
       ) : loadError ? (
         <main className="load-error">

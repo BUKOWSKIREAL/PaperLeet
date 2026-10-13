@@ -32,6 +32,14 @@ Passing the full test suite automatically marks the problem as complete and unlo
 
 The website runs code through the judge service and displays results automatically, with no report files to manage manually. The local service listens on `127.0.0.1:8765`, and Vite proxies `/api` requests to it. Code is saved to `workspace/` and executed by Python/PyTorch on your machine. This setup is intended for personal local use; it does not yet provide an isolated code sandbox for multiple users.
 
+## Community and accounts
+
+Open **Community** to browse discussions, post and reply, like or repost, and follow other researchers. Public profiles show posts, replies, likes, reposts, followers, and following. Writing requires a verified email from an institution approved in `institutions.yaml`.
+
+Display names and generated avatars are always public. Institution and country visibility are separate switches, both off by default; full email addresses stay private. Country is optional and entered by the user, with no IP lookup. Practice progress remains browser-local and is not synchronized to public profiles.
+
+Email sign-in uses Supabase Auth and requires server configuration; there is no demo-login bypass. Copy `.env.example` to `.env`, configure it, and explicitly export it in your shell before starting the service. See the [community setup guide](docs/community.md) for OTP templates, SMTP, institution review, and privacy rules. The server remains a local development service; this does not enable safe public multi-user code execution.
+
 ## Submit paper
 
 Click **Submit paper / 提交论文** in the top navigation and provide a paper URL, an optional official code URL, and what you want to practice. The model reads these sources and generates Chinese and English problem statements, starter code, a reference implementation, layered tests, and buggy variants. Candidates proceed to human review after passing isolated validation. Only the current version approved by a human reviewer receives a numeric problem ID and enters the paper library as a module. Export groups modules that cite the same arXiv paper or source URL under one paper. The generator currently creates one candidate module per submission.
@@ -102,11 +110,13 @@ You can deploy `web/dist/` to static hosting such as GitHub Pages, but static pa
 ```text
 paperleet/         CLI, pytest runner, local service, shared mathematical utilities
 papers.yaml        Curated papers, contributions, scope, and module ordering
+institutions.yaml  Reviewed institutional email domains
 problems/          Self-contained core module packages (rl / diffusion)
 web/               Vite + React + TypeScript
 tests/             Judge framework integration tests
 workspace/         Personal code, ignored by Git
 reports/           Judge and CI reports, ignored by Git
+.paperleet/        Local community database and paper submissions, ignored by Git
 ```
 
 See the [contributing guide (in Chinese)](CONTRIBUTING.md) for the problem authoring workflow and the [10-problem pilot specification (in Chinese)](PaperLeet_第一步_10题试点规格.md) for detailed acceptance criteria. GitHub Actions runs framework tests, three rounds of quality checks, data generation, and the frontend build, then uploads reports and static site build artifacts.

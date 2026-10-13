@@ -10,6 +10,7 @@ from paperleet.catalog import problem, root, workspace_path
 from paperleet.judge.runner import normalize_layers, run_problem
 from paperleet.submissions import Conflict, store
 from paperleet.submissions.model import ModelUnavailable
+from paperleet.social_api import is_social_path, dispatch as dispatch_social
 
 
 _judge_lock = threading.Lock()
@@ -19,13 +20,15 @@ class JudgeHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         pass
 
-    def respond(self, status, payload):
+    def respond(self, status, payload, headers=None):
         body = json.dumps(payload, ensure_ascii=False).encode()
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Content-Length", str(len(body)))
+        for name, value in (headers or {}).items():
+            self.send_header(name, value)
         self.end_headers()
         self.wfile.write(body)
 
@@ -39,6 +42,8 @@ class JudgeHandler(BaseHTTPRequestHandler):
             return self.respond(403, {"error": "Only local requests are accepted"})
         if self.path == "/api/health":
             return self.respond(200, {"ok": True, "mode": "local", "version": "0.1.0"})
+        if is_social_path(self.path):
+            return dispatch_social(self, "GET")
         try:
             if self.path == "/api/submissions/capabilities":
                 return self.respond(200, store().capabilities())
@@ -57,7 +62,7 @@ class JudgeHandler(BaseHTTPRequestHandler):
         if not self.valid_origin():
             return self.respond(403, {"error": "Only local requests are accepted"})
         submission_action = re.fullmatch(r"/api/submissions/([0-9a-f]{32})/(generate|validate|review)", self.path)
-        if self.path not in ("/api/test", "/api/submissions") and not submission_action:
+        if self.path not in ("/api/test", "/api/submissions") and not submission_action and not is_social_path(self.path):
             return self.respond(404, {"error": "Unknown endpoint"})
         if self.headers.get_content_type() != "application/json":
             return self.respond(415, {"error": "Expected application/json"})
@@ -68,6 +73,8 @@ class JudgeHandler(BaseHTTPRequestHandler):
             data = json.loads(self.rfile.read(size))
             if not isinstance(data, dict):
                 raise ValueError("Expected a JSON object")
+            if is_social_path(self.path):
+                return dispatch_social(self, "POST", data)
             if self.path == "/api/submissions":
                 return self.respond(201, store().create(data))
             if submission_action:
