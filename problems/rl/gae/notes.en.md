@@ -1,0 +1,7 @@
+# GAE: Review after passing
+
+- **Leakage across episodes.** If the last step of one episode depends on the next episode's rewards, the recursion probably multiplies by gamma and lambda but omits `~done`. `test_episode_isolation` changes only rewards after a boundary to identify this error.
+- **Missing bootstrap at a time limit.** Using `terminated | truncated` in the TD residual underestimates returns at time limits. `test_termination_and_truncation_bootstrap` compares the two endings side by side. This distinction comes from modern environment APIs, rather than the original GAE paper.
+- **Forward iteration over a backward dependency.** Correct shapes do not guarantee the correct direction. `test_lambda_one_telescopes` checks the entire time axis against an independent expansion of discounted rewards.
+- **Confusing value targets with Monte Carlo returns.** When lambda is below one, the target is still advantage plus current value. `test_returns_contract` checks this convention explicitly.
+- **Misreading unbiasedness.** With value-function error, an advantage at lambda one may still have a state-dependent baseline offset. An action-independent baseline does not bias the policy gradient. `test_bias_variance_tradeoff` compares the first action's score-function gradient with the exact dynamic-programming value, rather than just comparing mean advantages. See [Equations 16–18](https://arxiv.org/html/1506.02438v6#S3).

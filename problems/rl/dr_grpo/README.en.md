@@ -1,0 +1,57 @@
+# Dr. GRPO: Removing Two Biases
+
+## 1. What the paper solves
+
+Dr. GRPO examines two normalizations in group-relative optimization. Averaging by response length changes per-token weights; scaling by group standard deviation changes weights across prompts. [Sections 3.1–3.2](https://arxiv.org/html/2503.20783v2#S3.SS2) describe the corresponding corrections.
+
+## 2. Core equations and task
+
+Building on the previous exercise, implement `drgrpo_advantages` and `drgrpo_loss`. Rewards `[B*G]` remain contiguous by group. All three log-probability tensors and the mask have shape `[N,L]`; advantages have shape `[N]`, with $N=BG$. Group size must be at least two and divide the reward count.
+
+$$
+\hat A_i=r_i-\bar r_g,\qquad
+L=-\frac{1}{N L_{max}}\sum_{i,t}m_{i,t}
+\left[\min(\rho_{i,t}\hat A_i,\operatorname{clip}(\rho_{i,t},1-c,1+c)\hat A_i)-\beta k3_{i,t}\right].
+$$
+
+$L_{max}$ is a fixed generation limit supplied by the caller, not the longest response in the batch. The definitions of $\rho$, $k3$, and clipping match problem **4**. Defaults are $c=0.2$ and $\beta=0.04$. Return the loss and three detached diagnostics, `kl_mean, clipfrac, ratio_mean`, averaged over valid tokens.
+
+Consider two negatively advantaged responses of lengths five and twenty, with equal advantages. Under GRPO, their per-token penalty magnitudes differ by a factor of four: each token in the longer incorrect response receives a smaller penalty. A fixed denominator makes the per-token gradients equal. Without standard-deviation scaling, multiplying rewards by a constant also multiplies advantages by that constant, making reward scale a meaningful training parameter again.
+
+## 3. From equations to code
+
+```text
+rewards [B*G] → [B,G] → subtract group mean → [B*G]
+Call the supplied token_objective → objective/ratio/k3: [N,L]
+Mask objective → sum over all tokens → divide by N*max_len
+Keep valid-token normalization for diagnostics
+```
+
+The starter imports `token_objective(logp, old_logp, ref_logp, advantages, clip_eps, beta)` from problem **4**'s reference implementation. It returns `(objective, ratio, kl)`, with $-\beta k3$ already included in the objective. Reusing it keeps attention on the two normalization changes. Isolate padding correctly before aggregation, and do not let other responses' lengths alter the target response's denominator.
+
+## 4. Conventions
+
+| Item | This exercise | Paper and common implementations |
+|---|---|---|
+| Advantages | Subtract group mean only | Dr. GRPO also removes standard-deviation scaling |
+| Fixed constant | Caller-supplied `max_len` | The paper recommends the generation budget; other constants change gradient scale |
+| KL coefficient | Retain problem 4's value of 0.04 | Section 2 and Appendix G of the paper use zero |
+| Empirical length trend | Display the experiment without grading one run's direction | Multiple seeds are needed before using a trend as a stable behavioral threshold |
+
+KL is retained here to isolate the two changes for teaching. It is not the paper's training configuration. Gradient properties can be checked exactly; learned mean length also depends on EOS, learning rate, reward design, and sampling noise. Read those two kinds of evidence separately.
+
+## 5. Interactive visualizations
+
+[Open token weights](#viz-token_weight_heatmap): adjust two response lengths and inspect per-token weights under GRPO and Dr. GRPO.
+
+[Open difficulty bias](#viz-difficulty_bias): vary the fraction of correct responses and compare standardized rewards with centered rewards. The [length experiment](#viz-t3_length_curves) shows incorrect-response length curves and is explicitly display-only.
+
+## 6. Run your implementation
+
+Open problem **5**, write both functions in the browser editor, and click **Run tests**. Review gradient checks and experiment plots in the results panel.
+
+The length-gradient test includes problem **4**'s values for comparison. The fixed-limit test changes unrelated response lengths to rule out accidental dependence on batch composition.
+
+## 7. Further exploration
+
+Return to [GRPO](../grpo/README.md) to compare DAPO's valid-token average. With a fixed sampling budget, study separately how normalization affects gradient scale, reward improvement, and the lengths of incorrect responses.

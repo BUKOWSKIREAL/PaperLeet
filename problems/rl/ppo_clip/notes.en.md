@@ -1,0 +1,7 @@
+# PPO: Review after passing
+
+- **Treating clipping as a two-sided gradient cutoff.** Using only `clip(r)*A` also flattens the unfavorable direction. `test_four_quadrant_gradient` gives exact gradients for four sign combinations.
+- **Swapping policy `min` and value `max`.** The policy objective takes a pessimistic lower bound on reward; the value objective takes a pessimistic upper bound on error. `test_value_loss_lower_bound` makes the current prediction equal the target while the old prediction is far away, exposing the difference.
+- **Sending gradients to the old model.** Old log-probabilities and values are snapshots. Detach them even when the input has `requires_grad=True`. `test_old_values_are_constants` checks both snapshots.
+- **Using the wrong standard deviation or mishandling a single sample.** This exercise follows [CleanRL's `ppo.py`](https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/ppo.py) in using sample standard deviation, with an additional rule that it is zero when B=1. The original exercise checked this on 2026-10-13. `test_advantage_affine_invariance` and reference comparisons check normalization. See also the [2022 ICLR Blog Track article](https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/).
+- **Assuming PPO is a strict KL constraint.** Clipping cannot bound KL for arbitrary learning rates and optimizers. `test_bandit_learning_and_kl` fixes the full training configuration and calibrates its threshold without KL early stopping. That number should not be copied directly into large-model training.

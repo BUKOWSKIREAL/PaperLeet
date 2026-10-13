@@ -1,0 +1,66 @@
+id: diffusion/param_conversion
+number: 7
+title_en: x₀ / ε / v Parameterization
+short_id: D2
+title: x₀ / ε / v 参数化互转
+paper:
+  title: Progressive Distillation for Fast Sampling of Diffusion Models
+  authors: Tim Salimans, Jonathan Ho
+  venue: ICLR 2022
+  arxiv: '2202.00512'
+  anchors:
+  - 'Appendix D Eq. (26): angular velocity'
+  - 'Appendix D Eq. (30): inverse rotation'
+type: implement
+parent: null
+difficulty: E
+functions:
+- name: eps_to_x0
+  signature: 'eps_to_x0(x_t: Tensor, eps: Tensor, alpha: Tensor, sigma: Tensor) ->
+    Tensor'
+- name: x0_to_eps
+  signature: 'x0_to_eps(x_t: Tensor, x0: Tensor, alpha: Tensor, sigma: Tensor) ->
+    Tensor'
+- name: make_v
+  signature: 'make_v(x0: Tensor, eps: Tensor, alpha: Tensor, sigma: Tensor) -> Tensor'
+- name: v_to_x0
+  signature: 'v_to_x0(x_t: Tensor, v: Tensor, alpha: Tensor, sigma: Tensor) -> Tensor'
+- name: v_to_eps
+  signature: 'v_to_eps(x_t: Tensor, v: Tensor, alpha: Tensor, sigma: Tensor) -> Tensor'
+- name: convert
+  signature: 'convert(pred: Tensor, src: str, dst: str, x_t: Tensor, alpha: Tensor,
+    sigma: Tensor) -> Tensor'
+conventions:
+  index: 数组 0..T-1 对应论文 1..T
+  seed: 42
+  dtype: 调度 float64；其他张量保留输入精度
+  time_direction: 'Flow: t=0 噪声，t=1 数据；diffusion: 大 t 噪声'
+  coefficients: alpha=sqrt(alpha_bar), sigma=sqrt(1-alpha_bar); divisors clamp(min=1e-8)
+tests:
+  T0: 1
+  T1: 1
+  T2: 5
+  T3: 0
+t3_budget_s: 10
+mutants:
+- id: m1_v_sign
+  bug: 速度符号写反
+- id: m2_v_to_x0_swapped
+  bug: 逆变换交换了 alpha 与 sigma
+- id: m3_no_clamp
+  bug: 除法没有稳定性 clamp
+- id: m4_alpha_squared
+  bug: 把 alpha 与 alpha_bar 混淆
+viz:
+- param_circle
+- error_amplification
+estimated_minutes: 20
+tags:
+- Diffusion
+- PyTorch
+- D2
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2202.00512
+  - https://arxiv.org/html/2202.00512v2#A4

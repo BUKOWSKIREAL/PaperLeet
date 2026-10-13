@@ -1,0 +1,80 @@
+id: diffusion/ddim
+number: 9
+title_en: DDIM Deterministic Few-Step Sampling
+short_id: D4
+title: DDIM 确定性少步采样
+paper:
+  title: Denoising Diffusion Implicit Models
+  authors: Jiaming Song, Chenlin Meng, Stefano Ermon
+  venue: ICLR 2021
+  arxiv: '2010.02502'
+  anchors:
+  - 'Eq. (12): DDIM update'
+  - 'Eq. (16): eta parameterization'
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: ddim_step
+  signature: 'ddim_step(x_t: Tensor, eps_pred: Tensor, ab_t: Tensor, ab_prev: Tensor,
+    eta: float, noise: Tensor) -> Tensor'
+- name: ddim_timesteps
+  signature: 'ddim_timesteps(T: int, num_steps: int) -> Tensor'
+- name: ddim_sample
+  signature: 'ddim_sample(eps_model: Callable[[Tensor, Tensor], Tensor], x_T: Tensor,
+    alpha_bars: Tensor, num_steps: int, eta: float=0.0, generator: torch.Generator
+    | None=None, return_traj: bool=False) -> Tensor | tuple[Tensor, Tensor]'
+- name: ddim_invert
+  signature: 'ddim_invert(eps_model: Callable[[Tensor, Tensor], Tensor], x0: Tensor,
+    alpha_bars: Tensor, num_steps: int) -> Tensor'
+conventions:
+  index: 数组 0..T-1 对应论文 1..T
+  seed: 42
+  dtype: 调度 float64；其他张量保留输入精度
+  time_direction: 'Flow: t=0 噪声，t=1 数据；diffusion: 大 t 噪声'
+  timestep_spacing: trailing 使用整数 T//n；diffusers main 使用 T/n 再 round，非整除时不同
+tests:
+  T0: 1
+  T1: 1
+  T2: 6
+  T3: 1
+t3_budget_s: 10
+mutants:
+- id: m1_sigma_one_factor
+  bug: 随机方差遗漏第二个因子
+- id: m2_dir_no_sigma
+  bug: 方向项没有减去随机方差
+- id: m3_no_final_jump
+  bug: 最后没有跳到干净端点
+- id: m4_x0_uses_prev
+  bug: 恢复 x0 错用前一步累计 alpha
+- id: m5_invert_order
+  bug: 反演错误地降序遍历
+viz:
+- eta_steps_grid
+- trajectories
+- inversion_demo
+estimated_minutes: 35
+tags:
+- Diffusion
+- PyTorch
+- D4
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2010.02502
+  - https://github.com/huggingface/diffusers/blob/main/src/diffusers/schedulers/scheduling_ddim.py
+calibration:
+  seed: 42
+  reference_seed: 123
+  samples: 2000
+  sampling_steps: 50
+  mmd_threshold: 0.0007866607111079449
+  status: measured
+  multiplier: 1.5
+  device: CPU
+  threads: 2
+  torch_version: 2.14.1
+  machine: arm64
+  checked_at: '2026-10-13'
+  reference_mmd: 0.0005244404740719633

@@ -1,0 +1,7 @@
+# Dr. GRPO: Review after passing
+
+- **Still dividing by response length.** Each token in a short response then receives a larger gradient. `test_length_bias_removed` compares negatively advantaged responses of lengths five and twenty exactly, and reports the problem **4** comparison ratio, 5/20.
+- **Replacing the fixed limit with the batch's longest response.** Adding or extending another response can then change a target response's gradient. `test_fixed_generation_limit` uses unrelated responses with zero advantage and zero KL to expose this dependency.
+- **Dividing by standard deviation after centering.** If doubling rewards leaves gradient weights unchanged, problem **4**'s difficulty scaling remains. `test_advantage_scales_with_reward` checks the required linear scaling.
+- **Attributing this exercise's KL default to the paper.** [Section 2 and Appendix G](https://arxiv.org/html/2503.20783v2) explicitly set beta=0; Section 3.2 and the code example normalize by a fixed generation budget. This exercise intentionally retains beta=0.04 from problem **4** to isolate the two normalization changes. `test_reference` checks this numerical contract.
+- **Treating a single-seed length curve as a law.** `test_length_effect_display_only` records real training curves without grading their direction. EOS sampling, reward, and learning rate affect the result. Run experiments across seeds before adding a behavioral threshold. Currently, exactly derivable gradient properties provide the quality gate.

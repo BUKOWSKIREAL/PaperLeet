@@ -1,0 +1,58 @@
+id: rl/gae
+number: 1
+title_en: Generalized Advantage Estimation
+short_id: R1
+title: Generalized Advantage Estimation
+paper:
+  title: High-Dimensional Continuous Control Using Generalized Advantage Estimation
+  authors: John Schulman, Philipp Moritz, Sergey Levine, Michael Jordan, Pieter Abbeel
+  venue: ICLR 2016
+  arxiv: '1506.02438'
+  anchors:
+  - 'Eq. (16): GAE TD-residual sum'
+  - 'Eqs. (17–18): lambda endpoints'
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: compute_gae
+  signature: 'compute_gae(rewards: Tensor, values: Tensor, next_values: Tensor, terminated:
+    Tensor, truncated: Tensor, gamma: float=0.99, lam: float=0.95) -> tuple[Tensor,
+    Tensor]'
+conventions:
+  layout: '[T,N] 时间在前'
+  truncation: bootstrap 保留 next_values，递推在 terminated 或 truncated 停止
+tests:
+  T0: 3
+  T1: 1
+  T2: 6
+  T3: 1
+t3_budget_s: 10
+mutants:
+- id: m1_no_done_mask
+  bug: 递推不停止于 episode 边界
+- id: m2_trunc_as_term
+  bug: 把时间截断当作终止
+- id: m3_forward_loop
+  bug: 从前向后递推
+- id: m4_returns_mc
+  bug: returns 错用纯奖励回报
+viz:
+- gae_timeline
+- bias_variance_vs_lambda
+estimated_minutes: 25
+formula: \hat A_t=\delta_t+\gamma\lambda(1-d_t)\hat A_{t+1}
+tags:
+- Reinforcement Learning
+- R1
+sources_verified: '2026-10-13'
+calibration:
+  seed: 42
+  threads: 2
+  dtype: float64
+  method: Upper error thresholds = reference × 1.5; reward lower bounds specified
+    by pilot
+  metrics:
+    lambda_one_bias:
+      reference: 0.005332078586133618
+      threshold: 0.007998117879200427

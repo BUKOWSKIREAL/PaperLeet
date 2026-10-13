@@ -1,0 +1,88 @@
+id: diffusion/flow_matching
+number: 10
+title_en: Flow Matching Velocity Fields
+short_id: D5
+title: Flow Matching 速度场
+paper:
+  title: Flow Matching for Generative Modeling
+  authors: Yaron Lipman, Ricky T. Q. Chen, Heli Ben-Hamu, Maximilian Nickel, Matt
+    Le
+  venue: ICLR 2023
+  arxiv: '2210.02747'
+  anchors:
+  - 'Eq. (5): FM objective; Eq. (9): CFM objective'
+  - 'Eq. (22–23): conditional optimal-transport path and loss'
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: sample_t
+  signature: 'sample_t(batch: int, generator: torch.Generator | None, dist: str=''uniform'',
+    m: float=0.0, s: float=1.0) -> Tensor'
+- name: interpolate
+  signature: 'interpolate(x0: Tensor, x1: Tensor, t: Tensor) -> Tensor'
+- name: cfm_target
+  signature: 'cfm_target(x0: Tensor, x1: Tensor) -> Tensor'
+- name: cfm_loss
+  signature: 'cfm_loss(model: Callable[[Tensor, Tensor], Tensor], x1: Tensor, x0:
+    Tensor, t: Tensor) -> Tensor'
+- name: euler_sample
+  signature: 'euler_sample(model: Callable[[Tensor, Tensor], Tensor], x0: Tensor,
+    num_steps: int, return_traj: bool=False) -> Tensor | tuple[Tensor, Tensor]'
+conventions:
+  index: 数组 0..T-1 对应论文 1..T
+  seed: 42
+  dtype: 调度 float64；其他张量保留输入精度
+  time_direction: t=0 noise, t=1 data; Euler evaluates k/n for k=0..n-1
+  loss: mean over batch and coordinates
+tests:
+  T0: 1
+  T1: 1
+  T2: 5
+  T3: 1
+t3_budget_s: 10
+mutants:
+- id: m1_target_reversed
+  bug: 训练目标方向反了
+- id: m2_sample_reversed
+  bug: 采样方向从数据到噪声
+- id: m3_interp_swapped
+  bug: 插值方向与训练目标相反
+- id: m4_eval_at_one
+  bug: 使用右端点在 t=1 奇点求值
+viz:
+- flow_particles
+- steps_compare
+- convention_bug
+- loss_curve
+estimated_minutes: 35
+tags:
+- Diffusion
+- PyTorch
+- D5
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2210.02747
+  - https://arxiv.org/html/2210.02747v2
+  - https://arxiv.org/abs/2209.03003
+  - https://arxiv.org/html/2403.03206v1
+calibration:
+  seed: 42
+  reference_seed: 123
+  samples: 2000
+  training_steps: 2000
+  batch: 256
+  lr: 0.001
+  mmd_threshold: 0.019074374055781274
+  outlier_threshold: 0.18450000509619713
+  status: measured
+  multiplier: 1.5
+  device: CPU
+  threads: 2
+  torch_version: 2.14.1
+  machine: arm64
+  checked_at: '2026-10-13'
+  reference_mmd: 0.012716249370520849
+  reference_outlier_fraction: 0.12300000339746475
+  reference_duration_s: 1.810870666988194

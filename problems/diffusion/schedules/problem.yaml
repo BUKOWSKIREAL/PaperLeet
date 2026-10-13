@@ -1,0 +1,63 @@
+id: diffusion/schedules
+number: 6
+title_en: Noise Schedules & Forward Diffusion
+short_id: D1
+title: 噪声调度与前向加噪
+paper:
+  title: Denoising Diffusion Probabilistic Models
+  authors: Jonathan Ho, Ajay Jain, Pieter Abbeel
+  venue: NeurIPS 2020
+  arxiv: '2006.11239'
+  anchors:
+  - 'Eq. (4): forward marginal'
+  - 'Nichol & Dhariwal Eq. (16): cosine schedule'
+type: implement
+parent: null
+difficulty: E
+functions:
+- name: linear_betas
+  signature: 'linear_betas(T: int, beta_start: float=0.0001, beta_end: float=0.02)
+    -> Tensor'
+- name: cosine_betas
+  signature: 'cosine_betas(T: int, s: float=0.008, max_beta: float=0.999) -> Tensor'
+- name: make_schedule
+  signature: 'make_schedule(betas: Tensor) -> dict[str, Tensor]'
+- name: q_sample
+  signature: 'q_sample(x0: Tensor, t: Tensor, noise: Tensor, alpha_bars: Tensor) ->
+    Tensor'
+conventions:
+  index: 数组 0..T-1 对应论文 1..T
+  seed: 42
+  dtype: 调度 float64；其他张量保留输入精度
+  time_direction: 'Flow: t=0 噪声，t=1 数据；diffusion: 大 t 噪声'
+tests:
+  T0: 1
+  T1: 1
+  T2: 6
+  T3: 0
+t3_budget_s: 10
+mutants:
+- id: m1_offbyone
+  bug: 累计 alpha 的下标错一位
+- id: m2_no_sqrt
+  bug: 前向加噪系数忘记开平方
+- id: m3_cosine_no_clip
+  bug: cosine beta 没有截断
+- id: m4_cumsum
+  bug: 把累乘错写成累计求和
+- id: m5_shared_t
+  bug: 整个 batch 共享首行时间
+viz:
+- schedule_curves
+- forward_cloud
+estimated_minutes: 20
+tags:
+- Diffusion
+- PyTorch
+- D1
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2006.11239
+  - https://arxiv.org/abs/2102.09672
+  - https://github.com/openai/improved-diffusion/blob/main/improved_diffusion/gaussian_diffusion.py

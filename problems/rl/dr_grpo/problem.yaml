@@ -1,0 +1,60 @@
+id: rl/dr_grpo
+number: 5
+title_en: Dr. GRPO · Remove Two Biases
+short_id: R5
+title: Dr. GRPO · Remove Two Biases
+paper:
+  title: 'Understanding R1-Zero-Like Training: A Critical Perspective'
+  authors: Zichen Liu, Changyu Chen, Wenjun Li, Penghui Qi, Tianyu Pang, Chao Du,
+    Wee Sun Lee, Min Lin
+  venue: arXiv 2025
+  arxiv: '2503.20783'
+  anchors:
+  - 'Section 3.1: length and difficulty bias'
+  - 'Section 3.2: fixed generation budget; Appendix G: KL coefficient 0'
+type: variant
+parent: rl/grpo
+difficulty: M
+functions:
+- name: drgrpo_advantages
+  signature: 'drgrpo_advantages(rewards: Tensor, group_size: int) -> Tensor'
+- name: drgrpo_loss
+  signature: 'drgrpo_loss(logp: Tensor, old_logp: Tensor, ref_logp: Tensor, advantages:
+    Tensor, mask: Tensor, max_len: int, clip_eps: float=0.2, beta: float=0.04) ->
+    tuple[Tensor, dict]'
+conventions:
+  normalization: N × 外部固定 max_len
+  advantages: 奖励减组均值，不除标准差
+  beta: 本题 beta=0.04 以隔离两处改动；原文实验 Appendix G 为 0
+  t3: 长度曲线只展示，不对经验趋势判分
+tests:
+  T0: 1
+  T1: 1
+  T2: 3
+  T3: 1
+t3_budget_s: 10
+mutants:
+- id: m1_still_seq_mean
+  bug: 仍然按序列长度归一
+- id: m2_still_std
+  bug: 仍然除以标准差
+- id: m3_batch_max_len
+  bug: 用 batch 最大长度代替常数
+viz:
+- token_weight_heatmap
+- difficulty_bias
+- t3_length_curves
+estimated_minutes: 20
+formula: L=-\frac{1}{NL_{max}}\sum_{i,t}m_{i,t}(s_{i,t}-\beta k3_{i,t})
+tags:
+- Reinforcement Learning
+- R5
+sources_verified: '2026-10-13'
+calibration:
+  seed: 42
+  threads: 2
+  dtype: float32
+  method: Upper error thresholds = reference × 1.5; reward lower bounds specified
+    by pilot
+  metrics:
+    display_only: true

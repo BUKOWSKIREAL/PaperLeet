@@ -1,0 +1,68 @@
+id: rl/grpo
+number: 4
+title_en: Group Relative Policy Optimization
+short_id: R4
+title: Group Relative Policy Optimization
+paper:
+  title: 'DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language
+    Models'
+  authors: Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Xiao Bi,
+    Haowei Zhang, Mingchuan Zhang, Y. K. Li, Y. Wu, Daya Guo
+  venue: arXiv 2024
+  arxiv: '2402.03300'
+  anchors:
+  - 'Section 4.1.1, Eqs. (3–4): objective and KL'
+  - 'Section 4.1.2, Eq. (5): outcome advantage'
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: grpo_advantages
+  signature: 'grpo_advantages(rewards: Tensor, group_size: int, scale_std: bool=True,
+    eps: float=0.0001) -> Tensor'
+- name: grpo_loss
+  signature: 'grpo_loss(logp: Tensor, old_logp: Tensor, ref_logp: Tensor, advantages:
+    Tensor, mask: Tensor, clip_eps: float=0.2, beta: float=0.04) -> tuple[Tensor,
+    dict]'
+conventions:
+  std: TRL v0.23.1 std(dim=1)：correction=1，eps=1e-4
+  aggregation: 先有效 token 平均，再回答平均；全 padding 回答贡献 0
+  stats: 有效 token 平均的 kl_mean / clipfrac / ratio_mean；均 detach
+  kl: k3 非负；总体期望等于 KL 需行为分布与当前策略匹配，离策略时是估计量
+tests:
+  T0: 1
+  T1: 1
+  T2: 6
+  T3: 1
+t3_budget_s: 10
+mutants:
+- id: m1_std_over_batch
+  bug: 按全 batch 计算标准差
+- id: m2_mask_ignored
+  bug: padding 参与聚合
+- id: m3_k1_kl
+  bug: k1 逐 token 可为负
+- id: m4_old_logp_grad
+  bug: 采样策略未 detach
+- id: m5_token_mean
+  bug: 按 batch token 平均
+viz:
+- group_advantage
+- token_weight_heatmap
+- t3_reward_curve
+estimated_minutes: 30
+formula: \hat A_i=(r_i-\bar r_g)/(s_g+10^{-4})
+tags:
+- Reinforcement Learning
+- R4
+sources_verified: '2026-10-13'
+calibration:
+  seed: 42
+  threads: 2
+  dtype: float32
+  method: Upper error thresholds = reference × 1.5; reward lower bounds specified
+    by pilot
+  metrics:
+    final_reward:
+      reference: 0.9827682375907898
+      minimum: 0.9

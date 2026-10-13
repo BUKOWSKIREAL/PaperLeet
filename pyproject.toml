@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "paperleet"
+version = "0.1.0"
+description = "Read the paper. Implement the idea. Test the behavior."
+requires-python = ">=3.10"
+dependencies = ["torch>=2.2", "numpy>=1.26", "pytest>=8", "pytest-timeout>=2.3", "PyYAML>=6"]
+
+[project.scripts]
+paperleet = "paperleet.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["paperleet*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "problems"]
+addopts = "--import-mode=importlib"
+markers = ["t0: interface contracts", "t1: reference agreement", "t2: mathematical properties", "t3: behavioral experiments"]

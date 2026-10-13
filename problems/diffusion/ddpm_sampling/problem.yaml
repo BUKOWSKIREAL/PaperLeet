@@ -1,0 +1,81 @@
+id: diffusion/ddpm_sampling
+number: 8
+title_en: DDPM Posterior & Ancestral Sampling
+short_id: D3
+title: DDPM 后验与祖先采样
+paper:
+  title: Denoising Diffusion Probabilistic Models
+  authors: Jonathan Ho, Ajay Jain, Pieter Abbeel
+  venue: NeurIPS 2020
+  arxiv: '2006.11239'
+  anchors:
+  - 'Eq. (6–7): posterior mean and variance'
+  - 'Eq. (11): epsilon parameterization; Algorithm 2: sampling'
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: q_posterior
+  signature: 'q_posterior(x0: Tensor, x_t: Tensor, t: Tensor, betas: Tensor, alpha_bars:
+    Tensor, alpha_bars_prev: Tensor) -> tuple[Tensor, Tensor]'
+- name: p_sample_step
+  signature: 'p_sample_step(eps_pred: Tensor, x_t: Tensor, t: Tensor, betas: Tensor,
+    alpha_bars: Tensor, alpha_bars_prev: Tensor, noise: Tensor, var_type: str=''posterior'')
+    -> Tensor'
+- name: ddpm_sample
+  signature: 'ddpm_sample(eps_model: Callable[[Tensor, Tensor], Tensor], shape: tuple[int,
+    ...], betas: Tensor, generator: torch.Generator, var_type: str=''posterior'',
+    return_traj: bool=False) -> Tensor | tuple[Tensor, Tensor]'
+conventions:
+  index: 数组 0..T-1 对应论文 1..T
+  seed: 42
+  dtype: 调度 float64；其他张量保留输入精度
+  time_direction: 'Flow: t=0 噪声，t=1 数据；diffusion: 大 t 噪声'
+tests:
+  T0: 1
+  T1: 1
+  T2: 6
+  T3: 2
+t3_budget_s: 10
+mutants:
+- id: m1_coef_swapped
+  bug: 后验均值两个系数写反
+- id: m2_noise_at_last
+  bug: 最终一步仍加噪
+- id: m3_var_index
+  bug: 后验方差分子使用当前累计 alpha
+- id: m4_x0_no_sqrt
+  bug: 恢复 x0 时分母没有开平方
+- id: m5_ascending
+  bug: 反向扩散错误地按正序运行
+viz:
+- reverse_particles
+- variance_compare
+estimated_minutes: 35
+tags:
+- Diffusion
+- PyTorch
+- D3
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2006.11239
+  - https://github.com/openai/improved-diffusion/blob/main/improved_diffusion/gaussian_diffusion.py
+calibration:
+  seed: 42
+  reference_seed: 123
+  samples: 2000
+  schedule_steps: 1000
+  mmd_thresholds:
+    posterior: 0.0027089551579052573
+    beta: 0.002691266865028852
+  status: measured
+  multiplier: 1.5
+  device: CPU
+  threads: 2
+  torch_version: 2.14.1
+  machine: arm64
+  checked_at: '2026-10-13'
+  reference_mmd:
+    posterior: 0.0018059701052701715
+    beta: 0.0017941779100192345

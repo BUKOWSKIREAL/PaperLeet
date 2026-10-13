@@ -1,0 +1,65 @@
+id: rl/ppo_clip
+number: 2
+title_en: PPO Clipped Surrogate
+short_id: R2
+title: PPO Clipped Surrogate
+paper:
+  title: Proximal Policy Optimization Algorithms
+  authors: John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, Oleg Klimov
+  venue: arXiv 2017
+  arxiv: '1707.06347'
+  anchors:
+  - 'Eq. (7): clipped surrogate'
+  - 'Eq. (9): combined objective'
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: ppo_loss
+  signature: 'ppo_loss(new_logp: Tensor, old_logp: Tensor, advantages: Tensor, new_values:
+    Tensor, old_values: Tensor, returns: Tensor, entropy: Tensor | None=None, clip_eps:
+    float=0.2, vf_clip: float | None=0.2, vf_coef: float=0.5, ent_coef: float=0.0,
+    norm_adv: bool=True) -> dict[str, Tensor]'
+conventions:
+  normalization: minibatch 样本标准差 correction=1，B=1 时标准差视为 0
+  value_clipping: vf_clip=0.2；最大平方误差乘 1/2
+  snapshots: old_logp / old_values detach
+tests:
+  T0: 1
+  T1: 1
+  T2: 6
+  T3: 1
+t3_budget_s: 10
+mutants:
+- id: m1_clip_only
+  bug: 只用 clip 后的目标
+- id: m2_max_not_min
+  bug: 乐观界代替悲观界
+- id: m3_old_logp_grad
+  bug: 采样策略没有 detach
+- id: m4_ratio_no_exp
+  bug: 概率比未 exp
+- id: m5_vclip_min
+  bug: value loss 使用 min
+viz:
+- clip_objective
+- trust_region
+estimated_minutes: 30
+formula: L^{PG}=-\mathbb{E}[\min(rA,\operatorname{clip}(r)A)]
+tags:
+- Reinforcement Learning
+- R2
+sources_verified: '2026-10-13'
+calibration:
+  seed: 42
+  threads: 2
+  dtype: float32
+  method: Upper error thresholds = reference × 1.5; reward lower bounds specified
+    by pilot
+  metrics:
+    fixed_batch_max_kl:
+      reference: 0.09324019402265549
+      threshold: 0.13986029103398323
+    best_arm_probability:
+      reference: 0.9993019104003906
+      minimum: 0.9

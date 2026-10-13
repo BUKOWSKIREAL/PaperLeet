@@ -1,0 +1,84 @@
+# 贡献题目
+
+以 [第一步规格的“题目包规范”](PaperLeet_第一步_10题试点规格.md#题目包规范) 为准。建议复制 `problems/diffusion/param_conversion/` 作为新题模板；新目录中的 `problem.yaml` 会被 CLI 和网页自动发现，无需修改题库列表。
+
+## 1. 定义约定
+
+为论文添加 arXiv 链接、作者、会议及核验过的公式位置。明确 tensor shape、时间方向、mask、归一化、梯度归属和端点行为。`id` 必须与 `problems/` 下的两级目录对应；`number` 是正整数题号，必须唯一且发布后不可重新编号；新题取当前最大题号加一。`short_id` 仅用于兼容旧的 CLI 别名。
+
+```yaml
+id: diffusion/example
+number: 11
+title_en: A paper-to-code exercise
+title: A paper-to-code exercise
+difficulty: M
+type: implement
+parent: null
+paper:
+  title: Original paper title
+  authors: Authors
+  venue: Conference and year
+  arxiv: '0000.00000'
+  anchors: ['Verified equation or section']
+functions:
+  - name: example
+    signature: 'example(x: Tensor) -> Tensor'
+conventions:
+  layout: '[B, D]'
+tests: {T0: 1, T1: 1, T2: 3, T3: 0}
+t3_budget_s: 10
+estimated_minutes: 20
+viz: [example_visualization]
+mutants:
+  - id: m1_sign
+    bug: 'Reverses the sign'
+```
+
+## 2. 写完整题目包
+
+目录包含 `README.md`、`README.en.md`、`starter.py`、`solution.py`、`notes.md`、`notes.en.md`、`tests/test_*.py`、`mutants/*.py`、`viz/gen.py`。题面按规格写七节：问题、核心公式、公式到代码、本题约定、交互图、运行方式和延伸。starter 只给类型签名、shape、契约和 `raise NotImplementedError`；变体题允许显式导入前置题参考辅助函数。
+
+每个 mutant 是可独立加载的完整文件，首行说明唯一 bug，与 `solution.py` 的增删行总数不超过 10。合法的不同实现约定也可用作 mutant，但须在坑点中解释它仅不符合当前题目的契约。
+
+## 3. 用性质检验代码
+
+测试用 `@pytest.mark.t0` 到 `t3` 分层，每个测试 docstring 第一行说明性质的依据。通过 `impl` fixture 访问被测模块、`ref` fixture 访问参考解，禁止直接 import solution。参考数值对齐以外，还要有独立推导、不变量、边界、梯度和行为测试。
+
+```python
+@pytest.mark.t2
+def test_identity(impl, artifact):
+    """The declared identity must preserve every coordinate."""
+    x = torch.randn(8, 2, dtype=torch.float64)
+    got = impl.example(x)
+    artifact('expected', x)
+    artifact('got', got)
+    assert_close_located(got, x, rtol=1e-8, atol=1e-10)
+```
+
+公共 fixture 固定 Python、NumPy、PyTorch 种子为 42，并限制 PyTorch 为两条线程。T0–T2 单测试硬超时 5 秒，T3 硬超时 15 秒、质量门预算 10 秒。使用 `artifact(name, value)` 保存数组、字典或 tensor，点云最多保留 2000 点。失败信息应包含位置、期望与实际值。
+
+T3 必须使用传入的被测函数进行训练或采样；不能只验证公共工具或生成一条预设“训练曲线”。统计阈值先测参考解，再按规格标定，记录数据量、种子、模型、优化器、基线、阈值和测量环境。分布/公式约定改变时重新标定并检查 mutants。
+
+## 4. 生成网页数据并运行质量门
+
+`viz/gen.py` 提供 `generate() -> dict`，返回 JSON 可序列化数据。不得在 import 时启动训练。预计算轨迹应采样、降帧和压缩精度，输出单题不超过 500 KB。概念图在前端实时计算；报告图使用做题者实际 artifacts。
+
+```bash
+paperleet test diffusion/example --impl problems/diffusion/example/solution.py
+paperleet mutate diffusion/example
+paperleet ci --problem diffusion/example
+paperleet vizdata diffusion/example
+python -m pytest tests -q
+cd web
+npm run build
+```
+
+最终运行完整 `paperleet ci`。所有参考解必须通过、全部 mutants 必须被真实断言捕获、三次重复的结论必须一致。CI 总预算为 120 秒；单题调试可临时使用 `--repeats 1`，不能把该结果称为三次稳定性验收。
+
+## 5. 盲测与评审
+
+给新读者或独立 agent 只提供 starter 与题面，记录实现用时、约定不清处、所用可视化和遗漏的错误。评审不仅看覆盖率，还要确认测试对应论文主张、失败可定位，以及图与公式一致。不要提交个人 workspace、运行环境或大量临时报告。
+
+## 通过网页提交论文
+
+网页的 **Submit paper** 会把论文和官方代码来源送入候选题目流程。模型生成题面、参考实现和独立测试后，必须先通过隔离验证，再由人工完成论文依据、实现约定与测试质量评审，才能进入公开题库。候选材料保存在 `.paperleet/submissions/`，不会直接被题库扫描。详细设计与配置见 [Paper submission harness](docs/paper-submission-harness.md)。

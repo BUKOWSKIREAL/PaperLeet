@@ -1,0 +1,66 @@
+id: rl/dpo
+number: 3
+title_en: Direct Preference Optimization
+short_id: R3
+title: Direct Preference Optimization
+paper:
+  title: 'Direct Preference Optimization: Your Language Model is Secretly a Reward
+    Model'
+  authors: Rafael Rafailov, Archit Sharma, Eric Mitchell, Stefano Ermon, Christopher
+    D. Manning, Chelsea Finn
+  venue: NeurIPS 2023
+  arxiv: '2305.18290'
+  anchors:
+  - 'Eq. (4): optimal policy'
+  - 'Eq. (7): DPO loss'
+type: implement
+parent: null
+difficulty: E
+functions:
+- name: sequence_logprob
+  signature: 'sequence_logprob(logits: Tensor, input_ids: Tensor, loss_mask: Tensor)
+    -> Tensor'
+- name: dpo_loss
+  signature: 'dpo_loss(pi_chosen: Tensor, pi_rejected: Tensor, ref_chosen: Tensor,
+    ref_rejected: Tensor, beta: float=0.1, label_smoothing: float=0.0) -> tuple[Tensor,
+    Tensor, Tensor]'
+conventions:
+  layout: logits [B,T,V]；先右移标签/mask，再求回答 token log-prob 总和
+  label_smoothing: 保守 DPO 混合正反标签，不是 robust DPO 的无偏噪声校正
+tests:
+  T0: 1
+  T1: 1
+  T2: 6
+  T3: 1
+t3_budget_s: 10
+mutants:
+- id: m1_no_shift
+  bug: 标签未右移
+- id: m2_mask_offbyone
+  bug: mask 偏移错误
+- id: m3_naive_logsigmoid
+  bug: log sigmoid 不稳定
+- id: m4_reward_grad
+  bug: 奖励未 detach
+- id: m5_mean_not_sum
+  bug: token 平均代替求和
+viz:
+- shift_mask_grid
+- loss_vs_margin
+- t3_reward_scatter
+estimated_minutes: 20
+formula: L=-\log\sigma(\beta[(\log\pi_c-\log\pi_c^{ref})-(\log\pi_r-\log\pi_r^{ref})])
+tags:
+- Reinforcement Learning
+- R3
+sources_verified: '2026-10-13'
+calibration:
+  seed: 42
+  threads: 2
+  dtype: float32
+  method: Upper error thresholds = reference × 1.5; reward lower bounds specified
+    by pilot
+  metrics:
+    policy_kl:
+      reference: 0.00044954195618629456
+      threshold: 0.0006743129342794418
