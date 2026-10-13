@@ -72,6 +72,10 @@ try {
     if (data.kind === "toy_experiment") {
       assert(html.includes("我的运行结果"), `${file} must distinguish submitted code from reference data`);
       assert(data.provenance, `${file} must explain toy provenance`);
+      for (const chart of data.charts || []) {
+        const heading = renderToString(React.createElement("h4", null, String(chart.title || "")));
+        assert(html.includes(heading), `${file}: named chart ${chart.title} did not render`);
+      }
     }
     console.log(`PASS ${file}`);
   }

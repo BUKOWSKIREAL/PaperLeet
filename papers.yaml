@@ -225,12 +225,12 @@ papers:
     category: architecture
     short_title: Transformer
     year: 2017
-    tags: [Attention, Sequence Models]
-    summary: 用缩放点积注意力按内容组合序列信息。
-    summary_en: Combine sequence information by content using scaled dot-product attention.
-    scope: 实现缩放、掩码和 softmax 注意力；因果掩码及实验脚手架已提供。
-    scope_en: Implement scaling, masking, and softmax attention; causal masks and experiment scaffolding are supplied.
-    module_ids: [architecture/attention]
+    tags: [Attention, Normalization, Positional Encoding, Sequence Models]
+    summary: 用多头注意力组合序列信息，结合位置编码、逐位置前馈网络和残差归一化构成 Transformer。
+    summary_en: Combine sequence information through multi-head attention, positional encoding, position-wise feed-forward networks, and residual normalization.
+    scope: 分别实现缩放点积注意力、多头注意力、LayerNorm 与 Add & Norm、正弦位置编码及逐位置前馈网络；每个模块独立练习，辅助代码与小实验已提供。
+    scope_en: Independently implement scaled dot-product attention, multi-head attention, LayerNorm and Add & Norm, sinusoidal positional encoding, and position-wise feed-forward networks; helpers and small experiments are supplied.
+    module_ids: [architecture/attention, architecture/multihead_attention, architecture/layer_norm, architecture/positional_encoding, architecture/positionwise_ffn]
   - id: adamw
     number: 22
     category: optimization

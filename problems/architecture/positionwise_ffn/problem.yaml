@@ -1,0 +1,68 @@
+id: architecture/positionwise_ffn
+number: 30
+title: 逐位置前馈网络
+title_en: Position-wise Feed-Forward Network
+paper:
+  title: Attention Is All You Need
+  authors: Ashish Vaswani et al.
+  venue: NeurIPS 2017
+  arxiv: '1706.03762'
+  anchors:
+  - 'Section 3.3, Eq. (2): two affine maps with ReLU'
+  official_code: https://github.com/tensorflow/tensor2tensor
+paper_id: transformer
+type: implement
+parent: null
+difficulty: E
+functions:
+- name: positionwise_ffn
+  signature: 'positionwise_ffn(x: Tensor, w1: Tensor, b1: Tensor, w2: Tensor, b2:
+    Tensor) -> Tensor'
+module:
+  goal: 实现每个 token 独立共享的两层 ReLU 前馈网络。
+  goal_en: Implement the shared two-layer ReLU network applied independently to each
+    token.
+  scope: 只实现 positionwise_ffn；训练循环和数据已提供。
+  scope_en: Implement only positionwise_ffn; training and data are provided.
+  required_functions:
+  - positionwise_ffn
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: Preserve input dtype/device and autograd; gradient tests use float64.
+  device: CPU; no downloads or pretrained weights
+tests:
+  T0: 1
+  T1: 1
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 15
+tags:
+- Transformer
+- Feed-Forward
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/1706.03762
+  - https://arxiv.org/html/1706.03762v7
+  - https://github.com/tensorflow/tensor2tensor
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/abs/1706.03762
+  anchor: 'Section 3.3, Eq. (2): two affine maps with ReLU'
+  adaptation: PaperLeet two-output synthetic nonlinear regression; not a paper translation
+    benchmark.
+mutants:
+- id: m1_missing_relu
+  bug: 遗漏 ReLU
+- id: m2_missing_hidden_bias
+  bug: 遗漏第一层偏置
+- id: m3_detach_hidden
+  bug: 隐藏层错误地 detach，阻断梯度
+- id: m4_token_mixing
+  bug: 错误地在 token 维取平均

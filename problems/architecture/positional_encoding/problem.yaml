@@ -1,0 +1,69 @@
+id: architecture/positional_encoding
+number: 29
+title: 正弦位置编码
+title_en: Sinusoidal Positional Encoding
+paper:
+  title: Attention Is All You Need
+  authors: Ashish Vaswani et al.
+  venue: NeurIPS 2017
+  arxiv: '1706.03762'
+  anchors:
+  - 'Section 3.5: sinusoidal positional encoding and relative-offset linearity'
+  official_code: https://github.com/tensorflow/tensor2tensor
+paper_id: transformer
+type: implement
+parent: null
+difficulty: E
+functions:
+- name: sinusoidal_encoding
+  signature: 'sinusoidal_encoding(length: int, d_model: int, start: int = 0, *, dtype=torch.float32,
+    device=None) -> Tensor'
+module:
+  goal: 实现不同频率的正弦/余弦位置编码。
+  goal_en: Implement paired sine/cosine position features at geometrically spaced
+    frequencies.
+  scope: 只实现 sinusoidal_encoding；相对位移实验已提供。
+  scope_en: Implement only sinusoidal_encoding; the relative-offset experiment is
+    provided.
+  required_functions:
+  - sinusoidal_encoding
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: Explicit torch.float32 or torch.float64; preserve requested dtype.
+  device: CPU; no downloads or pretrained weights
+tests:
+  T0: 1
+  T1: 1
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 15
+tags:
+- Transformer
+- Positional Encoding
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/1706.03762
+  - https://arxiv.org/html/1706.03762v7
+  - https://github.com/tensorflow/tensor2tensor
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/abs/1706.03762
+  anchor: 'Section 3.5: sinusoidal positional encoding and relative-offset linearity'
+  adaptation: PaperLeet relative-offset rotation and position-separation demonstration;
+    not a paper benchmark.
+mutants:
+- id: m1_wrong_frequency
+  bug: 使用 i/d 而不是 2i/d
+- id: m2_sine_for_cosine
+  bug: 奇数维也使用正弦
+- id: m3_ignore_offset
+  bug: 忽略起始位置
+- id: m4_default_dtype
+  bug: 返回默认精度，丢失 float64

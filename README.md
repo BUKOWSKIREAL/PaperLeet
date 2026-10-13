@@ -4,7 +4,7 @@
 
 Read papers, implement the methods, and test your understanding through mathematical properties and actual behavior.
 
-The pilot includes **24 papers and 26 focused core modules**. Start with a paper, read its contribution and selected scope, then implement its core modules in a LeetCode-style split workspace. Supporting code is supplied so each exercise focuses on the paper’s key mechanism. Completing a paper means passing its selected core modules. Paper organization lives in `papers.yaml`; statements, implementations, tests, and visualization data live in `problems/`.
+The pilot includes **24 papers and 30 focused core modules**. Start with a paper, read its contribution and selected scope, then implement its core modules in a LeetCode-style split workspace. Supporting code is supplied so each exercise focuses on the paper’s key mechanism. Completing a paper means passing its selected core modules. Paper organization lives in `papers.yaml`; statements, implementations, tests, and visualization data live in `problems/`.
 
 ## Run locally
 
@@ -23,7 +23,7 @@ Open the URL shown in the terminal (default: **http://127.0.0.1:5173**). On subs
 
 ## Host an invitation-only beta
 
-A deployment package is available for a small online beta. Members can open the website from their own computers and solve the **26 curated modules**. The default institutional mode requires an invitation and verified institutional email. For an initial test group, use administrator-created accounts with `PAPERLEET_AUTH_MODE=test`: each tester receives a login username and access code, with no email registration, Supabase, or SMTP setup. See the [test account guide](docs/test-accounts.md). Hosted judging uses an isolated, resource-limited sandbox; drafts, results, and submission history are stored privately per account. Browser draft caches are separated by account, and conflicting edits from another device require an explicit choice before overwriting a draft.
+A deployment package is available for a small online beta. Members can open the website from their own computers and solve the **30 curated modules**. The default institutional mode requires an invitation and verified institutional email. For an initial test group, use administrator-created accounts with `PAPERLEET_AUTH_MODE=test`: each tester receives a login username and access code, with no email registration, Supabase, or SMTP setup. See the [test account guide](docs/test-accounts.md). Hosted judging uses an isolated, resource-limited sandbox; drafts, results, and submission history are stored privately per account. Browser draft caches are separated by account, and conflicting edits from another device require an explicit choice before overwriting a draft.
 
 Follow the [hosting guide](docs/hosting.md) to configure the server, sandbox, persistent storage, and your chosen account mode. Only institutional mode needs an email provider and invitation list. This repository supplies deployment files; it does not deploy a public instance automatically. The local `make dev` workflow below continues to run code on your own machine.
 
@@ -34,7 +34,7 @@ Follow the [hosting guide](docs/hosting.md) to configure the server, sandbox, pe
 3. Click **Run all tests** and wait for the test results to appear automatically.
 4. Use each test layer's failure explanations, expected values, and actual values to revise your code, then run it again.
 
-Passing the full test suite automatically marks the problem as complete and unlocks its notes on common pitfalls. Running only a subset of tests does not qualify as passing the full suite. In local mode, drafts and progress are saved in your current browser. In hosted mode, signed-in members sync drafts and judging results to their account. Use the Chinese / English toggle in the upper-right corner to switch the interface, problem statements, and explanations. The paper library uses numeric IDs 1–24. Module IDs 1–26 and internal directory names stay stable for existing drafts and CLI commands. A later failed run does not erase a previously accepted result. Existing drafts are preserved; use the editor reset action after saving your code if you want the new starter with supplied helpers.
+Passing the full test suite automatically marks the problem as complete and unlocks its notes on common pitfalls. Running only a subset of tests does not qualify as passing the full suite. In local mode, drafts and progress are saved in your current browser. In hosted mode, signed-in members sync drafts and judging results to their account. Use the Chinese / English toggle in the upper-right corner to switch the interface, problem statements, and explanations. The paper library uses numeric IDs 1–24. Module IDs 1–30 and internal directory names stay stable for existing drafts and CLI commands. A later failed run does not erase a previously accepted result. Existing drafts are preserved; use the editor reset action after saving your code if you want the new starter with supplied helpers.
 
 The website runs code through the judge service and displays results automatically, with no report files to manage manually. The local service listens on `127.0.0.1:8765`, and Vite proxies `/api` requests to it. Code is saved to `workspace/` and executed by Python/PyTorch on your machine. This local setup is intended for personal use. Use the separate hosted configuration for isolated multi-user judging; do not expose the development service directly.
 
@@ -48,7 +48,7 @@ Institutional email sign-in uses Supabase Auth and requires server configuration
 
 ## Submit paper
 
-In the **hosted beta**, signed-in members can submit paper proposals and read their own submissions; administrators can read all proposals. Generation, validation, and publication are performed by maintainers through the offline workflow. Hosted judging is limited to the 26 curated modules included in the deployment image.
+In the **hosted beta**, signed-in members can submit paper proposals and read their own submissions; administrators can read all proposals. Generation, validation, and publication are performed by maintainers through the offline workflow. Hosted judging is limited to the 30 curated modules included in the deployment image.
 
 In **local maintainer mode**, click **Submit paper / 提交论文** in the top navigation and provide a paper URL, an optional official code URL, and what you want to practice. The model reads these sources and generates Chinese and English problem statements, starter code, a reference implementation, layered tests, and buggy variants. Candidates proceed to human review after passing isolated validation. Only the current version approved by a human reviewer receives a numeric problem ID and enters the paper library as a module. Export groups modules that cite the same arXiv paper or source URL under one paper. The generator currently creates one candidate module per submission. It looks for author toys and paper figures, labels teaching adaptations explicitly, and generates T3 tests that record measured curves and metrics through a bounded `artifact` fixture. Human reviewers can inspect those results before approval.
 
@@ -77,7 +77,7 @@ paperleet ci
 
 `init` does not overwrite existing code by default. Use `--force` when you intend to reset it.
 
-`paperleet ci` checks that every reference solution passes, every mutant triggers at least one genuine test failure, each mutant changes at most 10 lines, results remain consistent across three runs, and the per-test T3 CPU budget and total runtime meet the limits. The expanded 26-module catalog has a 300-second total budget (override with `--budget`); individual T3 limits stay in each package. Results are written to `reports/ci.json`, with full reference reports for each problem also saved under `reports/`. Import and syntax errors do not count as valid mutant detections.
+`paperleet ci` checks that every reference solution passes, every mutant triggers at least one genuine test failure, each mutant changes at most 10 lines, results remain consistent across three runs, and the per-test T3 CPU budget and total runtime meet the limits. The expanded 30-module catalog has a 300-second total budget (override with `--budget`); individual T3 limits stay in each package. Results are written to `reports/ci.json`, with full reference reports for each problem also saved under `reports/`. Import and syntax errors do not count as valid mutant detections.
 
 ## Papers and selected core modules
 
@@ -103,7 +103,7 @@ paperleet ci
 | 18 | DMD | Implement the score-difference target and paired regression term; inspect mode coverage using an analytic bimodal distribution. | 19 |
 | 19 | DMD2 | Implement two-timescale updates and auxiliary objectives; verify parameter-update boundaries in a small experiment. | 20 |
 | 20 | Consistency Models | Implement the boundary parameterization and adjacent-time consistency-distillation loss. | 21 |
-| 21 | Transformer | Implement scaling, masking, and softmax attention; causal masks and experiment scaffolding are supplied. | 22 |
+| 21 | Transformer | Implement scaled dot-product attention, multi-head attention, LayerNorm and Add & Norm, sinusoidal positions, and position-wise FFN as five independent modules. | 22, 27–30 |
 | 22 | AdamW | Implement moment estimates, bias correction, and a decoupled weight-decay step. | 23 |
 | 23 | FlashAttention | Implement blockwise recurrence and rescaling. This CPU algorithm exercise does not benchmark GPU kernels. | 24 |
 | 24 | CLIP | Implement feature normalization, temperature scaling, and bidirectional contrastive loss with a tiny paired-retrieval experiment. | 25 |

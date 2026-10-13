@@ -35,6 +35,10 @@ COPY problems/diffusion/dmd/ ./problems/diffusion/dmd/
 COPY problems/diffusion/dmd2/ ./problems/diffusion/dmd2/
 COPY problems/diffusion/consistency/ ./problems/diffusion/consistency/
 COPY problems/architecture/attention/ ./problems/architecture/attention/
+COPY problems/architecture/multihead_attention/ ./problems/architecture/multihead_attention/
+COPY problems/architecture/layer_norm/ ./problems/architecture/layer_norm/
+COPY problems/architecture/positional_encoding/ ./problems/architecture/positional_encoding/
+COPY problems/architecture/positionwise_ffn/ ./problems/architecture/positionwise_ffn/
 COPY problems/optimization/adamw/ ./problems/optimization/adamw/
 COPY problems/architecture/flash_attention/ ./problems/architecture/flash_attention/
 COPY problems/representation/clip/ ./problems/representation/clip/

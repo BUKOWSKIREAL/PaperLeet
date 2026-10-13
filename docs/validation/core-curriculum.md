@@ -1,6 +1,6 @@
 # Core curriculum and toy experiments
 
-Validated locally on 2026-10-13. The maintained catalog contains **24 papers, 26 modules, and six categories**. Existing paper IDs 1–9 and module IDs 1–10 remain stable.
+Initial expansion validated locally on 2026-10-13: **24 papers, 26 modules, and six categories**. The Transformer follow-up below extends this to **30 modules**. Existing paper and module IDs remain stable.
 
 ## Selection and scope
 
@@ -30,3 +30,14 @@ Checked category filtering (6 RL, 4 post-training, 10 generative, 2 architecture
 Generated tests can request the backward-compatible `artifact` fixture. The worker serializes measured tensors/NumPy/JSON values with finite-value, shape-size, nesting, and byte limits; the host revalidates JSON without importing PyTorch. Toy provenance is bound to the candidate hash, and reference validation requires a nonempty correctly attributed T3 experiment. The review UI shows its artifacts before human approval.
 
 No paid model generation was performed during this validation. Hosted online generation/review remains an offline maintainer workflow; these changes do not automatically publish model-generated papers or establish their scientific correctness.
+
+## Transformer follow-up
+
+Transformer remains paper 21, with five independently solvable required modules: scaled dot-product attention (22), multi-head attention (27), LayerNorm and Add & Norm (28), sinusoidal positional encoding (29), and position-wise feed-forward networks (30). The catalog now contains 24 papers and 30 modules; architecture has two papers and six modules. All existing module IDs and drafts retain their identities.
+
+The new modules follow [Attention Is All You Need, §§3.1–3.5](https://arxiv.org/html/1706.03762v7). Add & Norm uses the original post-LN order with dropout disabled. Each new module supplies an independent CPU teaching experiment, explicitly labeled as an adaptation: separate head routing, token-local normalization, relative-position rotations, or nonlinear token regression. Attention helpers are supplied for the multi-head exercise, so solving module 22 is not a runtime prerequisite.
+
+- New packages: **28 distinct reference checks, 420 variant-test executions over three repeats, 16/16 mutants caught**. Reports are `reports/ci-transformer-multihead.json`, `reports/ci-transformer-layernorm.json`, and `reports/ci-transformer-position-ffn.json`.
+- Catalog and hosted protocol regression: **57 passed, 33 skipped**. After rebuilding the worker image, all **four new reference implementations passed live Docker judging** in 13.40 seconds.
+- `npm run check` and the production build pass. The renderer check now requires every named toy chart to appear, catching incompatible chart data that would otherwise silently disappear.
+- Chrome confirms one Transformer paper with five module cards, the 27 → 28 module navigation, and visible multi-head and LayerNorm experiment charts. No practice submission or account data was modified for this browser check.

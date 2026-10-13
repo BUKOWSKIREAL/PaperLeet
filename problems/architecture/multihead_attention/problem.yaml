@@ -1,0 +1,69 @@
+id: architecture/multihead_attention
+number: 27
+title: 多头注意力
+title_en: Multi-Head Attention
+paper:
+  title: Attention Is All You Need
+  authors: Ashish Vaswani et al.
+  venue: NeurIPS 2017
+  arxiv: '1706.03762'
+  anchors:
+  - 'Section 3.2.2, Figure 2: Multi-Head Attention'
+  - 'Section 3.2.3: self-attention and encoder-decoder attention'
+  official_code: https://github.com/tensorflow/tensor2tensor
+paper_id: transformer
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: multi_head_attention
+  signature: 'multi_head_attention(query: Tensor, key: Tensor, value: Tensor, w_q: Tensor, w_k: Tensor, w_v: Tensor, w_o: Tensor, num_heads: int, mask: Tensor | None=None) -> tuple[Tensor, Tensor]'
+- name: attention_kernel
+  signature: 'attention_kernel(q: Tensor, k: Tensor, v: Tensor, mask: Tensor | None=None) -> tuple[Tensor, Tensor]'
+module:
+  goal: 将输入投影到多个子空间，分别执行注意力并拼接、输出投影。
+  goal_en: Project inputs into separate head subspaces, attend independently, concatenate, and output-project.
+  scope: 只实现 multi_head_attention；缩放点积注意力内核和双头路由实验已提供。
+  scope_en: Implement only multi_head_attention; the attention kernel and two-head routing experiment are supplied.
+  required_functions:
+  - multi_head_attention
+  provided_functions:
+  - attention_kernel
+  optional: false
+conventions:
+  seed: 42
+  dtype: Preserve input dtype and device; numerical and gradient tests use float64.
+  device: CPU; no downloads or pretrained weights
+tests:
+  T0: 1
+  T1: 1
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 20
+tags:
+- Transformer
+- Multi-Head Attention
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/1706.03762
+  - https://arxiv.org/html/1706.03762v7
+  - https://github.com/tensorflow/tensor2tensor
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/abs/1706.03762
+  anchor: 'Section 3.2.2, Figure 2: Multi-Head Attention'
+  adaptation: Two fixed heads read different feature subspaces from three synthetic tokens; this illustrates the paper operator without reproducing a paper experiment.
+mutants:
+- id: m1_reuse_query_projection
+  bug: 键错误地复用 query 投影矩阵
+- id: m2_ignore_mask
+  bug: 调用注意力内核时遗漏 mask
+- id: m3_wrong_concatenation
+  bug: 合并头之前没有将 query 维换回原位
+- id: m4_skip_output_projection
+  bug: 拼接后遗漏输出投影

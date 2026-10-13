@@ -1,0 +1,70 @@
+id: architecture/layer_norm
+number: 28
+title: LayerNorm 与残差连接
+title_en: LayerNorm and Add & Norm
+paper:
+  title: Attention Is All You Need
+  authors: Ashish Vaswani et al.
+  venue: NeurIPS 2017
+  arxiv: '1706.03762'
+  anchors:
+  - 'Section 3.1: residual connection followed by layer normalization'
+  - 'Section 5.4: dropout before residual addition (disabled in this exercise)'
+  official_code: https://github.com/tensorflow/tensor2tensor
+paper_id: transformer
+type: implement
+parent: null
+difficulty: E
+functions:
+- name: layer_norm
+  signature: 'layer_norm(x: Tensor, weight: Tensor, bias: Tensor, eps: float = 1e-5) -> Tensor'
+- name: post_norm_residual
+  signature: 'post_norm_residual(x: Tensor, sublayer_output: Tensor, weight: Tensor, bias: Tensor, eps: float = 1e-5) -> Tensor'
+module:
+  goal: 实现逐 token 的 LayerNorm 和原始 Transformer 的 Add & Norm。
+  goal_en: Implement token-local LayerNorm and the original Transformer's Add & Norm.
+  scope: 实现 layer_norm 和 post_norm_residual；子层输出与无训练 toy 实验已提供，关闭 dropout。
+  scope_en: Implement layer_norm and post_norm_residual; sublayer outputs and the training-free toy are supplied, with dropout disabled.
+  required_functions:
+  - layer_norm
+  - post_norm_residual
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: Preserve float32/float64 dtype; numerical and gradient tests use float64.
+  device: CPU; no downloads or pretrained weights
+tests:
+  T0: 1
+  T1: 1
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 20
+tags:
+- Transformer
+- Normalization
+- Residual Connections
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/1706.03762
+  - https://arxiv.org/abs/1607.06450
+  - https://github.com/tensorflow/tensor2tensor
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/abs/1706.03762
+  anchor: 'Section 3.1: residual connections and layer normalization'
+  adaptation: Eight synthetic tokens with varied shifts/scales and supplied sublayer outputs; dropout disabled; no claim of reproducing a paper experiment.
+mutants:
+- id: m1_unbiased_variance
+  bug: 使用样本方差而不是总体方差
+- id: m2_sequence_statistics
+  bug: 同时在序列维和特征维计算统计量
+- id: m3_epsilon_outside_sqrt
+  bug: 把 epsilon 放在平方根外面
+- id: m4_normalize_before_add
+  bug: 先归一化残差分支，再加上子层输出
