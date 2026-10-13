@@ -5,7 +5,13 @@ import { difficultyAdvantage, dpoObjective, tokenGradient } from "./concepts";
 import type { Aggregation } from "./concepts";
 
 type Point = [number, number];
-const colors = ["#e7aa4d", "#98a4b7", "#67c5bc", "#ad99d9", "#ec8997"];
+const colors = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+];
 const nums = (n: number, fn: (i: number) => number) =>
   Array.from({ length: n }, (_, i) => fn(i));
 export function Slider({
@@ -98,7 +104,7 @@ export function Chart({
             y="31"
             width={Math.max(0, x(shade[1]) - x(shade[0]))}
             height="157"
-            fill="#e7aa4d"
+            fill={colors[0]}
             opacity=".09"
           />
         )}
@@ -125,7 +131,7 @@ export function Chart({
               x2={x(focusX)}
               y1="31"
               y2="188"
-              stroke="#e7aa4d"
+              stroke={colors[0]}
               strokeDasharray="3 4"
               opacity=".6"
             />
@@ -139,7 +145,7 @@ export function Chart({
                   cx={x(focusX)}
                   cy={y(closest[1])}
                   r="4"
-                  fill="#e7aa4d"
+                  fill={colors[0]}
                 />
               );
             })}
@@ -193,7 +199,7 @@ export function Bars({
               className="bar-value"
               style={{
                 height: `${(Math.abs(v) / max) * 85}%`,
-                background: v < 0 ? "#98a4b7" : "#e7aa4d",
+                background: v < 0 ? colors[1] : colors[0],
               }}
             />
           </div>
@@ -546,7 +552,7 @@ export function GRPO({ dr = false }: { dr?: boolean }) {
                     style={{
                       background:
                         i < length
-                          ? `rgba(${gradient < 0 ? "231,170,77" : "103,197,188"},${0.1 + Math.min(0.85, Math.abs(gradient) * 4.8)})`
+                          ? `color-mix(in srgb, ${colors[gradient < 0 ? 0 : 2]} ${(0.1 + Math.min(0.85, Math.abs(gradient) * 4.8)) * 100}%, transparent)`
                           : undefined,
                     }}
                   >
@@ -670,7 +676,7 @@ export function Params() {
             refY="3"
             orient="auto"
           >
-            <path d="M0,0L6,3L0,6" fill="#e7aa4d" />
+            <path d="M0,0L6,3L0,6" fill={colors[0]} />
           </marker>
         </defs>
         <path d="M95 260H415M95 260V20" className="axis" />
@@ -682,13 +688,13 @@ export function Params() {
         />
         <path
           d={`M95 260 L${95 + a * 210} ${260 - s * 210}`}
-          stroke="#e7aa4d"
+          stroke={colors[0]}
           strokeWidth="3"
           markerEnd="url(#arr)"
         />
         <path
           d={`M${95 + a * 210} ${260 - s * 210}l${-s * 85} ${-a * 85}`}
-          stroke="#67c5bc"
+          stroke={colors[2]}
           strokeWidth="3"
         />
         <path
@@ -696,7 +702,7 @@ export function Params() {
           className="gridline"
           strokeDasharray="4 4"
         />
-        <circle cx={95 + a * 210} cy={260 - s * 210} r="6" fill="#e7aa4d" />
+        <circle cx={95 + a * 210} cy={260 - s * 210} r="6" fill={colors[0]} />
         <text x="420" y="265">
           x₀
         </text>
@@ -709,7 +715,7 @@ export function Params() {
         <text
           x={90 + a * 210 - s * 85}
           y={252 - s * 210 - a * 85}
-          fill="#67c5bc"
+          fill={colors[2]}
         >
           v
         </text>

@@ -3,6 +3,9 @@
   margin: 0 auto;
   padding: 34px 36px 60px;
 }
+.community-page {
+  padding-top: 28px;
+}
 .social-page-heading {
   display: flex;
   align-items: center;
@@ -31,6 +34,14 @@
   color: var(--text-secondary);
   line-height: 1.7;
   font-size: 15px;
+}
+.community-heading {
+  padding: 0 0 20px;
+}
+.community-heading h1 {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.35;
 }
 .social-panel {
   min-width: 0;
@@ -364,7 +375,7 @@
 .community-layout {
   display: grid;
   grid-template-columns: 218px minmax(0, 1fr);
-  gap: 26px;
+  gap: 22px;
   align-items: start;
 }
 .community-sidebar {
@@ -373,14 +384,14 @@
   gap: 19px;
 }
 .board-list {
-  padding: 19px 10px 12px;
+  padding: 16px 10px 10px;
 }
 .sidebar-label {
   display: block;
   font-size: 12px;
-  letter-spacing: 1px;
+  font-weight: 500;
   color: var(--text-secondary);
-  padding: 0 12px 16px;
+  padding: 0 12px 10px;
 }
 .board-list button {
   display: flex;
@@ -401,23 +412,6 @@
 .board-list button:hover {
   background: var(--surface2);
   color: var(--text);
-}
-.community-about h3 {
-  font-size: 16px;
-  margin: 15px 0 11px;
-}
-.community-about p {
-  color: var(--text-secondary);
-  font-size: 14px;
-  line-height: 1.7;
-}
-.community-about > a {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  margin-top: 20px;
-  color: var(--accent);
 }
 .community-feed {
   min-width: 0;
@@ -575,8 +569,8 @@
   gap: 6px;
 }
 .community-empty {
-  min-height: 345px;
-  padding: 65px 35px;
+  min-height: 280px;
+  padding: 44px 32px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1071,9 +1065,6 @@
     font-size: 14px;
     gap: 8px;
   }
-  .community-about {
-    padding: 18px;
-  }
   .account-grid {
     grid-template-columns: minmax(0, 1fr) 245px;
     gap: 18px;
@@ -1131,8 +1122,7 @@
     width: max-content;
     min-width: 100%;
   }
-  .board-list .sidebar-label,
-  .community-about {
+  .board-list .sidebar-label {
     display: none;
   }
   .board-list button {
@@ -1186,8 +1176,8 @@
     font-size: 12px;
   }
   .community-empty {
-    min-height: 320px;
-    padding: 45px 20px;
+    min-height: 250px;
+    padding: 36px 20px;
   }
   .social-panel {
     border-radius: 7px;

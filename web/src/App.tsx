@@ -46,6 +46,22 @@ import "./community.css";
 const difficulty = (d: string) =>
   ({ E: "Easy", M: "Medium", H: "Hard" })[d] || d;
 const editorFontSizes = [13, 14, 15, 16, 17, 18, 20];
+type Theme = "light" | "dark";
+function initialTheme(): Theme {
+  try {
+    const saved = localStorage.getItem("paperleet.theme");
+    if (saved === "light" || saved === "dark") return saved;
+  } catch {
+    // Browser storage can be unavailable in private or embedded contexts.
+  }
+  try {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  } catch {
+    return "light";
+  }
+}
 function initialEditorFontSize() {
   try {
     const saved = Number(localStorage.getItem("paperleet.editor.fontSize"));
@@ -93,9 +109,11 @@ export function Highlight({
   return html ? (
     <div className="highlight" dangerouslySetInnerHTML={{ __html: html }} />
   ) : (
-    <pre>
-      <code>{code}</code>
-    </pre>
+    <div className="highlight">
+      <pre>
+        <code>{code}</code>
+      </pre>
+    </div>
   );
 }
 export function Prose({
@@ -186,7 +204,6 @@ function Brand() {
       <span>
         Paper<span>Leet</span>
       </span>
-      <b>BETA</b>
     </a>
   );
 }
@@ -351,9 +368,7 @@ function Workspace() {
     [toast, setToast] = useState(""),
     [guide, setGuide] = useState(false),
     [font, setFont] = useState(initialEditorFontSize),
-    [theme, setTheme] = useState(
-      () => localStorage.getItem("paperleet.theme") || "dark",
-    );
+    [theme, setTheme] = useState<Theme>(initialTheme);
   const sourceProblem = problems.find(
     (p) => p.id === id || String(p.number) === id,
   );
@@ -416,8 +431,20 @@ function Workspace() {
   }, [practice.owner]);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    localStorage.setItem("paperleet.theme", theme);
+    document.documentElement.style.colorScheme = theme;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute(
+      "content",
+      theme === "dark" ? "#1a1a1a" : "#ffffff",
+    );
   }, [theme]);
+  function selectTheme(nextTheme: Theme) {
+    setTheme(nextTheme);
+    try {
+      localStorage.setItem("paperleet.theme", nextTheme);
+    } catch {
+      // Theme selection still works for this session without browser storage.
+    }
+  }
   useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(""), 6000);
@@ -578,13 +605,34 @@ function Workspace() {
               <i>/</i>
               <span className={locale === "en" ? "selected" : ""}>EN</span>
             </button>
-            <button
-              className="icon-button"
-              aria-label={t("切换明暗主题", "Toggle color theme")}
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            <div
+              className="theme-switcher"
+              role="group"
+              aria-label={t("外观", "Appearance")}
             >
-              {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
-            </button>
+              <button
+                type="button"
+                className={theme === "light" ? "selected" : ""}
+                aria-label={t("浅色主题", "Light theme")}
+                aria-pressed={theme === "light"}
+                title={t("浅色主题", "Light theme")}
+                onClick={() => selectTheme("light")}
+              >
+                <Sun size={15} aria-hidden="true" />
+                <span className="theme-label">{t("浅色", "Light")}</span>
+              </button>
+              <button
+                type="button"
+                className={theme === "dark" ? "selected" : ""}
+                aria-label={t("深色主题", "Dark theme")}
+                aria-pressed={theme === "dark"}
+                title={t("深色主题", "Dark theme")}
+                onClick={() => selectTheme("dark")}
+              >
+                <Moon size={15} aria-hidden="true" />
+                <span className="theme-label">{t("深色", "Dark")}</span>
+              </button>
+            </div>
             <AccountNav />
           </div>
         </div>

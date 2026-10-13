@@ -5,10 +5,11 @@ import bash from "@shikijs/langs/bash";
 import json from "@shikijs/langs/json";
 import yaml from "@shikijs/langs/yaml";
 import latex from "@shikijs/langs/latex";
-import theme from "@shikijs/themes/github-dark";
+import lightTheme from "@shikijs/themes/github-light";
+import darkTheme from "@shikijs/themes/github-dark";
 
 const highlighter = createHighlighterCore({
-  themes: [theme],
+  themes: [lightTheme, darkTheme],
   langs: [python, bash, json, yaml, latex],
   engine: createJavaScriptRegexEngine(),
 });
@@ -20,6 +21,7 @@ export async function highlight(code: string, language: string) {
     lang: ["python", "bash", "json", "yaml", "latex"].includes(lang)
       ? lang
       : "text",
-    theme: "github-dark",
+    themes: { light: "github-light", dark: "github-dark" },
+    defaultColor: false,
   });
 }

@@ -425,17 +425,8 @@ function CommunityFeed() {
   }, [category, following, search, offset, user?.id, retry]);
   return (
     <main className="social-page community-page">
-      <div className="social-page-heading">
-        <div>
-          <span className="social-eyebrow">PAPERLEET COMMUNITY</span>
-          <h1>{t("一起读论文，聊实现。", "Read. Build. Discuss.")}</h1>
-          <p>
-            {t(
-              "分享论文里的想法，也交流代码中的细节。",
-              "A place for paper discussions, implementation notes, and questions.",
-            )}
-          </p>
-        </div>
+      <div className="social-page-heading community-heading">
+        <h1>{t("社区", "Community")}</h1>
         {user ? (
           <button className="button" onClick={() => setCompose(true)}>
             <Plus size={16} />
@@ -451,9 +442,7 @@ function CommunityFeed() {
       <div className="community-layout">
         <aside className="community-sidebar">
           <section className="social-panel board-list">
-            <span className="sidebar-label">
-              {t("浏览版块", "BROWSE BOARDS")}
-            </span>
+            <span className="sidebar-label">{t("版块", "Boards")}</span>
             <button
               className={!category ? "selected" : ""}
               onClick={() => {
@@ -477,20 +466,6 @@ function CommunityFeed() {
                 {t(c.zh, c.en)}
               </button>
             ))}
-          </section>
-          <section className="social-panel community-about">
-            <BookOpen size={22} className="accent-icon" />
-            <h3>{t("从一个问题开始", "Start with a question")}</h3>
-            <p>
-              {t(
-                "说清论文出处、实现思路和遇到的问题，让讨论更容易继续。",
-                "Include the paper, your approach, and what you are working through to help others join in.",
-              )}
-            </p>
-            <a href="#">
-              {t("浏览论文题库", "Explore the papers")}
-              <ArrowRight size={13} />
-            </a>
           </section>
         </aside>
         <section className="community-feed">

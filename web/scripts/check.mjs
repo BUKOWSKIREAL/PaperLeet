@@ -297,8 +297,14 @@ try {
       "Malformed artifact should remain readable as JSON",
     );
   }
-  for (const lang of ["python", "bash", "json", "yaml", "latex", "text"])
-    assert((await highlight("x = 1", lang)).includes("<pre"));
+  for (const lang of ["python", "bash", "json", "yaml", "latex", "text"]) {
+    const highlighted = await highlight("x = 1", lang);
+    assert(highlighted.includes("<pre"));
+    assert(highlighted.includes("--shiki-light:"));
+    assert(highlighted.includes("--shiki-dark:"));
+    assert(highlighted.includes("--shiki-light-bg:"));
+    assert(highlighted.includes("--shiki-dark-bg:"));
+  }
   console.log(
     "PASS packed trajectories, completion rules, report overlay, MMD threshold, syntax highlighting",
   );
