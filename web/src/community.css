@@ -1371,3 +1371,35 @@
     gap: 15px;
   }
 }
+.practice-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 11px 15px;
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  font-size: 11px;
+  line-height: 1.7;
+}
+.practice-notice > span {
+  flex: 1;
+  min-width: 200px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.practice-notice > a,
+.practice-notice > button {
+  color: var(--accent);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 4px 7px;
+  white-space: nowrap;
+  font-size: 10px;
+}
+.editor-status > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

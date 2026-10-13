@@ -122,6 +122,14 @@ function SignIn({ enabled }: { enabled: boolean }) {
             "Sign in with your school or institutional email to discuss papers and implementations.",
           )}
         </p>
+        {capabilities?.invite_only && (
+          <SocialNotice>
+            {t(
+              "当前为邀请制内测。机构邮箱验证和管理员邀请均通过后才能登录；需要加入时请联系维护者。",
+              "This beta is invitation-only. Sign-in requires both an administrator invitation and a verified institutional email. Contact the maintainers to request access.",
+            )}
+          </SocialNotice>
+        )}
         {!enabled && (
           <SocialNotice>
             {t(
@@ -330,7 +338,7 @@ function InstitutionRequest() {
 }
 function ProfileSettings({ user }: { user: AccountUser }) {
   const { t } = useI18n();
-  const { setUser } = useAccount();
+  const { setUser, health } = useAccount();
   const [name, setName] = useState(user.display_name),
     [username, setUsername] = useState(user.username),
     [color, setColor] = useState(user.avatar_color),
@@ -522,10 +530,15 @@ function ProfileSettings({ user }: { user: AccountUser }) {
             <span>
               {t("允许展示学习进度", "Allow learning progress to be public")}
               <small>
-                {t(
-                  "当前练习进度仍保存在本机，尚未同步到公开主页。",
-                  "Practice progress is currently saved in this browser and is not yet synced to your public profile.",
-                )}
+                {health?.mode === "hosted"
+                  ? t(
+                      "在线练习草稿与判题结果会同步到你的账号；公开学习统计尚未开放，此开关暂不发布这些记录。",
+                      "Online drafts and judging results sync privately to your account. Public learning statistics are not available yet, so this setting does not publish those records.",
+                    )
+                  : t(
+                      "当前练习进度仍保存在本机，尚未同步到公开主页。",
+                      "Practice progress is currently saved in this browser and is not yet synced to your public profile.",
+                    )}
               </small>
             </span>
           </label>

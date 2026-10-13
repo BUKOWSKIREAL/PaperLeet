@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { python } from "@codemirror/lang-python";
 import Markdown from "react-markdown";
@@ -33,26 +33,19 @@ import {
 import { ArtifactCharts } from "./Visuals";
 import Visuals from "./Lab";
 import { isPassed, layers, status } from "./types";
-import type { Paper, Problem, Report, Saved } from "./types";
+import type { Paper, Problem, Report } from "./types";
 import { PaperDetail, PaperLibrary, paperModules } from "./PaperViews";
-import { decodeProblemHash, parseReport, parseSaved } from "./reports";
+import { decodeProblemHash, parseReport } from "./reports";
 import { LocaleProvider, useI18n } from "./i18n";
 import Submissions from "./Submissions";
 import Community, { UserProfile } from "./Community";
 import Account from "./Account";
-import { AccountNav, AccountProvider } from "./social";
+import { AccountNav, AccountProvider, useAccount } from "./social";
+import { usePracticeWorkspace } from "./PracticeWorkspace";
 import "./community.css";
 
-const STORAGE = "paperleet.workspace.v1";
 const difficulty = (d: string) =>
   ({ E: "Easy", M: "Medium", H: "Hard" })[d] || d;
-function loadSaved(): Record<string, Saved> {
-  try {
-    return parseSaved(JSON.parse(localStorage.getItem(STORAGE) || "{}"));
-  } catch {
-    return {};
-  }
-}
 function getId() {
   return decodeProblemHash(location.hash);
 }
@@ -322,20 +315,26 @@ function ReportView({
 export default function App() {
   return (
     <LocaleProvider>
-      <AccountProvider><Workspace /></AccountProvider>
+      <AccountProvider>
+        <Workspace />
+      </AccountProvider>
     </LocaleProvider>
   );
 }
 function Workspace() {
   const { locale, setLocale, t } = useI18n();
+  const { user, health, healthError, refreshHealth } = useAccount();
+  const practice = usePracticeWorkspace();
+  const { saved, update } = practice;
+  const online = !!health?.judge.ready && !healthError;
+  const hosted = health?.mode === "hosted";
+  const runController = useRef<AbortController | undefined>(undefined);
   const [problems, setProblems] = useState<Problem[]>([]),
     [papers, setPapers] = useState<Paper[]>([]),
     [loadError, setLoadError] = useState(""),
     [id, setId] = useState(getId),
-    [saved, setSaved] = useState(loadSaved),
     [tab, setTab] = useState("description"),
     [rightTab, setRightTab] = useState("code"),
-    [online, setOnline] = useState(false),
     [running, setRunning] = useState(false),
     [toast, setToast] = useState(""),
     [guide, setGuide] = useState(false),
@@ -357,7 +356,11 @@ function Workspace() {
   const selectedPaper = papers.find((paper) =>
     problem ? paper.id === problem.paper_id : id === `papers/${paper.id}`,
   );
-  const siblingModules = selectedPaper ? paperModules(selectedPaper, problems) : sourceProblem ? [sourceProblem] : [];
+  const siblingModules = selectedPaper
+    ? paperModules(selectedPaper, problems)
+    : sourceProblem
+      ? [sourceProblem]
+      : [];
   const moduleIndex = siblingModules.findIndex((p) => p.id === problem?.id);
   function loadCatalog() {
     return fetch(
@@ -392,62 +395,47 @@ function Workspace() {
     return () => window.removeEventListener("hashchange", h);
   }, []);
   useEffect(() => {
-    let live = true;
-    const ping = () =>
-      fetch("/api/health", { signal: AbortSignal.timeout(2000) })
-        .then((r) => r.json())
-        .then((r) => {
-          if (live) setOnline(r.ok === true || r.status === "ok");
-        })
-        .catch(() => {
-          if (live) setOnline(false);
-        });
-    void ping();
-    const timer = setInterval(ping, 15000);
-    return () => {
-      live = false;
-      clearInterval(timer);
-    };
-  }, []);
+    runController.current?.abort();
+    setRunning(false);
+    setToast("");
+    setTab("description");
+  }, [practice.owner]);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("paperleet.theme", theme);
   }, [theme]);
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE, JSON.stringify(saved));
-    } catch {
-      setToast(
-        t(
-          "浏览器存储空间不足，请下载代码备份。",
-          "Browser storage is full. Download your code to keep a backup.",
-        ),
-      );
-    }
-  }, [saved]);
-  useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(""), 6000);
     return () => clearTimeout(timer);
   }, [toast]);
-  function update(pid: string, change: Partial<Saved>) {
-    setSaved((prev) => ({
-      ...prev,
-      [pid]: { ...prev[pid], ...change, updated: new Date().toISOString() },
-    }));
-  }
   async function run() {
-    if (!problem) return;
+    if (
+      !problem ||
+      !practice.ready ||
+      (hosted && (!user || !online || practice.conflicts[problem.id]))
+    )
+      return;
+    const runOwner = practice.owner;
+    const submittedCode = current.code ?? problem.starter;
     setRunning(true);
     try {
+      if (hosted) await practice.flush();
+      if (!practice.owns(runOwner)) return;
+      const controller = new AbortController();
+      runController.current = controller;
       const response = await fetch("/api/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           problem: problem.id,
-          code: current.code ?? problem.starter,
+          code: submittedCode,
+          ...(hosted ? { expected_user_id: user?.id } : {}),
         }),
-        signal: AbortSignal.timeout(180000),
+        signal: AbortSignal.any([
+          controller.signal,
+          AbortSignal.timeout(180000),
+        ]),
       });
       const data = await response.json();
       if (
@@ -462,18 +450,12 @@ function Workspace() {
         throw Error(
           t("判题服务返回了无效结果", "The judge returned an invalid result"),
         );
-      update(problem.id, {
-        report,
-        acceptedReport: isPassed(problem, report)
-          ? report
-          : isPassed(problem, current.acceptedReport)
-            ? current.acceptedReport
-            : isPassed(problem, current.report) ? current.report : undefined,
-      });
+      if (!practice.owns(runOwner)) return;
+      practice.applyReport(problem, report, runOwner);
       setTab("tests");
-      setOnline(true);
       setToast(t("判题已完成", "Run complete"));
     } catch (e) {
+      if (!practice.owns(runOwner)) return;
       setToast(
         e instanceof Error && e.name !== "SyntaxError" && e.name !== "TypeError"
           ? e.message
@@ -483,7 +465,7 @@ function Workspace() {
             ),
       );
     } finally {
-      setRunning(false);
+      if (practice.owns(runOwner)) setRunning(false);
     }
   }
   async function copy(text: string) {
@@ -508,8 +490,8 @@ function Workspace() {
     ["solution", t("参考解", "Solution")],
   ];
   const webReadme = problem?.readme.replace(
-    /##\s*6[.、．]?\s*怎么运行[^\n]*\n[\s\S]*?(?=\n##\s*7|$)/,
-    `## 6. ${t("编写与运行", "Write and run")}\n\n${t("在右侧编辑器中完成实现，点击「运行全部测试」。测试结果会在「测试」标签页显示；全部通过后解锁坑点。草稿会自动保存在当前浏览器。", "Complete the implementation in the editor and select Run all tests. Results appear in the Tests tab; passing all tests unlocks Notes. Drafts are saved automatically in this browser.")}\n`,
+    /##\s*6[.、．]?\s*(?:怎么运行|编写与运行|Write and run|Running)[^\n]*\n[\s\S]*?(?=\n##\s*7|$)/,
+    `## 6. ${t("编写与运行", "Write and run")}\n\n${hosted ? t("受邀用户登录后，可在右侧完成实现并运行测试。草稿与判题结果会私密同步到账号；全部通过后解锁坑点。", "Invited members can sign in, implement the module, and run tests. Drafts and judging results sync privately to your account; passing all tests unlocks Notes.") : t("在右侧编辑器中完成实现，点击「运行全部测试」。测试结果会在「测试」标签页显示；全部通过后解锁坑点。草稿会自动保存在当前浏览器。", "Complete the implementation in the editor and select Run all tests. Results appear in the Tests tab; passing all tests unlocks Notes. Drafts are saved automatically in this browser.")}\n`,
   );
   return (
     <div className={`app ${problem ? "workspace-view" : ""}`}>
@@ -517,7 +499,18 @@ function Workspace() {
         <div className="nav-inner">
           <Brand />
           <nav>
-            <a className={!problem && !submissionPage && !communityPage && !accountPage && !profileUsername ? "active" : ""} href="#">
+            <a
+              className={
+                !problem &&
+                !submissionPage &&
+                !communityPage &&
+                !accountPage &&
+                !profileUsername
+                  ? "active"
+                  : ""
+              }
+              href="#"
+            >
               {t("论文题库", "Papers")}
             </a>
             <button
@@ -537,7 +530,10 @@ function Workspace() {
             <a className={submissionPage ? "active" : ""} href="#/submit">
               {t("提交论文", "Submit paper")}
             </a>
-            <a className={communityPage || profileUsername ? "active" : ""} href="#/community">
+            <a
+              className={communityPage || profileUsername ? "active" : ""}
+              href="#/community"
+            >
               {t("社区", "Community")}
             </a>
             <button onClick={() => setGuide(true)}>
@@ -579,13 +575,20 @@ function Workspace() {
         </div>
       </header>
       {communityPage ? (
-        <Community postId={id === "community" ? undefined : id.slice("community/".length)} />
+        <Community
+          postId={
+            id === "community" ? undefined : id.slice("community/".length)
+          }
+        />
       ) : accountPage ? (
         <Account />
       ) : profileUsername ? (
         <UserProfile key={profileUsername} username={profileUsername} />
       ) : submissionPage ? (
-        <Submissions onPublished={loadCatalog} />
+        <Submissions
+          key={`${health?.mode || "pending"}:${user?.id || "anonymous"}`}
+          onPublished={loadCatalog}
+        />
       ) : loadError ? (
         <main className="load-error">
           <Terminal size={35} />
@@ -601,14 +604,32 @@ function Workspace() {
           {t("正在加载论文题库…", "Loading papers…")}
         </main>
       ) : !problem ? (
-        selectedPaper ? <PaperDetail paper={selectedPaper} problems={problems} saved={saved} onGuide={() => setGuide(true)} /> :
-        <PaperLibrary papers={papers} problems={problems} saved={saved} onGuide={() => setGuide(true)} />
+        selectedPaper ? (
+          <PaperDetail
+            paper={selectedPaper}
+            problems={problems}
+            saved={saved}
+            onGuide={() => setGuide(true)}
+          />
+        ) : (
+          <PaperLibrary
+            papers={papers}
+            problems={problems}
+            saved={saved}
+            onGuide={() => setGuide(true)}
+          />
+        )
       ) : (
         <>
           <div className="workspace-toolbar">
-            <a className="back-link" href={selectedPaper ? `#/papers/${selectedPaper.id}` : "#"}>
+            <a
+              className="back-link"
+              href={selectedPaper ? `#/papers/${selectedPaper.id}` : "#"}
+            >
               <ArrowLeft size={15} />
-              {selectedPaper ? `${selectedPaper.number}. ${selectedPaper.short_title}` : t("论文题库", "Papers")}
+              {selectedPaper
+                ? `${selectedPaper.number}. ${selectedPaper.short_title}`
+                : t("论文题库", "Papers")}
             </a>
             <span className="toolbar-divider" />
             <b>
@@ -796,13 +817,29 @@ function Workspace() {
                       </div>
                       <ExternalLink size={14} />
                     </a>
-                    {problem.module && <section className="module-scope-card">
-                      <h3>{t("本模块的目标", "Your implementation goal")}</h3>
-                      <p>{t(problem.module.goal, problem.module.goal_en)}</p>
-                      <p className="module-scope-detail">{t(problem.module.scope, problem.module.scope_en)}</p>
-                      <div className="module-functions"><span>{t("需要实现", "Implement")}</span>{problem.module.required_functions.map((name) => <code key={name}>{name}</code>)}</div>
-                      {!!problem.module.provided_functions.length && <div className="module-functions provided-functions"><span>{t("已提供", "Provided")}</span>{problem.module.provided_functions.map((name) => <code key={name}>{name}</code>)}</div>}
-                    </section>}
+                    {problem.module && (
+                      <section className="module-scope-card">
+                        <h3>{t("本模块的目标", "Your implementation goal")}</h3>
+                        <p>{t(problem.module.goal, problem.module.goal_en)}</p>
+                        <p className="module-scope-detail">
+                          {t(problem.module.scope, problem.module.scope_en)}
+                        </p>
+                        <div className="module-functions">
+                          <span>{t("需要实现", "Implement")}</span>
+                          {problem.module.required_functions.map((name) => (
+                            <code key={name}>{name}</code>
+                          ))}
+                        </div>
+                        {!!problem.module.provided_functions.length && (
+                          <div className="module-functions provided-functions">
+                            <span>{t("已提供", "Provided")}</span>
+                            {problem.module.provided_functions.map((name) => (
+                              <code key={name}>{name}</code>
+                            ))}
+                          </div>
+                        )}
+                      </section>
+                    )}
                     {tab === "explanation" && (
                       <Visuals key={problem.id} problem={problem} />
                     )}
@@ -906,6 +943,7 @@ function Workspace() {
                           "恢复初始代码（先下载备份）",
                           "Reset code (download backup first)",
                         )}
+                        disabled={!practice.ready}
                         aria-label={t(
                           "恢复初始代码并备份",
                           "Reset starter with backup",
@@ -935,7 +973,8 @@ function Workspace() {
                   </div>
                   <div className="code-editor">
                     <CodeMirror
-                      key={problem.id}
+                      key={`${practice.owner}:${problem.id}`}
+                      readOnly={!practice.ready}
                       value={current.code ?? problem.starter}
                       height="100%"
                       theme={theme === "dark" ? "dark" : "light"}
@@ -954,14 +993,109 @@ function Workspace() {
                   <div className="editor-status">
                     <span>
                       <Check size={12} />
-                      {current.code !== undefined
-                        ? t("草稿已自动保存", "Draft saved automatically")
-                        : t("初始代码", "Starter code")}
+                      {practice.loading
+                        ? t("正在加载工作区…", "Loading workspace…")
+                        : hosted
+                          ? !user
+                            ? t(
+                                "草稿仅保存在此浏览器，登录后使用独立工作区",
+                                "Browser-only draft · sign in for your account workspace",
+                              )
+                            : practice.error
+                              ? t(
+                                  "同步失败，草稿保留在当前浏览器",
+                                  "Sync failed · draft kept in this browser",
+                                )
+                              : practice.conflicts[problem.id]
+                                ? t(
+                                    "草稿版本冲突，请选择保留的版本",
+                                    "Draft conflict · choose a version below",
+                                  )
+                                : practice.saving || practice.pending
+                                  ? t("正在同步草稿…", "Syncing draft…")
+                                  : t("已同步到账号", "Synced to your account")
+                          : current.code !== undefined
+                            ? t("草稿已自动保存", "Draft saved automatically")
+                            : t("初始代码", "Starter code")}
                     </span>
                     <span>
                       UTF-8 <i>·</i> Python
                     </span>
                   </div>
+                  {(practice.error ||
+                    practice.conflicts[problem.id] ||
+                    (!health && healthError) ||
+                    (hosted && (!user || !online))) && (
+                    <div className="practice-notice" role="status">
+                      {practice.conflicts[problem.id] ? (
+                        <>
+                          <span>
+                            {t(
+                              "其他设备更新了这道题的草稿。选择保留哪个版本；当前代码尚未覆盖服务器。",
+                              "Another device updated this draft. Choose which version to keep; your current code has not overwritten the server.",
+                            )}
+                          </span>
+                          <button
+                            onClick={() =>
+                              practice.resolveConflict(problem.id, false)
+                            }
+                          >
+                            {t("使用服务器版本", "Use server draft")}
+                          </button>
+                          <button
+                            onClick={() =>
+                              practice.resolveConflict(problem.id, true)
+                            }
+                          >
+                            {t("保留当前版本", "Keep this draft")}
+                          </button>
+                        </>
+                      ) : practice.error ? (
+                        <>
+                          <span>{practice.error}</span>
+                          <button onClick={practice.retry}>
+                            {t("重试同步", "Retry sync")}
+                          </button>
+                        </>
+                      ) : !health ? (
+                        <>
+                          <span>
+                            {t(
+                              "无法确认服务配置，工作区尚未加载。",
+                              "Service configuration is unavailable. Your workspace has not been loaded.",
+                            )}
+                          </span>
+                          <button onClick={() => void refreshHealth()}>
+                            {t("重试", "Retry")}
+                          </button>
+                        </>
+                      ) : !user ? (
+                        <>
+                          <span>
+                            {t(
+                              "在线内测仅向受邀且已验证机构邮箱的用户开放判题。",
+                              "Online judging is available to invited members with a verified institutional email.",
+                            )}
+                          </span>
+                          <a href="#/account">
+                            {t("登录以运行", "Sign in to run")}
+                          </a>
+                        </>
+                      ) : (
+                        <>
+                          <span>
+                            {t(
+                              "判题沙箱尚未就绪，请稍后重试。草稿仍会同步。",
+                              "The judge sandbox is not ready. Please try again shortly; your drafts will still sync.",
+                            )}
+                          </span>
+                          <button onClick={() => void refreshHealth()}>
+                            {t("刷新状态", "Refresh status")}
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
                   <div className="console">
                     <div className="console-header">
                       <span>
@@ -999,6 +1133,10 @@ function Workspace() {
                           <span className="spinner" />
                           {t("正在判题…", "Running tests…")}
                         </>
+                      ) : hosted && !user ? (
+                        <a href="#/account">
+                          {t("登录后运行", "Sign in to run")}
+                        </a>
                       ) : online ? (
                         <>
                           <i className="green-dot" />
@@ -1013,7 +1151,14 @@ function Workspace() {
                     </span>
                     <button
                       className="button run-button"
-                      disabled={running}
+                      disabled={
+                        running ||
+                        !practice.ready ||
+                        (hosted &&
+                          (!user ||
+                            !online ||
+                            !!practice.conflicts[problem.id]))
+                      }
                       onClick={run}
                     >
                       <Play size={15} fill="currentColor" />

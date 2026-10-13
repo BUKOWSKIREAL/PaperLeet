@@ -1,0 +1,27 @@
+# Build from the repository root:
+# docker build -f deploy/Dockerfile.judge -t paperleet-worker:local .
+FROM python:3.12-slim
+WORKDIR /opt/paperleet
+RUN pip install --no-cache-dir torch==2.6.0 --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir numpy==2.2.4 pytest==8.3.5 pytest-timeout==2.3.1 PyYAML==6.0.2
+ENV PYTHONPATH=/opt/paperleet PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
+    PAPERLEET_ROOT=/opt/paperleet OMP_NUM_THREADS=2 MKL_NUM_THREADS=2
+# Explicit allowlist: never COPY the repository, .env, accounts, databases,
+# browser files, model credentials, or the Docker socket into this image.
+COPY pyproject.toml conftest.py ./
+COPY paperleet/__init__.py paperleet/catalog.py ./paperleet/
+COPY paperleet/common/*.py ./paperleet/common/
+COPY paperleet/judge/*.py ./paperleet/judge/
+COPY paperleet/hosting/__init__.py paperleet/hosting/judge_client.py paperleet/hosting/worker.py ./paperleet/hosting/
+COPY problems/rl/gae/ ./problems/rl/gae/
+COPY problems/rl/ppo_clip/ ./problems/rl/ppo_clip/
+COPY problems/rl/dpo/ ./problems/rl/dpo/
+COPY problems/rl/grpo/ ./problems/rl/grpo/
+COPY problems/rl/dr_grpo/ ./problems/rl/dr_grpo/
+COPY problems/diffusion/schedules/ ./problems/diffusion/schedules/
+COPY problems/diffusion/param_conversion/ ./problems/diffusion/param_conversion/
+COPY problems/diffusion/ddpm_sampling/ ./problems/diffusion/ddpm_sampling/
+COPY problems/diffusion/ddim/ ./problems/diffusion/ddim/
+COPY problems/diffusion/flow_matching/ ./problems/diffusion/flow_matching/
+USER 65534:65534
+ENTRYPOINT ["python", "-m", "paperleet.hosting.worker"]

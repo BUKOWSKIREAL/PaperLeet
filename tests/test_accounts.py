@@ -33,6 +33,8 @@ class EmailProvider:
 @pytest.fixture
 def accounts(tmp_path, monkeypatch):
     monkeypatch.delenv("PAPERLEET_ADMIN_EMAILS", raising=False)
+    monkeypatch.setenv("PAPERLEET_MODE", "local")
+    monkeypatch.delenv("PAPERLEET_INVITE_EMAILS", raising=False)
     config = tmp_path / "institutions.yaml"
     config.write_text("""institutions:
   - id: institute
@@ -235,6 +237,58 @@ def test_admin_bootstrap_requires_verified_allowlisted_mailbox(accounts, monkeyp
     assert "role" not in accounts.public_user(user["id"])
     with pytest.raises(AccountError):
         sign_in(accounts, "person@gmail.com")
+
+
+def test_hosted_requires_nonempty_exact_invites_and_still_requires_institution(accounts, monkeypatch):
+    monkeypatch.setenv("PAPERLEET_MODE", "hosted")
+    assert accounts.capabilities()["invite_only"] is True
+    assert accounts.capabilities()["auth_available"] is False
+    with pytest.raises(AuthUnavailable, match="nonempty"):
+        accounts.request_code("student@research.edu")
+    with pytest.raises(AuthUnavailable, match="nonempty"):
+        sign_in(accounts)
+    monkeypatch.setenv("PAPERLEET_INVITE_EMAILS", " Student@RESEARCH.EDU , invited@gmail.com")
+    assert accounts.capabilities()["auth_available"] is True
+    with pytest.raises(AuthenticationError, match="invite-only"):
+        accounts.request_code("other@research.edu")
+    with pytest.raises(AuthenticationError, match="invite-only"):
+        sign_in(accounts, "other@research.edu")
+    with pytest.raises(AccountError, match="not approved"):
+        accounts.request_code("invited@gmail.com")
+    with pytest.raises(AccountError, match="not approved"):
+        sign_in(accounts, "invited@gmail.com")
+    assert accounts.provider.sent == []
+    accounts.request_code("student@research.edu")
+    token, user = sign_in(accounts)
+    assert accounts.get_session(token)["id"] == user["id"]
+
+
+def test_invite_removal_revokes_existing_sessions_and_admin_cannot_bypass(accounts, monkeypatch):
+    monkeypatch.setenv("PAPERLEET_ADMIN_EMAILS", "student@research.edu")
+    token, user = sign_in(accounts)
+    assert user["role"] == "admin"
+    monkeypatch.setenv("PAPERLEET_MODE", "hosted")
+    monkeypatch.setenv("PAPERLEET_INVITE_EMAILS", "student@research.edu")
+    assert accounts.get_session(token)
+    monkeypatch.setenv("PAPERLEET_INVITE_EMAILS", "other@research.edu")
+    assert accounts.get_session(token) is None
+    with pytest.raises(AuthenticationError, match="invite-only"):
+        sign_in(accounts)
+    monkeypatch.setenv("PAPERLEET_INVITE_EMAILS", "")
+    assert accounts.get_session(token) is None
+
+
+def test_invalid_invitation_config_fails_closed(accounts, monkeypatch):
+    monkeypatch.setenv("PAPERLEET_MODE", "hosted")
+    monkeypatch.setenv("PAPERLEET_INVITE_EMAILS", "*@research.edu")
+    # Wildcards cannot grant eligibility to all institutional users.
+    assert accounts.capabilities()["auth_available"] is False
+    with pytest.raises(AuthUnavailable, match="wildcards"):
+        sign_in(accounts)
+    monkeypatch.setenv("PAPERLEET_INVITE_EMAILS", "research.edu")
+    assert accounts.capabilities()["auth_available"] is False
+    with pytest.raises(AuthUnavailable):
+        sign_in(accounts)
 
 
 def test_pending_institution_request_never_grants_access(accounts):

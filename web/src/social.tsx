@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { ShieldCheck } from "lucide-react";
 import { useI18n } from "./i18n";
@@ -26,6 +26,7 @@ export type AccountUser = PublicUser & {
 };
 export type AccountCapabilities = {
   auth_available: boolean;
+  invite_only?: boolean;
   institution_verification_required: boolean;
   institutions: (Institution & { domains: string[] })[];
   reason?: string;
@@ -68,7 +69,15 @@ export async function socialApi<T>(path: string, body?: unknown): Promise<T> {
     );
   return data as T;
 }
+export type DeploymentHealth = {
+  mode: "local" | "hosted";
+  judge: { ready: boolean; reason?: string };
+  auth_required: boolean;
+};
 type AccountContextValue = {
+  health?: DeploymentHealth;
+  healthError: string;
+  refreshHealth: () => Promise<void>;
   user: AccountUser | null;
   capabilities?: AccountCapabilities;
   loading: boolean;
@@ -77,6 +86,8 @@ type AccountContextValue = {
   setUser: (user: AccountUser | null) => void;
 };
 const AccountContext = createContext<AccountContextValue>({
+  healthError: "",
+  refreshHealth: async () => {},
   user: null,
   loading: true,
   error: "",
@@ -84,32 +95,104 @@ const AccountContext = createContext<AccountContextValue>({
   setUser: () => {},
 });
 export function AccountProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AccountUser | null>(null);
+  const [user, setCurrentUser] = useState<AccountUser | null>(null);
   const [capabilities, setCapabilities] = useState<AccountCapabilities>();
+  const [health, setHealth] = useState<DeploymentHealth>();
+  const [healthError, setHealthError] = useState("");
   const [loading, setLoading] = useState(true),
     [error, setError] = useState("");
+  const accountEpoch = useRef(0);
+  function setUser(next: AccountUser | null) {
+    accountEpoch.current += 1;
+    setCurrentUser(next);
+    setLoading(false);
+    setError("");
+    try {
+      localStorage.setItem(
+        "paperleet.auth.changed",
+        `${Date.now()}-${Math.random()}`,
+      );
+    } catch {
+      /* The current tab still updates without browser storage. */
+    }
+  }
   async function refresh() {
+    const epoch = ++accountEpoch.current;
     setLoading(true);
     try {
       const data = await socialApi<{
         user: AccountUser | null;
         capabilities: AccountCapabilities;
       }>("account/me");
-      setUser(data.user);
+      if (epoch !== accountEpoch.current) return;
+      setCurrentUser(data.user);
       setCapabilities(data.capabilities);
       setError("");
     } catch (e) {
+      if (epoch !== accountEpoch.current) return;
+      setCurrentUser(null);
       setError(errorMessage(e));
     } finally {
-      setLoading(false);
+      if (epoch === accountEpoch.current) setLoading(false);
+    }
+  }
+  async function refreshHealth() {
+    try {
+      const response = await fetch("/api/health", {
+        cache: "no-store",
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok) throw Error("Service unavailable");
+      const data = await response.json();
+      if (data.mode !== "local" && data.mode !== "hosted")
+        throw Error("Deployment configuration unavailable");
+      setHealth({
+        mode: data.mode,
+        auth_required: data.auth_required === true,
+        judge: data.judge || { ready: false },
+      });
+      setHealthError("");
+    } catch (e) {
+      setHealthError(errorMessage(e));
+      setHealth((previous) =>
+        previous
+          ? {
+              ...previous,
+              judge: { ready: false, reason: "Service unavailable" },
+            }
+          : undefined,
+      );
     }
   }
   useEffect(() => {
     void refresh();
+    void refreshHealth();
+    const timer = setInterval(() => void refreshHealth(), 15000);
+    const changed = (event: StorageEvent) => {
+      if (event.key === "paperleet.auth.changed") {
+        setCurrentUser(null);
+        void refresh();
+      }
+    };
+    window.addEventListener("storage", changed);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("storage", changed);
+    };
   }, []);
   return (
     <AccountContext.Provider
-      value={{ user, capabilities, loading, error, refresh, setUser }}
+      value={{
+        user,
+        capabilities,
+        loading,
+        error,
+        refresh,
+        setUser,
+        health,
+        healthError,
+        refreshHealth,
+      }}
     >
       {children}
     </AccountContext.Provider>

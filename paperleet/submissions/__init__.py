@@ -11,6 +11,7 @@ import uuid
 import yaml
 
 from paperleet.catalog import problems, root
+from paperleet.config import data_directory
 from .checks import https_url, package_hash, static_checks
 from .model import ModelUnavailable, OpenAIProvider
 from .sandbox import Sandbox
@@ -28,9 +29,9 @@ class Conflict(ValueError):
 
 
 class SubmissionStore:
-    def __init__(self, base=None, provider=None, sandbox=None):
+    def __init__(self, base=None, provider=None, sandbox=None, directory=None):
         self.base = Path(base or root())
-        self.directory = self.base / ".paperleet" / "submissions"
+        self.directory = Path(directory) if directory is not None else self.base / ".paperleet" / "submissions"
         self.directory.mkdir(parents=True, exist_ok=True)
         self.provider = provider or OpenAIProvider()
         self.sandbox = sandbox or Sandbox()
@@ -75,10 +76,12 @@ class SubmissionStore:
         # Keep the list cheap; detail retains source, complete code and all validation runs.
         return sorted([{k: v for k, v in row.items() if k not in ("candidate", "provenance", "excerpt", "validation")} for row in rows], key=lambda r: r["created_at"], reverse=True)
 
-    def create(self, payload):
+    def create(self, payload, owner_id=None):
         if not isinstance(payload, dict):
             raise ValueError("Expected a submission object")
         data = {"id": uuid.uuid4().hex, "status": "submitted", "created_at": now(), "reviews": []}
+        if owner_id is not None:
+            data["owner_id"] = owner_id
         for key, limit in (("title", 240), ("excerpt", 80000), ("focus", 4000)):
             value = payload.get(key, "")
             if not isinstance(value, str) or len(value) > limit:
@@ -246,8 +249,8 @@ _stores_lock = threading.Lock()
 
 
 def store():
-    location = root()
+    location = (root(), data_directory())
     with _stores_lock:
         if location not in _stores:
-            _stores[location] = SubmissionStore(location)
+            _stores[location] = SubmissionStore(location[0], directory=location[1] / "submissions")
         return _stores[location]

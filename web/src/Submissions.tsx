@@ -15,6 +15,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useI18n } from "./i18n";
+import { useAccount } from "./social";
 import { Highlight, Prose } from "./App";
 
 type Candidate = {
@@ -77,6 +78,11 @@ type Submission = {
   published_problem?: { id: string; number: number };
 };
 type Capabilities = {
+  mode?: "local" | "hosted";
+  can_submit?: boolean;
+  can_generate?: boolean;
+  can_review?: boolean;
+  reason?: string;
   generation: {
     ready: boolean;
     provider: string;
@@ -124,6 +130,7 @@ export default function Submissions({
   onPublished: () => void;
 }) {
   const { t, locale } = useI18n();
+  const { user, health } = useAccount();
   const [caps, setCaps] = useState<Capabilities>(),
     [items, setItems] = useState<Submission[]>([]),
     [selected, setSelected] = useState<Submission>(),
@@ -141,6 +148,14 @@ export default function Submissions({
     [reviewNotes, setReviewNotes] = useState(""),
     [decision, setDecision] = useState("approve"),
     [checks, setChecks] = useState(EMPTY_CHECKS);
+  const hosted = health?.mode === "hosted" || caps?.mode === "hosted";
+  const canSubmit = caps?.can_submit ?? health?.mode === "local";
+  const canGenerate = caps?.can_generate ?? health?.mode === "local";
+  const canReview = caps?.can_review ?? health?.mode === "local";
+  const managedNotice = t(
+    "内测版接收论文提案；生成、验证和发布由维护者在离线流程中完成。",
+    "The beta accepts paper proposals. Generation, validation, and publication are managed by maintainers offline.",
+  );
   const labels: Record<string, string> = {
     submitted: t("已提交", "Submitted"),
     generating: t("生成中", "Generating"),
@@ -165,11 +180,13 @@ export default function Submissions({
     setLoading(true);
     setError("");
     try {
-      const [capabilities, list] = await Promise.all([
-        api<Capabilities>("/capabilities"),
-        api<{ submissions: Submission[] }>(""),
-      ]);
+      const capabilities = await api<Capabilities>("/capabilities");
       setCaps(capabilities);
+      if (capabilities.can_submit === false) {
+        setItems([]);
+        return;
+      }
+      const list = await api<{ submissions: Submission[] }>("");
       setItems(list.submissions);
     } catch (e) {
       setError(
@@ -219,6 +236,7 @@ export default function Submissions({
   }
   async function create(event: React.FormEvent) {
     event.preventDefault();
+    if (!canSubmit) return;
     setBusy(true);
     setError("");
     try {
@@ -236,7 +254,7 @@ export default function Submissions({
       setCodeUrl("");
       setExcerpt("");
       setFocus("");
-      if (caps?.generation.ready)
+      if (canGenerate && caps?.generation.ready)
         saveItem(await api<Submission>(`/${item.id}/generate`, {}));
     } catch (e) {
       setError(
@@ -247,7 +265,7 @@ export default function Submissions({
     }
   }
   async function act(action: "generate" | "validate" | "review") {
-    if (!selected) return;
+    if (!selected || (action === "review" ? !canReview : !canGenerate)) return;
     setBusy(true);
     setError("");
     try {
@@ -277,6 +295,7 @@ export default function Submissions({
     selected.validation.package_hash === selected.package_hash;
   const canApprove = validated && Object.values(checks).every(Boolean);
   const reviewable =
+    canReview &&
     !!candidate &&
     !running &&
     selected?.status !== "published" &&
@@ -331,7 +350,11 @@ export default function Submissions({
       <div className="submission-columns">
         <aside className="submission-list">
           <div className="aside-title">
-            <h3>{t("提交记录", "Submissions")}</h3>
+            <h3>
+              {hosted && user?.role !== "admin"
+                ? t("我的提案", "My proposals")
+                : t("提交记录", "Submissions")}
+            </h3>
             <button
               className="icon-button"
               aria-label={t(
@@ -381,9 +404,11 @@ export default function Submissions({
                 />
                 {t("模型生成", "Model generation")}
                 <b>
-                  {caps.generation.ready
-                    ? t("就绪", "Ready")
-                    : t("未配置", "Not configured")}
+                  {!canGenerate
+                    ? t("由维护者处理", "Maintainer managed")
+                    : caps.generation.ready
+                      ? t("就绪", "Ready")
+                      : t("未配置", "Not configured")}
                 </b>
               </div>
               <div>
@@ -400,7 +425,7 @@ export default function Submissions({
               <details>
                 <summary>{t("配置详情", "Configuration details")}</summary>
                 <p>{caps.generation.model}</p>
-                {!caps.generation.ready && (
+                {!caps.generation.ready && canGenerate && (
                   <p>
                     {caps.generation.reason ||
                       t(
@@ -409,7 +434,7 @@ export default function Submissions({
                       )}
                   </p>
                 )}
-                {!caps.sandbox.ready && (
+                {!caps.sandbox.ready && canGenerate && (
                   <p>
                     {caps.sandbox.reason ||
                       t(
@@ -427,109 +452,131 @@ export default function Submissions({
             <section className="submission-card">
               <h2>{t("论文来源", "Paper sources")}</h2>
               <p className="submission-muted">
-                {t(
-                  "模型会归纳方法、接口约定及证据位置，生成初始代码、参考解、测试和错误变体。",
-                  "The model extracts the method, interface conventions, and evidence, then drafts starter code, a reference, tests, and faulty variants.",
-                )}
+                {hosted
+                  ? t(
+                      "分享论文来源和你希望练习的核心模块，维护者将审核提案。",
+                      "Share the paper sources and the core modules you would like to practice. Maintainers will review your proposal.",
+                    )
+                  : t(
+                      "模型会归纳方法、接口约定及证据位置，生成初始代码、参考解、测试和错误变体。",
+                      "The model extracts the method, interface conventions, and evidence, then drafts starter code, a reference, tests, and faulty variants.",
+                    )}
               </p>
-              <form className="submission-form" onSubmit={create}>
-                <label>
-                  {t("论文标题", "Paper title")}
-                  <input
-                    required
-                    maxLength={240}
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder={t("输入论文标题", "Enter the paper title")}
-                  />
-                </label>
-                <label>
-                  {t("论文链接", "Paper URL")}
-                  <input
-                    type="url"
-                    required
-                    value={paperUrl}
-                    onChange={(e) => setPaperUrl(e.target.value)}
-                    placeholder="https://arxiv.org/abs/…"
-                  />
-                </label>
-                <label>
-                  {t("官方代码链接（可选）", "Official code URL (optional)")}
-                  <input
-                    type="url"
-                    value={codeUrl}
-                    onChange={(e) => setCodeUrl(e.target.value)}
-                    placeholder="https://github.com/…"
-                  />
-                </label>
-                <label>
-                  {t("练习重点（可选）", "Practice focus (optional)")}
-                  <textarea
-                    rows={3}
-                    maxLength={4000}
-                    value={focus}
-                    onChange={(e) => setFocus(e.target.value)}
-                    placeholder={t(
-                      "例如：只提炼核心 loss，并验证梯度、mask 和归一化。",
-                      "For example: extract the core loss and verify gradients, masks, and normalization.",
-                    )}
-                  />
-                </label>
-                <details>
-                  <summary>
-                    {t(
-                      "补充论文摘录（可选）",
-                      "Add a paper excerpt (optional)",
-                    )}
-                  </summary>
+              {hosted && <p className="submission-muted">{managedNotice}</p>}
+              {!canSubmit && (
+                <p className="submission-muted">
+                  {loading ? (
+                    t("正在检查提交权限…", "Checking submission access…")
+                  ) : (
+                    <a className="button subtle" href="#/account">
+                      {t(
+                        "受邀用户登录后可提交提案",
+                        "Sign in with an invited account to submit",
+                      )}
+                    </a>
+                  )}
+                </p>
+              )}
+              {canSubmit && (
+                <form className="submission-form" onSubmit={create}>
                   <label>
-                    <span className="sr-only">
-                      {t("论文摘录", "Paper excerpt")}
-                    </span>
+                    {t("论文标题", "Paper title")}
+                    <input
+                      required
+                      maxLength={240}
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder={t("输入论文标题", "Enter the paper title")}
+                    />
+                  </label>
+                  <label>
+                    {t("论文链接", "Paper URL")}
+                    <input
+                      type="url"
+                      required
+                      value={paperUrl}
+                      onChange={(e) => setPaperUrl(e.target.value)}
+                      placeholder="https://arxiv.org/abs/…"
+                    />
+                  </label>
+                  <label>
+                    {t("官方代码链接（可选）", "Official code URL (optional)")}
+                    <input
+                      type="url"
+                      value={codeUrl}
+                      onChange={(e) => setCodeUrl(e.target.value)}
+                      placeholder="https://github.com/…"
+                    />
+                  </label>
+                  <label>
+                    {t("练习重点（可选）", "Practice focus (optional)")}
                     <textarea
-                      rows={7}
-                      maxLength={60000}
-                      value={excerpt}
-                      onChange={(e) => setExcerpt(e.target.value)}
+                      rows={3}
+                      maxLength={4000}
+                      value={focus}
+                      onChange={(e) => setFocus(e.target.value)}
                       placeholder={t(
-                        "粘贴核心公式、伪代码和相关段落，帮助模型定位。",
-                        "Paste key formulas, pseudocode, or relevant passages.",
+                        "例如：只提炼核心 loss，并验证梯度、mask 和归一化。",
+                        "For example: extract the core loss and verify gradients, masks, and normalization.",
                       )}
                     />
                   </label>
-                </details>
-                <div className="review-required">
-                  <ShieldCheck size={18} />
-                  <p>
-                    {t(
-                      "生成内容先进入候选区。只有验证通过并由人工评审确认后，才会加入题库。",
-                      "Generated content stays in the candidate queue until validation passes and a human reviewer approves it.",
-                    )}
-                  </p>
-                </div>
-                {caps && !caps.generation.ready && (
-                  <p className="submission-muted">
-                    {t(
-                      "当前可以保存提交；配置模型服务后，可从提交详情继续生成。",
-                      "Save a submission now and generate it from its detail page once the model service is configured.",
-                    )}
-                  </p>
-                )}
-                <button
-                  className="button"
-                  type="submit"
-                  disabled={busy || loading}
-                >
-                  {busy ? (
-                    <LoaderCircle size={16} className="spinning" />
-                  ) : (
-                    <ArrowRight size={16} />
+                  <details>
+                    <summary>
+                      {t(
+                        "补充论文摘录（可选）",
+                        "Add a paper excerpt (optional)",
+                      )}
+                    </summary>
+                    <label>
+                      <span className="sr-only">
+                        {t("论文摘录", "Paper excerpt")}
+                      </span>
+                      <textarea
+                        rows={7}
+                        maxLength={60000}
+                        value={excerpt}
+                        onChange={(e) => setExcerpt(e.target.value)}
+                        placeholder={t(
+                          "粘贴核心公式、伪代码和相关段落，帮助模型定位。",
+                          "Paste key formulas, pseudocode, or relevant passages.",
+                        )}
+                      />
+                    </label>
+                  </details>
+                  <div className="review-required">
+                    <ShieldCheck size={18} />
+                    <p>
+                      {t(
+                        "生成内容先进入候选区。只有验证通过并由人工评审确认后，才会加入题库。",
+                        "Generated content stays in the candidate queue until validation passes and a human reviewer approves it.",
+                      )}
+                    </p>
+                  </div>
+                  {caps && !caps.generation.ready && canGenerate && (
+                    <p className="submission-muted">
+                      {t(
+                        "当前可以保存提交；配置模型服务后，可从提交详情继续生成。",
+                        "Save a submission now and generate it from its detail page once the model service is configured.",
+                      )}
+                    </p>
                   )}
-                  {caps?.generation.ready
-                    ? t("提交并生成候选题", "Submit & generate candidate")
-                    : t("保存论文提交", "Save paper submission")}
-                </button>
-              </form>
+                  <button
+                    className="button"
+                    type="submit"
+                    disabled={busy || loading || !canSubmit}
+                  >
+                    {busy ? (
+                      <LoaderCircle size={16} className="spinning" />
+                    ) : (
+                      <ArrowRight size={16} />
+                    )}
+                    {canGenerate && caps?.generation.ready
+                      ? t("提交并生成候选题", "Submit & generate candidate")
+                      : t("保存论文提交", "Save paper submission")}
+                  </button>
+                </form>
+              )}
             </section>
           ) : selected ? (
             <>
@@ -583,7 +630,7 @@ export default function Submissions({
                   </a>
                 ) : (
                   <div className="submission-actions">
-                    {selected.status !== "rejected" && (
+                    {canGenerate && selected.status !== "rejected" && (
                       <button
                         className="button subtle"
                         disabled={running || !caps?.generation.ready}
@@ -599,20 +646,22 @@ export default function Submissions({
                           : t("生成代码与测试", "Generate code & tests")}
                       </button>
                     )}
-                    {candidate && selected.status !== "rejected" && (
-                      <button
-                        className="button"
-                        disabled={running || !caps?.sandbox.ready}
-                        onClick={() => void act("validate")}
-                      >
-                        {selected.status === "validating" ? (
-                          <LoaderCircle size={15} className="spinning" />
-                        ) : (
-                          <FlaskConical size={15} />
-                        )}
-                        {t("运行验证", "Run validation")}
-                      </button>
-                    )}
+                    {canGenerate &&
+                      candidate &&
+                      selected.status !== "rejected" && (
+                        <button
+                          className="button"
+                          disabled={running || !caps?.sandbox.ready}
+                          onClick={() => void act("validate")}
+                        >
+                          {selected.status === "validating" ? (
+                            <LoaderCircle size={15} className="spinning" />
+                          ) : (
+                            <FlaskConical size={15} />
+                          )}
+                          {t("运行验证", "Run validation")}
+                        </button>
+                      )}
                   </div>
                 )}
                 {busyStatus(selected.status) && (
@@ -625,15 +674,17 @@ export default function Submissions({
                 )}
                 {!candidate && !busyStatus(selected.status) && (
                   <p className="submission-muted">
-                    {caps?.generation.ready
-                      ? t(
-                          "生成后可查看题面、参考代码、测试和来源证据。",
-                          "Generate to inspect the problem, reference code, tests, and source evidence.",
-                        )
-                      : t(
-                          "提交已保存。模型服务配置完成后，刷新服务状态并继续生成。",
-                          "Submission saved. Configure the model service, refresh its status, and continue generation.",
-                        )}
+                    {!canGenerate
+                      ? managedNotice
+                      : caps?.generation.ready
+                        ? t(
+                            "生成后可查看题面、参考代码、测试和来源证据。",
+                            "Generate to inspect the problem, reference code, tests, and source evidence.",
+                          )
+                        : t(
+                            "提交已保存。模型服务配置完成后，刷新服务状态并继续生成。",
+                            "Submission saved. Configure the model service, refresh its status, and continue generation.",
+                          )}
                   </p>
                 )}
               </section>
@@ -839,10 +890,12 @@ export default function Submissions({
                     <ShieldCheck size={20} />
                   </div>
                   <p className="submission-muted">
-                    {t(
-                      "请逐项查看论文证据、实现和测试。模型不会替你勾选这些检查。",
-                      "Inspect the source evidence, implementation, and tests. These checks must be completed by a human reviewer.",
-                    )}
+                    {canReview
+                      ? t(
+                          "请逐项查看论文证据、实现和测试。模型不会替你勾选这些检查。",
+                          "Inspect the source evidence, implementation, and tests. These checks must be completed by a human reviewer.",
+                        )
+                      : managedNotice}
                   </p>
                   {!validated && selected.status !== "published" && (
                     <p className="review-blocked">

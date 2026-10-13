@@ -7,7 +7,7 @@ import threading
 import time
 from urllib.parse import parse_qs, unquote, urlsplit
 
-from paperleet.catalog import root
+from paperleet.config import data_directory, hosted
 
 
 COOKIE = "paperleet_session"
@@ -20,7 +20,7 @@ _requests = defaultdict(deque)
 def services():
     from paperleet.accounts import AccountService
     from paperleet.community import CommunityService
-    database = root() / ".paperleet" / "community.sqlite3"
+    database = data_directory() / "community.sqlite3"
     with _service_lock:
         if database not in _services:
             accounts = AccountService(database)
@@ -49,7 +49,7 @@ def session_cookie(token=""):
     cookie[COOKIE]["httponly"] = True
     cookie[COOKIE]["samesite"] = "Lax"
     cookie[COOKIE]["max-age"] = 7 * 86400 if token else 0
-    if os.environ.get("PAPERLEET_SECURE_COOKIES") == "1":
+    if hosted() or os.environ.get("PAPERLEET_SECURE_COOKIES") == "1":
         cookie[COOKIE]["secure"] = True
     return cookie.output(header="").strip()
 
@@ -58,7 +58,15 @@ def _throttle(handler, path):
     # Counts only writes, not profile/feed reads. Per-email limits live in auth.
     now = time.monotonic()
     group = "auth" if path.startswith("/api/account/") else "community"
-    key = (handler.client_address[0], group)
+    client = handler.client_address[0]
+    if hosted() and os.environ.get("PAPERLEET_TRUST_PROXY") == "1":
+        # The deployment proxy overwrites this header; the API has no public port.
+        import ipaddress
+        try:
+            client = str(ipaddress.ip_address(handler.headers.get("X-PaperLeet-Client-IP", client)))
+        except ValueError:
+            pass
+    key = (client, group)
     window, limit = (600, 40) if group == "auth" else (60, 60)
     with _rate_lock:
         # Evict inactive clients rather than retaining an IP history.
@@ -74,7 +82,7 @@ def _throttle(handler, path):
 
 
 def dispatch(handler, method, data=None):
-    """Only the server calls this, after loopback-origin and JSON checks."""
+    """Only the server calls this, after configured-origin and JSON checks."""
     from paperleet.accounts import AccountError, AuthenticationError, AuthUnavailable, RateLimited
     parsed = urlsplit(handler.path)
     path = parsed.path.rstrip("/")

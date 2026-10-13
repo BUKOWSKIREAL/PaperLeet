@@ -206,11 +206,36 @@ class AccountService:
     def capabilities(self):
         available = bool(self.provider.available)
         result = {"auth_available": available, "institution_verification_required": True,
+                  "invite_only": os.environ.get("PAPERLEET_MODE", "local") == "hosted",
                   "institutions": [{**_institution_public(item), "domains": item["domains"]}
                                    for item in self.institutions.values()]}
         if not available:
             result["reason"] = "Institutional email sign-in is not configured. Set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY."
+        try:
+            self._invites()
+        except AuthUnavailable as exc:
+            result.update(auth_available=False, reason=str(exc))
         return result
+
+    def _invites(self):
+        # Read on each operation, including session lookup: removing an invite
+        # revokes access without relying on session expiry or another sign-in.
+        if os.environ.get("PAPERLEET_MODE", "local") != "hosted":
+            return None
+        values = [value.strip() for value in os.environ.get("PAPERLEET_INVITE_EMAILS", "").split(",") if value.strip()]
+        if not values:
+            raise AuthUnavailable("Hosted sign-in requires a nonempty PAPERLEET_INVITE_EMAILS allowlist")
+        if any("*" in value for value in values):
+            raise AuthUnavailable("PAPERLEET_INVITE_EMAILS must list individual email addresses, not wildcards")
+        try:
+            return frozenset(_email(value) for value in values)
+        except AccountError:
+            raise AuthUnavailable("PAPERLEET_INVITE_EMAILS must contain valid individual email addresses") from None
+
+    def _check_invitation(self, email):
+        invited = self._invites()
+        if invited is not None and email not in invited:
+            raise AuthenticationError("This hosted beta is invite-only. Ask the owner to invite your institutional email.")
 
     def _ready(self):
         if not self.provider.available:
@@ -239,6 +264,7 @@ class AccountService:
     def request_code(self, email):
         self._ready()
         email = _email(email)
+        self._check_invitation(email)
         self._institution(email)
         self._limit("email", email, maximum=5, seconds=3600, cooldown=60, global_maximum=60)
         self.provider.request_code(email)
@@ -247,6 +273,7 @@ class AccountService:
     def verify_code(self, email, code):
         self._ready()
         email = _email(email)
+        self._check_invitation(email)
         institution = self._institution(email)
         if not isinstance(code, str) or not re.fullmatch(r"[0-9]{6,10}", code.strip()):
             raise AccountError("Enter the verification code from your email")
@@ -314,6 +341,10 @@ class AccountService:
         if row is None:
             return None
         user = self.get_user(row["id"])
+        try:
+            self._check_invitation(user["email"])
+        except AccountError:
+            return None
         return user if user["institution_verified"] else None
 
     def logout(self, token):
@@ -388,9 +419,10 @@ class AccountService:
 def main(argv=None):
     """Read-only maintenance entry point; approvals are reviewed config edits."""
     import argparse
+    from paperleet.config import data_directory
     parser = argparse.ArgumentParser(description="Inspect PaperLeet institutional account requests")
     parser.add_argument("command", choices=["institution-requests"])
-    parser.add_argument("--database", type=Path, default=DEFAULT_INSTITUTIONS.parent / ".paperleet" / "community.sqlite3")
+    parser.add_argument("--database", type=Path, default=data_directory() / "community.sqlite3")
     args = parser.parse_args(argv)
     if not args.database.exists():
         print("[]")
