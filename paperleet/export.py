@@ -6,7 +6,6 @@ from pathlib import Path
 from paperleet.catalog import problems, root
 from paperleet.paper_catalog import paper_catalog, module_scope
 from paperleet.judge.loader import load_implementation
-from paperleet.judge.pytest_plugin import jsonable
 
 
 def web_readme(markdown: str, language: str = "zh") -> str:
@@ -31,6 +30,7 @@ def vizdata(entry):
     import random
     import numpy as np
     import torch
+    from paperleet.judge.pytest_plugin import jsonable
     random.seed(42)
     np.random.seed(42)
     torch.manual_seed(42)

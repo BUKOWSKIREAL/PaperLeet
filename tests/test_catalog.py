@@ -1,5 +1,9 @@
 """Public numbering survives filesystem order and keeps old workspace aliases usable."""
 import json
+import os
+from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 import yaml
@@ -63,6 +67,34 @@ def test_export_includes_translations_and_browser_run_instructions(tmp_path, mon
     assert "Run tests" in exported["translations"]["en"]["readme"]
     assert exported["translations"]["en"]["notes"] == "Explain the invariant."
     assert "paperleet init" in (folder / "README.md").read_text()
+
+
+def test_catalog_exports_without_loading_judge_dependencies(tmp_path):
+    package(tmp_path, "demo/a", 1, title_en="Example")
+    # Run outside pytest: its own plugin imports the judge dependencies already.
+    result = subprocess.run(
+        [sys.executable, "-c", """
+import importlib.abc
+import json
+import sys
+
+class NoJudgeImports(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname.split('.')[0] in {'torch', 'numpy', 'pytest'} or fullname == 'paperleet.judge.pytest_plugin':
+            raise AssertionError(f'Catalog export must not import {fullname}')
+
+sys.meta_path.insert(0, NoJudgeImports())
+from paperleet.export import export_catalog
+catalog = json.loads(export_catalog().read_text())
+assert catalog['problems'][0]['number'] == 1
+assert catalog['problems'][0]['translations']['en']['title'] == 'Example'
+assert not {'torch', 'numpy', 'pytest'} & sys.modules.keys()
+"""],
+        cwd=Path(__file__).resolve().parents[1],
+        env={**os.environ, "PAPERLEET_ROOT": str(tmp_path)},
+        capture_output=True, text=True, timeout=15,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 def test_nonstandard_statement_is_preserved():

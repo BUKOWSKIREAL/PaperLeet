@@ -7,56 +7,85 @@ import sys
 import time
 from pathlib import Path
 
-from paperleet.export import export_catalog
 
-
-def main():
-    repository = Path(__file__).resolve().parents[1]
+def preflight(repository):
     if not (repository / "web/node_modules/.bin/vite").exists():
-        raise SystemExit("Run `cd web && npm ci` first.")
+        raise RuntimeError("Run `cd web && npm ci` first.")
     for port in (8765, 5173):
         with socket.socket() as probe:
             if probe.connect_ex(("127.0.0.1", port)) == 0:
-                raise SystemExit(f"Port {port} is already in use. Stop the existing dev process first.")
-    export_catalog()
+                raise RuntimeError(f"Port {port} is already in use. Stop the existing dev process first.")
+
+
+def main():
     processes = []
+    previous_handlers = {}
+    stopping = False
 
     def stop(*_):
-        raise KeyboardInterrupt
+        if not stopping:
+            raise KeyboardInterrupt
 
-    shutdown_signals = [signal.SIGTERM]
+    shutdown_signals = [signal.SIGINT, signal.SIGTERM]
     if hasattr(signal, "SIGHUP"):
         shutdown_signals.append(signal.SIGHUP)
-    for shutdown_signal in shutdown_signals:
-        signal.signal(shutdown_signal, stop)
 
     try:
-        processes.append(subprocess.Popen([sys.executable, "-m", "paperleet.cli", "serve"], cwd=repository, start_new_session=True))
-        processes.append(subprocess.Popen(["npm", "run", "dev", "--", "--port", "5173", "--strictPort"], cwd=repository / "web", start_new_session=True))
-        while all(process.poll() is None for process in processes):
+        for shutdown_signal in shutdown_signals:
+            previous_handlers[shutdown_signal] = signal.getsignal(shutdown_signal)
+            signal.signal(shutdown_signal, stop)
+        print("Starting PaperLeet... (Ctrl-C to stop)", flush=True)
+        repository = Path(__file__).resolve().parents[1]
+        preflight(repository)
+
+        # Application imports belong inside the interrupt-controlled startup.
+        from paperleet.config import auth_mode
+        print(f"Authentication mode: {auth_mode()}", flush=True)
+        print("Preparing the problem catalog...", flush=True)
+        from paperleet.export import export_catalog
+        export_catalog()
+
+        print("Starting judge on 127.0.0.1:8765 and web on http://127.0.0.1:5173...", flush=True)
+        processes.append(("Judge", subprocess.Popen([sys.executable, "-m", "paperleet.cli", "serve"], cwd=repository, start_new_session=True)))
+        processes.append(("Web server", subprocess.Popen(["npm", "run", "dev", "--", "--port", "5173", "--strictPort"], cwd=repository / "web", start_new_session=True)))
+        while True:
+            for name, process in processes:
+                code = process.poll()
+                if code is not None:
+                    print(f"{name} exited unexpectedly (exit code {code}); stopping PaperLeet.", file=sys.stderr, flush=True)
+                    return code if code > 0 else 1
             time.sleep(.25)
     except KeyboardInterrupt:
-        pass
+        print("\nStopping PaperLeet...", flush=True)
+        return 0
+    except Exception as error:
+        print(f"PaperLeet startup failed: {error}", file=sys.stderr, flush=True)
+        return 1
     finally:
         # A second terminal signal must not interrupt child cleanup.
-        for shutdown_signal in [signal.SIGINT, *shutdown_signals]:
+        stopping = True
+        for shutdown_signal in previous_handlers:
             signal.signal(shutdown_signal, signal.SIG_IGN)
-        for process in processes:
-            try:
-                # npm may have exited while its Vite child still owns the port.
-                os.killpg(process.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-        for process in processes:
-            try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
+        try:
+            for _, process in processes:
                 try:
-                    os.killpg(process.pid, signal.SIGKILL)
+                    # npm may have exited while its Vite child still owns the port.
+                    os.killpg(process.pid, signal.SIGTERM)
                 except ProcessLookupError:
                     pass
-                process.wait()
+            for _, process in processes:
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    process.wait()
+        finally:
+            for shutdown_signal, previous_handler in previous_handlers.items():
+                signal.signal(shutdown_signal, previous_handler)
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

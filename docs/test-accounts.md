@@ -59,6 +59,8 @@ export PAPERLEET_AUTH_MODE=test
 make dev
 ```
 
+Create each account only once. To start again later, run `export PAPERLEET_AUTH_MODE=test` and `make dev` in the same terminal, then sign in with the existing username and access code. Open the URL printed by Vite (default: `http://127.0.0.1:5173`). Keep the terminal running while using the site; press Ctrl-C to stop both development services. Stopping the services does not delete accounts.
+
 The local development service still keeps practice drafts in the browser and runs code on your machine. Use the hosted deployment to test private cloud practice and isolated multi-user judging. Stop and restart an already-running development service after changing the authentication mode.
 
 ## Return to institutional sign-in
