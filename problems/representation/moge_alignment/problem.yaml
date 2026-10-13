@@ -1,0 +1,82 @@
+id: representation/moge_alignment
+number: 47
+title: MoGe 鲁棒最优对齐
+title_en: MoGe Robust Optimal Alignment
+paper:
+  title: 'MoGe: Unlocking Accurate Monocular Geometry Estimation for Open-Domain Images with Optimal Training Supervision'
+  authors: Ruicheng Wang et al.
+  venue: CVPR 2025 Oral
+  arxiv: '2410.19115'
+  url: https://arxiv.org/abs/2410.19115
+  anchors:
+  - 'Section 3: affine-invariant point maps and robust optimal alignment'
+  - 'Official alignment.py: align and align_points_scale_z_shift'
+paper_id: moge
+difficulty: H
+functions:
+- name: optimal_scale_1d
+  signature: 'optimal_scale_1d(x: Tensor, y: Tensor, weight: Tensor, trunc: float | None = None) -> tuple[Tensor,
+    Tensor]'
+- name: roe_align
+  signature: 'roe_align(prediction: Tensor, target: Tensor, mask: Tensor, trunc: float | None = None) -> tuple[Tensor,
+    Tensor]'
+type: implement
+parent: null
+module:
+  goal: 通过加权 L1 折点与深度锚点，精确求解相机坐标点图的尺度及 z 平移。
+  goal_en: Solve shared scale and z translation exactly using weighted L1 breakpoints and depth anchors.
+  scope: 实现 ROE 的全局对齐核心；CPU 小点集枚举，不包含点图网络、多尺度球域或相机恢复。
+  scope_en: Implement the global ROE alignment core on tiny point sets; exclude the point-map network, multi-scale
+    spheres and camera recovery.
+  required_functions:
+  - optimal_scale_1d
+  - roe_align
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: CPU float32/float64; preserve dtype/device and do not mutate inputs
+  device: CPU; no pretrained weights or downloads
+  shape: Single nonempty vector or (N,3) point map; valid target depths are positive; N <= 64 in tests.
+  weights: ROE uses 1 / target_z for each coordinate. Truncate weighted absolute coordinate residuals, then sum.
+  alignment: Unconstrained real scale and scalar z shift; x/y translation is fixed to zero.
+  ties: '1D: smallest sorted active ratio among equal minima; no active coefficient -> scale 0. Full alignment:
+    any global minimizer accepted.'
+  autograd: This educational global solver returns detached scalar tensors. Differentiable anchor reconstruction
+    from the production implementation is outside scope.
+  mask: Invalid point coordinates may be NaN; select mask before validation/arithmetic. No input mutation.
+tests:
+  T0: 2
+  T1: 2
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 45
+tags:
+- 3D Geometry
+- Robust Estimation
+- Piecewise Linear Optimization
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2410.19115
+  - https://openaccess.thecvf.com/content/CVPR2025/html/Wang_MoGe_Unlocking_Accurate_Monocular_Geometry_Estimation_for_Open-Domain_Images_with_CVPR_2025_paper.html
+  - https://github.com/microsoft/MoGe/blob/74fbce054ebed49800de42d0ad0e83495065719a/moge/utils/alignment.py
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/abs/2410.19115
+  anchor: Section 3 and official align/align_points_scale_z_shift
+  adaptation: Six generated 3D points with a known transform and a corrupted coordinate; not a native paper toy
+    or full geometry model reproduction.
+mutants:
+- id: m1_ignore_depth_weights
+  bug: 忽略目标深度倒数权重
+- id: m2_truncate_before_weight
+  bug: 在加权前截断原始距离
+- id: m3_center_all_coordinates
+  bug: 错误地将 x/y 也减去锚点
+- id: m4_squared_residual
+  bug: 以平方残差替代绝对残差

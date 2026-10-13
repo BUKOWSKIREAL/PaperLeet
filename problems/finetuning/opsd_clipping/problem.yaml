@@ -1,0 +1,67 @@
+id: finetuning/opsd_clipping
+number: 37
+title: OPSD 逐词表项散度截断
+title_en: OPSD Pointwise Divergence Clipping
+paper:
+  title: 'Self-Distilled Reasoner: On-Policy Self-Distillation for Large Language Models'
+  authors: Siyan Zhao et al.
+  venue: arXiv 2026
+  arxiv: '2601.18734'
+  url: https://arxiv.org/html/2601.18734v3
+  anchors:
+  - 'Section 3.2: Per-Token Pointwise Divergence Clipping'
+paper_id: opsd
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: clipped_distillation_loss
+  signature: clipped_distillation_loss(student_logits, teacher_logits, mask, tau, direction='forward')
+module:
+  goal: 实现 forward/reverse KL 的逐词表项上限截断。
+  goal_en: Upper-clip vocabulary contributions to forward and reverse KL.
+  scope: 实现有符号散度项、逐项截断和回答级平均；阈值校验与实验循环已提供。
+  scope_en: Implement signed divergence terms, pointwise clipping, and response-level averaging; validation and
+    experiments are supplied.
+  required_functions:
+  - clipped_distillation_loss
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: CPU float32/float64; preserve dtype/device and student autograd
+  device: CPU; no pretrained models or downloads
+tests:
+  T0: 1
+  T1: 2
+  T2: 3
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 20
+tags:
+- Self-Distillation
+- KL Divergence
+- Clipping
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/html/2601.18734v3
+  - https://github.com/siyan-zhao/OPSD
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/html/2601.18734v3
+  anchor: 'Section 3.2: Per-Token Pointwise Divergence Clipping'
+  adaptation: Sweep tau on three-category distributions and compare pointwise clipping with aggregate clipping.
+    This is a teaching adaptation of the formula, not the Qwen training experiment.
+mutants:
+- id: m1_aggregate_clip
+  bug: 整体 KL 截断
+- id: m2_remove_negative
+  bug: 错误去掉负散度项
+- id: m3_teacher_gradient
+  bug: 教师梯度泄漏
+- id: m4_reverse_as_forward
+  bug: 忽略 reverse 方向

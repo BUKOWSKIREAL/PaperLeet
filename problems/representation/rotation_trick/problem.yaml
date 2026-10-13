@@ -1,0 +1,73 @@
+id: representation/rotation_trick
+number: 41
+title: Rotation Trick 向量量化梯度
+title_en: Rotation Trick Quantization Gradients
+paper:
+  title: Restructuring Vector Quantization with the Rotation Trick
+  authors: Christopher Fifty et al.
+  venue: ICLR 2025 Oral
+  arxiv: '2410.06424'
+  url: https://arxiv.org/html/2410.06424v1
+  anchors:
+  - 'Algorithm 1: stop-gradient on scaled rotation'
+  - 'Section 4.2: efficient Householder rotation'
+  - 'Figures 2–3: quadratic gradient illustration and angle preservation'
+paper_id: rotation-trick
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: rotation_quantize
+  signature: 'rotation_quantize(e: Tensor, q: Tensor, eps: float = 1e-8) -> Tensor'
+module:
+  goal: 在量化前向保持码本值，同时通过冻结的旋转与缩放传递梯度。
+  goal_en: Keep the quantized forward value while transporting encoder gradients through a frozen scaled rotation.
+  scope: 输入已选好的码本向量，仅实现梯度替代器；不实现码本学习或完整 VQ-VAE。
+  scope_en: Given the selected code, implement the gradient surrogate; codebook learning and a full VQ-VAE are outside
+    this module.
+  required_functions:
+  - rotation_quantize
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: Preserve input dtype/device and autograd; CPU float32 and float64.
+  vectors: Equal nonempty [...,D] tensors, D>=2; both norms > eps; normalized-sum norm > eps.
+  gradient: Freeze rotation and norm ratio; selected q receives no surrogate-path gradient.
+  degenerate: Supplied validation rejects zero/near-zero and antiparallel vectors; no arbitrary extension is tested.
+tests:
+  T0: 2
+  T1: 2
+  T2: 2
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 30
+tags:
+- Vector Quantization
+- Surrogate Gradients
+- Geometry
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/html/2410.06424v1
+  - https://github.com/cfifty/rotation_trick
+  - https://iclr.cc/virtual/2025/poster/30284
+  - https://iclr.cc/static/virtual/data/iclr-2025-orals-posters.json
+toy:
+  kind: paper_derived
+  source: https://arxiv.org/html/2410.06424v1
+  anchor: Figures 2–3; Algorithm 1; Section 4.2
+  adaptation: Use the original f(x,y)=x²+y² and 16 code vectors; choose a 4×4 grid and circular samples to visualize
+    gradient angles/norms. No copied plot or VQ-VAE training.
+mutants:
+- id: m1_ordinary_ste
+  bug: Uses the identity STE backward map instead of rotation and scaling.
+- id: m2_missing_scale
+  bug: Omits the code/encoder norm ratio.
+- id: m3_live_rotation
+  bug: Differentiates through normalized rotation directions.
+- id: m4_wrong_rotation_sign
+  bug: Subtracts the rank-one alignment term.

@@ -287,3 +287,149 @@ papers:
     scope: 三题分别实现有界衰减与 delta-rule 递推、跨层残差注意力聚合、SiTU 门控激活，并重绘论文中的门函数与激活曲线。
     scope_en: Independently implement bounded decay and delta-rule recurrence, attention over residual blocks, and SiTU gating; recreate the report's decay and activation curves.
     module_ids: [architecture/kimi_kda, architecture/block_attention_residual, architecture/situ_glu]
+  - id: opsd
+    number: 27
+    category: post-training
+    short_title: OPSD
+    year: 2026
+    tags: [Self-Distillation, Causal Alignment, KL Divergence, Clipping]
+    summary: 用同一模型的特权上下文教师监督学生自己的轨迹。
+    summary_en: Use a privileged-context teacher from the same model to supervise student rollouts.
+    scope: 双上下文因果对齐与逐词表项散度截断。
+    scope_en: Dual-context causal alignment and pointwise divergence clipping.
+    module_ids:
+    - finetuning/opsd_alignment
+    - finetuning/opsd_clipping
+  - id: sdpo
+    number: 28
+    category: reinforcement-learning
+    short_title: SDPO
+    year: 2026
+    tags: [Reinforcement Learning, Self-Distillation, Feedback, KL Divergence, Top-K]
+    summary: 将环境反馈与成功尝试转成逐 token 的自蒸馏监督。
+    summary_en: Turn environment feedback and successful attempts into token-level self-distillation.
+    scope: 同题反馈路由、reverse KL 与 top-k 尾部概率聚合。
+    scope_en: Same-question feedback routing, reverse KL, and top-k tail-mass coarsening.
+    module_ids:
+    - rl/sdpo_feedback
+    - rl/sdpo_topk
+  - id: repa
+    number: 29
+    category: representation
+    short_title: REPA
+    year: 2025
+    tags: [Representation Alignment, Diffusion Transformer, Autograd]
+    summary: 将生成模型的中间特征与冻结教师的语义表征对齐。
+    summary_en: Align intermediate generative features with a frozen semantic teacher.
+    scope: 逐 patch 表征对齐损失与梯度边界。
+    scope_en: Patch-wise representation alignment and gradient boundaries.
+    module_ids:
+    - representation/repa
+  - id: rotation-trick
+    number: 30
+    category: representation
+    short_title: Rotation Trick
+    year: 2025
+    tags: [Vector Quantization, Surrogate Gradients, Geometry]
+    summary: 以冻结旋转与缩放构造向量量化的代理梯度。
+    summary_en: Use a frozen rotation and scale to construct vector-quantization surrogate gradients.
+    scope: 保持量化前向值的旋转梯度变换。
+    scope_en: Rotation-based gradient transformation with quantized forward values.
+    module_ids:
+    - representation/rotation_trick
+  - id: differential-transformer
+    number: 31
+    category: architecture
+    short_title: Differential Transformer
+    year: 2025
+    tags: [Attention, Transformer, Autograd]
+    summary: 相减两张注意力图以抑制共有噪声。
+    summary_en: Subtract two attention maps to suppress common-mode noise.
+    scope: 已投影张量上的差分注意力与 lambda 参数化。
+    scope_en: Differential attention on projected tensors and lambda parameterization.
+    module_ids:
+    - architecture/differential_attention
+  - id: block-diffusion
+    number: 32
+    category: generative-models
+    short_title: Block Diffusion
+    year: 2025
+    tags: [Discrete Diffusion, Attention Mask, Language Modeling]
+    summary: 以块间自回归和块内扩散结合离散生成。
+    summary_en: Combine autoregression across blocks with diffusion within blocks.
+    scope: 拼接干净和含噪 token 的单次前向注意力掩码。
+    scope_en: Single-forward attention masks for concatenated noisy and clean tokens.
+    module_ids:
+    - diffusion/block_diffusion
+  - id: distillm-2
+    number: 33
+    category: post-training
+    short_title: DistiLLM-2
+    year: 2025
+    tags: [Distillation, Post-training, KL Divergence]
+    summary: 在教师与学生生成的数据上分别使用不同的蒸馏方向。
+    summary_en: Use distinct distillation directions on teacher- and student-generated responses.
+    scope: 教师轨迹的 skew KL 与学生轨迹的 skew reverse KL。
+    scope_en: Skew KL on teacher trajectories and skew reverse KL on student trajectories.
+    module_ids:
+    - finetuning/distillm2
+  - id: pkpo
+    number: 34
+    category: reinforcement-learning
+    short_title: PKPO
+    year: 2025
+    tags: [Reinforcement Learning, Policy Gradient, Pass@K]
+    summary: 将 pass@k 目标的奖励变换用于策略梯度训练。
+    summary_en: Transform rewards to optimize a pass@k policy-gradient objective.
+    scope: 连续奖励变换、policy loss 与论文的一维 Gaussian toy。
+    scope_en: Continuous-reward transformation, policy loss, and the paper’s one-dimensional Gaussian toy.
+    module_ids:
+    - rl/pkpo
+  - id: svdquant
+    number: 35
+    category: post-training
+    short_title: SVDQuant
+    year: 2025
+    tags: [Quantization, Low-rank Approximation, Diffusion]
+    summary: 用高精度低秩支路吸收量化困难成分，再量化残差。
+    summary_en: Absorb difficult-to-quantize components in a high-precision low-rank branch and quantize the residual.
+    scope: 平滑、SVD 低秩分解与 4-bit 残差前向。
+    scope_en: Smoothing, SVD low-rank decomposition, and a 4-bit residual forward pass.
+    module_ids:
+    - finetuning/svdquant
+  - id: moge
+    number: 36
+    category: representation
+    short_title: MoGe
+    year: 2025
+    tags: [3D Geometry, Robust Estimation, Piecewise Linear Optimization]
+    summary: 通过鲁棒几何对齐处理单目预测中的尺度与深度偏移。
+    summary_en: Use robust geometric alignment to handle scale and depth-shift ambiguity in monocular predictions.
+    scope: 截断加权 L1 的鲁棒最优估计。
+    scope_en: Robust optimal estimation with truncated weighted L1 residuals.
+    module_ids:
+    - representation/moge_alignment
+  - id: daps
+    number: 37
+    category: generative-models
+    short_title: DAPS
+    year: 2025
+    tags: [Inverse Problems, Posterior Sampling, Langevin Dynamics]
+    summary: 将干净空间的测量一致性优化与重新加噪解耦。
+    summary_en: Decouple measurement-consistency updates in clean space from renoising.
+    scope: 线性 Gaussian 后验 score、Langevin 与独立重新加噪。
+    scope_en: Linear-Gaussian posterior score, Langevin updates, and independent renoising.
+    module_ids:
+    - diffusion/daps
+  - id: diffusion-nft
+    number: 38
+    category: generative-models
+    short_title: DiffusionNFT
+    year: 2026
+    tags: [Diffusion RL, Flow Matching, Negative-aware Finetuning]
+    summary: 从反馈构造正负隐式速度场，优化扩散模型。
+    summary_en: Construct positive and negative implicit velocity fields from feedback to optimize diffusion models.
+    scope: 正负 beta 隐式速度、双分支目标与微型训练。
+    scope_en: Positive/negative beta implicit velocities, the two-branch objective, and tiny training.
+    module_ids:
+    - diffusion/diffusion_nft

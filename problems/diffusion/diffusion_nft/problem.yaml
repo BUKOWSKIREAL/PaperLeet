@@ -1,0 +1,80 @@
+id: diffusion/diffusion_nft
+number: 49
+title: DiffusionNFT 正负双分支流匹配
+title_en: DiffusionNFT Positive and Negative Flow Matching
+paper:
+  title: 'DiffusionNFT: Online Diffusion Reinforcement with Forward Process'
+  authors: Kaiwen Zheng et al.
+  venue: ICLR 2026 Oral
+  arxiv: '2509.16117'
+  url: https://arxiv.org/abs/2509.16117
+  anchors:
+  - 'Section 3.2, Eq. (5): implicit positive/negative policies and dual flow objective'
+  - 'Section 3.3, Algorithm 1: frozen old policy, bounded optimality probabilities'
+paper_id: diffusion-nft
+difficulty: M
+functions:
+- name: implicit_velocities
+  signature: 'implicit_velocities(current: Tensor, old: Tensor, beta: float) -> tuple[Tensor, Tensor]'
+- name: nft_loss
+  signature: 'nft_loss(current: Tensor, old: Tensor, target: Tensor, rewards: Tensor, beta: float) -> Tensor'
+type: implement
+parent: null
+module:
+  goal: 从单个可训练 velocity 构造隐式正负策略，并通过概率奖励联合优化。
+  goal_en: Construct implicit positive and negative policies from one trainable velocity and optimize both with
+    probabilistic rewards.
+  scope: 实现 Eq.(5) 训练核心；提供前向加噪与微型训练脚手架，不包含图像奖励模型、在线采样或 EMA 更新。
+  scope_en: Implement the Eq. (5) training core; forward noising and tiny training scaffolding are supplied. Image
+    reward models, online rollouts and EMA updates are excluded.
+  required_functions:
+  - implicit_velocities
+  - nft_loss
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: CPU float32/float64; preserve dtype/device and do not mutate inputs
+  device: CPU; no pretrained weights or downloads
+  shape: Velocities have identical nonempty (B,...) shapes; rewards have shape (B,).
+  beta: Finite positive beta; implicit branches use beta, not its reciprocal.
+  reward: Already normalized optimality probabilities in [0,1]; no clipping or group normalization inside this module.
+  reduction: Sum squared errors over all non-batch coordinates; mean over B examples.
+  autograd: Gradients flow only into current. old, target and rewards are detached within the functions.
+  time: Teaching scaffold uses x_t=(1-t)x0+t*noise, target=noise-x0.
+tests:
+  T0: 2
+  T1: 2
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 25
+tags:
+- Diffusion RL
+- Flow Matching
+- Negative-aware Finetuning
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2509.16117
+  - https://arxiv.org/html/2509.16117v1#S3.SS2
+  - https://github.com/NVlabs/DiffusionNFT
+  - https://iclr.cc/virtual/2026/poster/10009149
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/abs/2509.16117
+  anchor: Section 3.2 Eq. (5) and Section 3.3 Algorithm 1
+  adaptation: A fixed five-example 2D forward-process minibatch trains velocity outputs against independent analytic
+    quadratic optima; not a full online image-RL benchmark.
+mutants:
+- id: m1_reciprocal_beta
+  bug: 隐式分支使用 beta 倒数
+- id: m2_negative_branch_sign
+  bug: 负分支的当前策略项符号错误
+- id: m3_drop_negative_examples
+  bug: 丢弃负样本训练项
+- id: m4_train_old_policy
+  bug: 没有冻结旧策略输出

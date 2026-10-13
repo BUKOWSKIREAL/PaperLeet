@@ -1,0 +1,92 @@
+id: rl/sdpo_feedback
+number: 38
+title: SDPO 反馈选择与自蒸馏
+title_en: SDPO Feedback Selection and Self-Distillation
+paper:
+  title: Reinforcement Learning via Self-Distillation
+  authors: Jonas Hübotter et al.
+  venue: ICML 2026
+  arxiv: '2601.20802'
+  url: https://arxiv.org/html/2601.20802v2
+  anchors:
+  - Section 2, Algorithm 1, and teacher prompt Table 2
+paper_id: sdpo
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: select_feedback
+  signature: select_feedback(question_ids, success, rich_feedback)
+- name: feedback_reverse_kl
+  signature: feedback_reverse_kl(student_logits, teacher_logits, token_mask, feedback_available)
+module:
+  goal: 按 Table 2 选择自身成功解、同题成功解或环境反馈，再执行自蒸馏。
+  goal_en: Select a successful self/peer solution or environment feedback following
+    Table 2, then distill.
+  scope: 实现反馈路由与有效 token 的 reverse KL；微型程序和 categorical 教师已提供，同题多解时取最小索引。
+  scope_en: Implement feedback routing and token-masked reverse KL; tiny programs
+    and a categorical teacher are supplied. Choose the lowest index among multiple
+    peer solutions.
+  required_functions:
+  - select_feedback
+  - feedback_reverse_kl
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: CPU float32/float64; preserve dtype/device and student autograd
+  device: CPU; no pretrained models or downloads
+  feedback_routing: Successful original attempt uses itself; otherwise same-question
+    successful solution; otherwise rich environment feedback. Success takes precedence
+    over environment feedback, following Table 2.
+tests:
+  T0: 1
+  T1: 2
+  T2: 3
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 25
+tags:
+- Reinforcement Learning
+- Self-Distillation
+- Feedback
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/html/2601.20802v2
+  - https://github.com/lasgroup/SDPO
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/html/2601.20802v2
+  anchor: Section 2, Algorithm 1, and teacher prompt Table 2
+  adaptation: Evaluate six add-one, double, and square program attempts with supplied
+    tests. Self-successes and same-question successful solutions take precedence over
+    environment messages; one unavailable row remains unchanged. A categorical teacher
+    replaces the language model.
+  adaptation_zh: 给定单测评估六次程序尝试，按 Table 2 优先自身成功解或同题成功解，其次环境反馈；一条无反馈记录保持不变。categorical
+    教师替代语言模型。
+mutants:
+- id: m1_cross_question
+  bug: Ignore question identity when finding a successful solution.
+- id: m2_exclude_self
+  bug: Incorrectly exclude a successful attempt from teaching itself.
+- id: m3_unavailable_leak
+  bug: Ignore whether teacher feedback is available.
+- id: m4_teacher_gradient
+  bug: Leak gradients through the self-teacher.
+calibration:
+  seed: 42
+  threads: 2
+  dtype: float64
+  method: One deterministic reference run after the final correction, independent
+    numerical/gradient checks and four rejected mutants; toy thresholds are exercise
+    requirements, not paper benchmark scores.
+  reference_metrics:
+    feedback_count: 5
+    initial_correct_probability: 0.3333333333333333
+    final_correct_probability: 0.8918969281778949
+    unavailable_logit_change: 0.0
+  max_observed_t3_s: 0.011979583883658051

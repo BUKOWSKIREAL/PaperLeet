@@ -1,0 +1,71 @@
+id: finetuning/opsd_alignment
+number: 36
+title: OPSD 学生轨迹的双上下文对齐
+title_en: OPSD Dual-Context Rollout Alignment
+paper:
+  title: 'Self-Distilled Reasoner: On-Policy Self-Distillation for Large Language
+    Models'
+  authors: Siyan Zhao et al.
+  venue: arXiv 2026
+  arxiv: '2601.18734'
+  url: https://arxiv.org/html/2601.18734v3
+  anchors:
+  - Section 3.2 and Algorithm 1
+paper_id: opsd
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: align_rollout_logits
+  signature: align_rollout_logits(student_logits, teacher_logits, student_prompt_lengths,
+    teacher_prompt_lengths, response_lengths)
+module:
+  goal: 对齐同一段学生回答在不同长度上下文下的 next-token logits。
+  goal_en: Align next-token logits for the same student response under unequal context
+    lengths.
+  scope: 实现因果位置选择、变长掩码和教师梯度隔离；logits 与 toy 训练循环已提供。
+  scope_en: Implement causal position selection, variable-length masking, and teacher
+    detachment; logits and a toy training loop are supplied.
+  required_functions:
+  - align_rollout_logits
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: CPU float32/float64; preserve dtype/device and student autograd
+  device: CPU; no pretrained models or downloads
+tests:
+  T0: 1
+  T1: 2
+  T2: 3
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 20
+tags:
+- Self-Distillation
+- Causal Alignment
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/html/2601.18734v3
+  - https://github.com/siyan-zhao/OPSD
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/html/2601.18734v3
+  anchor: Section 3.2 and Algorithm 1
+  adaptation: Train categorical logits on three unequal-length responses and track
+    correct-token probability at the actual response positions. This teaching experiment
+    supplies privileged targets and tests alignment; it does not run an LLM or reproduce
+    reasoning benchmarks.
+mutants:
+- id: m1_causal_shift
+  bug: 因果位置偏移一位
+- id: m2_teacher_context
+  bug: 教师复用学生上下文长度
+- id: m3_teacher_gradient
+  bug: 教师分支未冻结
+- id: m4_padding_leak
+  bug: 填充位置未清零

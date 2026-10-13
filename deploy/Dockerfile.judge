@@ -48,5 +48,19 @@ COPY problems/architecture/kimi_kda/ ./problems/architecture/kimi_kda/
 COPY problems/architecture/block_attention_residual/ ./problems/architecture/block_attention_residual/
 COPY problems/architecture/situ_glu/ ./problems/architecture/situ_glu/
 COPY problems/diffusion/progressive_distillation/ ./problems/diffusion/progressive_distillation/
+COPY problems/finetuning/opsd_alignment/ ./problems/finetuning/opsd_alignment/
+COPY problems/finetuning/opsd_clipping/ ./problems/finetuning/opsd_clipping/
+COPY problems/rl/sdpo_feedback/ ./problems/rl/sdpo_feedback/
+COPY problems/rl/sdpo_topk/ ./problems/rl/sdpo_topk/
+COPY problems/representation/repa/ ./problems/representation/repa/
+COPY problems/representation/rotation_trick/ ./problems/representation/rotation_trick/
+COPY problems/architecture/differential_attention/ ./problems/architecture/differential_attention/
+COPY problems/diffusion/block_diffusion/ ./problems/diffusion/block_diffusion/
+COPY problems/finetuning/distillm2/ ./problems/finetuning/distillm2/
+COPY problems/rl/pkpo/ ./problems/rl/pkpo/
+COPY problems/finetuning/svdquant/ ./problems/finetuning/svdquant/
+COPY problems/representation/moge_alignment/ ./problems/representation/moge_alignment/
+COPY problems/diffusion/daps/ ./problems/diffusion/daps/
+COPY problems/diffusion/diffusion_nft/ ./problems/diffusion/diffusion_nft/
 USER 65534:65534
 ENTRYPOINT ["python", "-m", "paperleet.hosting.worker"]

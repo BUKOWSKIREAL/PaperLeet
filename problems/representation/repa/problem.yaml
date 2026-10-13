@@ -1,0 +1,79 @@
+id: representation/repa
+number: 40
+title: REPA 表征对齐损失
+title_en: REPA Representation Alignment
+paper:
+  title: 'Representation Alignment for Generation: Training Diffusion Transformers
+    Is Easier Than You Think'
+  authors: Sihyun Yu et al.
+  venue: ICLR 2025 Oral
+  arxiv: '2410.06940'
+  url: https://arxiv.org/abs/2410.06940
+  anchors:
+  - 'Representation alignment objective: per-patch negative cosine similarity'
+  - 'Author loss.py: projection loss and velocity MSE'
+paper_id: repa
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: repa_alignment
+  signature: 'repa_alignment(projected: Tensor, teacher: Tensor, eps: float = 1e-8)
+    -> Tensor'
+- name: repa_objective
+  signature: 'repa_objective(prediction: Tensor, velocity_target: Tensor, projected:
+    Tensor, teacher: Tensor, weight: float = 0.5, eps: float = 1e-8) -> Tensor'
+module:
+  goal: 将扩散模型的噪声特征逐 patch 对齐到冻结的干净图像教师表征。
+  goal_en: Align noisy diffusion features patch by patch to frozen clean-image representations.
+  scope: 实现对齐损失和总目标；提供已投影特征，不训练完整 DiT 或教师编码器。
+  scope_en: Implement alignment and the combined objective on projected features;
+    full DiT and teacher training are outside this module.
+  required_functions:
+  - repa_alignment
+  - repa_objective
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: Preserve input dtype/device and autograd; CPU float32 and float64.
+  features: Equal nonempty [B,N,D] tensors; teacher and velocity targets are stop-gradient.
+  normalization: Clamp each patch norm separately at eps; negative cosine, averaged
+    over B*N.
+  objective: Mean velocity MSE plus weight times alignment; no 1/2 factor.
+tests:
+  T0: 2
+  T1: 2
+  T2: 2
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 25
+tags:
+- Representation Alignment
+- Diffusion Transformer
+- Autograd
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2410.06940
+  - https://github.com/sihyun-yu/REPA
+  - https://iclr.cc/virtual/2025/poster/30467
+  - https://iclr.cc/static/virtual/data/iclr-2025-orals-posters.json
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/abs/2410.06940
+  anchor: Representation alignment objective; author loss.py
+  adaptation: A tiny synthetic noisy-feature projector is optimized for 80 updates
+    against fixed clean features. This is not an original paper experiment.
+mutants:
+- id: m1_positive_cosine
+  bug: Reverses the alignment loss sign.
+- id: m2_trainable_teacher
+  bug: Lets the alignment objective update frozen teacher features.
+- id: m3_wrong_axis
+  bug: Normalizes along patches instead of the feature dimension.
+- id: m4_missing_weight
+  bug: Ignores the alignment weight in the combined objective.

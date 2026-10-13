@@ -1,0 +1,80 @@
+id: architecture/differential_attention
+number: 42
+title: Differential Transformer 差分注意力
+title_en: Differential Transformer Attention
+paper:
+  title: Differential Transformer
+  authors: Tianzhu Ye et al.
+  venue: ICLR 2025 Oral
+  arxiv: '2410.05258'
+  url: https://arxiv.org/html/2410.05258v1
+  anchors:
+  - 'Section 2.1, Eq. (1): difference of two softmax attention maps'
+  - 'Section 2.1, Eq. (2): lambda exponential-difference parameterization'
+paper_id: differential-transformer
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: differential_lambda
+  signature: 'differential_lambda(q1: Tensor, k1: Tensor, q2: Tensor, k2: Tensor,
+    lambda_init: float = 0.2) -> Tensor'
+- name: differential_attention
+  signature: 'differential_attention(q1: Tensor, k1: Tensor, q2: Tensor, k2: Tensor,
+    value: Tensor, coefficient, causal: bool = True) -> Tensor'
+module:
+  goal: 用两张注意力图的差分抵消共有响应，并正确传播可学习 lambda 的梯度。
+  goal_en: Subtract two attention maps to cancel shared responses and propagate gradients
+    through a learned lambda.
+  scope: 实现已投影 Q/K/V 的差分注意力与 lambda；每头归一化、输出投影和整个语言模型不在本题范围。
+  scope_en: Implement projected differential attention and lambda; per-head normalization,
+    output projection and the full language model are outside this module.
+  required_functions:
+  - differential_lambda
+  - differential_attention
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: Preserve input dtype/device and autograd; CPU float32 and float64.
+  qkv: Q/K have equal [B,H,T,D] shapes; V is [B,H,T,2D].
+  mask: Causal self-attention masks both branches, including diagonal as allowed.
+  lambda: A finite scalar, not restricted to [0,1]; preserve tensor coefficient gradients.
+  normalization: Two separate softmax operations over keys, scaling by sqrt(D).
+tests:
+  T0: 2
+  T1: 2
+  T2: 2
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 35
+tags:
+- Attention
+- Transformer
+- Autograd
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/html/2410.05258v1
+  - https://aka.ms/Diff-Transformer
+  - https://iclr.cc/virtual/2025/poster/29792
+  - https://iclr.cc/static/virtual/data/iclr-2025-orals-posters.json
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/html/2410.05258v1
+  anchor: Section 2.1, Eqs. (1)–(2)
+  adaptation: A four-token lambda sweep measures cancellation of a shared value offset
+    and the retained signal; not a language-model benchmark or universal denoising
+    guarantee.
+mutants:
+- id: m1_add_attention_maps
+  bug: Adds the second attention map instead of subtracting.
+- id: m2_wrong_scale
+  bug: Scales scores by D instead of sqrt(D).
+- id: m3_unmasked_second_branch
+  bug: Lets the second branch attend to future tokens.
+- id: m4_lambda_sum
+  bug: Adds exponentials in the lambda parameterization.

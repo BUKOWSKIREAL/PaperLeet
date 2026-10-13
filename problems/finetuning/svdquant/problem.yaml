@@ -1,0 +1,99 @@
+id: finetuning/svdquant
+number: 46
+title: SVDQuant 平滑、低秩与残差量化
+title_en: SVDQuant Smoothing, Low-rank and Residual Quantization
+paper_id: svdquant
+paper:
+  title: 'SVDQuant: Absorbing Outliers by Low-Rank Components for 4-Bit Diffusion Models'
+  authors: Muyang Li et al.
+  venue: ICLR 2025 Spotlight
+  arxiv: 2411.05007v1
+  url: https://arxiv.org/html/2411.05007v1
+  anchors:
+  - 'Section 3, Eq.1: symmetric quantization'
+  - 'Section 4.2, Eq.5: high-precision low-rank and W4A4 residual'
+  - 'Figures 4-5: smoothing and outlier migration'
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: smooth_inputs
+  signature: 'smooth_inputs(x: Tensor, weight: Tensor, scale: Tensor) -> tuple[Tensor, Tensor]'
+- name: split_weight
+  signature: 'split_weight(weight: Tensor, rank: int) -> tuple[Tensor, Tensor, Tensor]'
+- name: svdquant_linear
+  signature: 'svdquant_linear(x: Tensor, weight: Tensor, scale: Tensor, rank: int, bits: int=4) -> Tensor'
+- name: fake_quantize
+  signature: 'fake_quantize(x: Tensor, bits: int=4)'
+module:
+  goal: 实现平滑、截断 SVD 和低精度残差双分支前向。
+  goal_en: Implement smoothing, truncated SVD and a quantized residual two-branch forward.
+  scope: 给定平滑系数及 INT fake quantizer；单次 SVD，无校准搜索、FP4、迭代细化或 GPU 内核。
+  scope_en: Given smoothing factors and an INT fake quantizer; one SVD, no calibration search, FP4, iterative refinement
+    or GPU kernels.
+  required_functions:
+  - smooth_inputs
+  - split_weight
+  - svdquant_linear
+  provided_functions:
+  - fake_quantize
+  optional: false
+conventions:
+  seed: 42
+  dtype: CPU float32/float64; preserve dtype/device and input values
+  device: CPU; no downloads or pretrained weights
+  weight_layout: X[B,M] and W[M,N], linear output X@W; inference numerical contract, no gradient tests
+tests:
+  T0: 2
+  T1: 2
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 35
+tags:
+- Quantization
+- Low-rank Approximation
+- Diffusion
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/html/2411.05007v1
+  - https://iclr.cc/virtual/2025/poster/27906
+  - https://github.com/mit-han-lab/deepcompressor/
+toy:
+  kind: teaching_adaptation
+  provenance: teaching_adaptation
+  source: https://arxiv.org/html/2411.05007v1
+  anchor: 'Figures 4-5: smoothing and outlier migration'
+  adaptation: Controlled synthetic outlier channel demonstrating Eq.5, not a reproduction of diffusion-model image
+    quality or Nunchaku speed.
+  seed: 42
+  device: cpu
+  adaptation_zh: 受控离群通道展示 Eq.5，不复现扩散图像质量或 Nunchaku 性能。
+mutants:
+- id: m1_wrong_smoothing
+  bug: Divide weights instead of compensating the input scale.
+- id: m2_quantized_lowrank_input
+  bug: Quantize activations in the high-precision branch too.
+- id: m3_quantize_full_weight
+  bug: Quantize full smoothed weight instead of its residual.
+- id: m4_drop_singular_values
+  bug: Drop the singular value scaling from low-rank factors.
+calibration:
+  seed: 42
+  threads: 2
+  dtype: float64
+  method: One deterministic reference run with independent T1/T2 oracles and four rejected mutants; toy thresholds
+    are exercise requirements, not paper benchmark scores.
+  reference_metrics:
+    naive_relative_error: 0.16450124841021163
+    smoothing_only_relative_error: 0.16485195842804903
+    rank1_relative_error: 0.01215227894144383
+    full_rank_relative_error: 7.085485912726332e-16
+    smoothing_identity_error: 2.842170943040401e-14
+    weight_absmax: 81.57007785157958
+    residual_absmax: 3.3308383055314916
+  max_observed_t3_s: 0.004359500948339701

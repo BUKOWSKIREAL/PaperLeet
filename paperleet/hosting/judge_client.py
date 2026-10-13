@@ -41,6 +41,20 @@ CURATED_PROBLEMS = frozenset(("rl/gae", "rl/ppo_clip", "rl/dpo", "rl/grpo", "rl/
     'architecture/kimi_kda',
     'architecture/block_attention_residual',
     'architecture/situ_glu',
+    'finetuning/opsd_alignment',
+    'finetuning/opsd_clipping',
+    'rl/sdpo_feedback',
+    'rl/sdpo_topk',
+    'representation/repa',
+    'representation/rotation_trick',
+    'architecture/differential_attention',
+    'diffusion/block_diffusion',
+    'finetuning/distillm2',
+    'rl/pkpo',
+    'finetuning/svdquant',
+    'representation/moge_alignment',
+    'diffusion/daps',
+    'diffusion/diffusion_nft',
     'diffusion/progressive_distillation'))
 MAX_CODE_BYTES = 128 * 1024
 MAX_REQUEST_BYTES = 256 * 1024

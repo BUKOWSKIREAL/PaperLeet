@@ -167,6 +167,22 @@ def test_required_and_provided_functions_cannot_overlap():
         module_scope(entry)
 
 
+def test_maintained_catalog_can_export_complete_bilingual_packages(tmp_path, monkeypatch):
+    """Exercise real package metadata without changing the dev server's exported catalog."""
+    import shutil
+    source_root = Path(__file__).resolve().parents[1]
+    shutil.copyfile(source_root / "papers.yaml", tmp_path / "papers.yaml")
+    (tmp_path / "problems").symlink_to(source_root / "problems", target_is_directory=True)
+    monkeypatch.setenv("PAPERLEET_ROOT", str(tmp_path))
+    exported = json.loads(export_catalog().read_text())
+    for entry in exported["problems"]:
+        if entry["id"].startswith("community/"):
+            continue
+        assert entry["readme"] and entry["starter"] and entry["solution"] and entry["notes"]
+        assert entry["translations"]["en"]["readme"] and entry["translations"]["en"]["notes"]
+    assert {module for card in exported["papers"] for module in card["curated_module_ids"]} <= {entry["id"] for entry in exported["problems"]}
+
+
 def test_arxiv_source_versions_share_identity():
     assert source_key({"arxiv": "2006.11239"}) == source_key({"url": "https://arxiv.org/html/2006.11239v2"})
 

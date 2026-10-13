@@ -1,0 +1,1071 @@
+{
+  "verified_at": "2026-10-13",
+  "selection": "35 Oral/Spotlight candidates; 10 selected here, plus OPSD and SDPO from the earlier distillation shortlist.",
+  "candidates": [
+    {
+      "id": "distillm-2",
+      "short_title": "DistiLLM-2",
+      "title": "DistiLLM-2: A Contrastive Approach Boosts the Distillation of LLMs",
+      "conference": "ICML",
+      "year": 2025,
+      "presentation": "Oral",
+      "program_url": "https://icml.cc/virtual/2025/poster/43884",
+      "paper_url": "https://arxiv.org/html/2503.07067",
+      "code_url": "https://github.com/jongwooko/distillm-2",
+      "priority": "A",
+      "modules": [
+        "教师回答上的 skew KL 与学生回答上的 skew reverse KL",
+        "两路回答损失的加权聚合与课程参数"
+      ],
+      "toy": {
+        "kind": "teaching_adaptation",
+        "source": "https://arxiv.org/html/2503.07067#S3",
+        "description": "用小词表、教师与学生各自产生的两组回答展示两路蒸馏梯度；未确认论文有同样的独立 CPU toy。"
+      },
+      "harness": [
+        "两路散度不能交换；与逐词表独立公式比较",
+        "混合分布归一化、系数边界与 padding 不变性",
+        "教师无梯度，学生两路均有正确梯度"
+      ],
+      "scope_note": "区别于已有 GKD 的单路学生 rollout；保留论文 Eq.2 及 §3.1 的两路机制，数据生成和训练循环由平台提供。",
+      "status": "implemented",
+      "implemented_module_ids": [
+        "finetuning/distillm2"
+      ]
+    },
+    {
+      "id": "adpa",
+      "short_title": "ADPA",
+      "title": "Advantage-Guided Distillation for Preference Alignment in Small Language Models",
+      "conference": "ICLR",
+      "year": 2025,
+      "presentation": "Spotlight",
+      "program_url": "https://iclr.cc/virtual/2025/poster/27759",
+      "paper_url": "https://arxiv.org/html/2502.17927",
+      "code_url": "https://github.com/SLIT-AI/ADPA",
+      "priority": "B",
+      "modules": [
+        "DPO 教师与 reference 教师的对数概率比优势",
+        "学生分布下的优势期望及 SFT 联合目标"
+      ],
+      "toy": {
+        "kind": "teaching_adaptation",
+        "source": "https://arxiv.org/html/2502.17927#S3",
+        "description": "用三动作分布观察 DPO 教师相对 reference 的偏好变化如何影响学生；教学改编，不声称原文 Figure 3 概念图已有可运行脚本。"
+      },
+      "harness": [
+        "两教师相同时优势项为零",
+        "学生分布加权，不以教师概率加权；和显式求和 oracle 一致",
+        "冻结两教师；mask、目标符号及 SFT 权重边界"
+      ],
+      "scope_note": "论文 Eq.8–10；强调相对教师的偏好增量，与普通复制教师分布区分。",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "troll",
+      "short_title": "TROLL",
+      "title": "TROLL: Trust Regions improve Reinforcement Learning for Large Language Models",
+      "conference": "ICLR",
+      "year": 2026,
+      "presentation": "Oral",
+      "program_url": "https://iclr.cc/virtual/2026/poster/10008998",
+      "paper_url": "https://arxiv.org/html/2510.03817",
+      "code_url": "https://github.com/pbecker93/discrete_trpl",
+      "priority": "B",
+      "modules": [
+        "离散概率分布的 KL 信赖域投影",
+        "投影的隐式梯度与约束激活边界"
+      ],
+      "toy": {
+        "kind": "paper_figure_adaptation",
+        "source": "https://arxiv.org/html/2510.03817#S1.F1",
+        "description": "原文 Figure 1 有三 token 概率单纯形示意；据此做可交互投影实验。原文图示来源明确，但数值实例和 CPU 实现仍是教学改编。"
+      },
+      "harness": [
+        "概率非负且和为一；投影到旧分布的 KL 不超过 epsilon",
+        "原分布可行时不变；epsilon=0 时回到旧分布",
+        "与低维约束优化 oracle 比较；隐式梯度用有限差分验证，避免在不可微边界误用 gradcheck"
+      ],
+      "scope_note": "首版只取严格正概率的小词表，数值对偶求解器可提供；须实现论文投影，不能用普通 PPO ratio clip 替代。大词表稀疏化后置。",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "pkpo",
+      "short_title": "PKPO · Pass@K Policy Optimization",
+      "title": "Pass@K Policy Optimization: Solving Harder Reinforcement Learning Problems",
+      "conference": "NeurIPS",
+      "year": 2025,
+      "presentation": "Spotlight",
+      "program_url": "https://neurips.cc/virtual/2025/poster/117623",
+      "paper_url": "https://arxiv.org/html/2505.15201",
+      "code_url": null,
+      "priority": "A",
+      "modules": [
+        "稳定的 pass@k 估计与样本奖励变换",
+        "leave-one-out 基线和多样本梯度估计"
+      ],
+      "toy": {
+        "kind": "paper_toy_scaled",
+        "source": "https://arxiv.org/html/2505.15201#S5.SS1",
+        "description": "原文 §5.1/Figure 1 的一维 Gaussian policy：标准差 0.1，区间 [0,1] 内奖励 x²、区间外为 0。缩减采样量，展示 k 对目标、梯度和方差的影响。"
+      },
+      "harness": [
+        "枚举小 n 的所有 k 子集，与闭式估计比较",
+        "k=1、k=n、全零/全一奖励与数值稳定性",
+        "精确小状态分布的期望梯度；基线不能依赖被排除样本；统计展示使用固定种子和校准阈值"
+      ],
+      "scope_note": "核心是训练奖励/梯度变换，不仅是 Codex 的 pass@k 评测公式；不承诺每个 toy 同时提高 pass@1 和 pass@k。",
+      "status": "implemented",
+      "implemented_module_ids": [
+        "rl/pkpo"
+      ]
+    },
+    {
+      "id": "repa",
+      "short_title": "REPA",
+      "title": "Representation Alignment for Generation: Training Diffusion Transformers Is Easier Than You Think",
+      "conference": "ICLR",
+      "year": 2025,
+      "presentation": "Oral",
+      "program_url": "https://iclr.cc/virtual/2025/poster/30467",
+      "paper_url": "https://arxiv.org/html/2410.06940v1",
+      "code_url": null,
+      "priority": "A",
+      "modules": [
+        "Patch-wise representation alignment loss",
+        "Denoising loss plus frozen-teacher feature alignment"
+      ],
+      "toy": {
+        "kind": "teaching_adaptation",
+        "source": "Paper Sec. 3 and alignment-objective ablation",
+        "description": "Tiny noisy patch features and fixed clean teacher embeddings; compare projection alignment before/after a short CPU optimization."
+      },
+      "harness": [
+        "Check cosine normalization along feature dimension, patch matching and batch reduction.",
+        "Teacher must receive no gradient; student and projection must receive gradients.",
+        "Mutants: detach student instead of teacher; normalize across tokens; compare mean pooled features instead of matched patches."
+      ],
+      "scope_note": "New training principle for diffusion representations. Do not require DINOv2/DiT checkpoints or claim ImageNet speedup from toy.",
+      "status": "implemented",
+      "implemented_module_ids": [
+        "representation/repa"
+      ]
+    },
+    {
+      "id": "shortcut-models",
+      "short_title": "Shortcut Models",
+      "title": "One Step Diffusion via Shortcut Models",
+      "conference": "ICLR",
+      "year": 2025,
+      "presentation": "Oral",
+      "program_url": "https://iclr.cc/virtual/2025/poster/29802",
+      "paper_url": "https://arxiv.org/html/2410.12557v1",
+      "code_url": "https://github.com/kvfrans/shortcut-models",
+      "priority": "A",
+      "modules": [
+        "Compose two short steps into a long-step bootstrap target",
+        "Joint flow-matching and shortcut loss",
+        "Step-size-conditioned sampling"
+      ],
+      "toy": {
+        "kind": "teaching_adaptation",
+        "source": "Paper Sec. 3, Fig. 3 and Sec. 3.1",
+        "description": "Use an analytic 2D curved flow or tiny mixture; compare one large shortcut against two smaller steps with fixed seeds."
+      },
+      "harness": [
+        "Second model call must use predicted intermediate state and time t+d.",
+        "Target average, step-size doubling and stop-gradient must agree with an explicit oracle.",
+        "Mutants: interpolate the second state from ground truth; forget averaging; keep target gradients; reuse time t."
+      ],
+      "scope_note": "Distinct from MeanFlow and Progressive Distillation: one network conditioned on step size with recursive self-consistency. Paper figures explain geometry, but no verified released 2D toy benchmark.",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "scm",
+      "short_title": "sCM / TrigFlow",
+      "title": "Simplifying, Stabilizing and Scaling Continuous-time Consistency Models",
+      "conference": "ICLR",
+      "year": 2025,
+      "presentation": "Oral",
+      "program_url": "https://iclr.cc/virtual/2025/poster/29963",
+      "paper_url": "https://arxiv.org/html/2410.11081v1",
+      "code_url": null,
+      "priority": "B",
+      "modules": [
+        "TrigFlow data/noise and velocity parameterization",
+        "Continuous-time consistency tangent via JVP",
+        "Stabilized tangent target"
+      ],
+      "toy": {
+        "kind": "teaching_adaptation",
+        "source": "Paper Sec. 5.1; Appendix B TrigFlow",
+        "description": "Analytic linear or tiny nonlinear denoiser on 2D data; compare exact directional derivative with JVP and finite differences."
+      },
+      "harness": [
+        "Check cosine/sine endpoint conventions and the data-standard-deviation scale.",
+        "Compare JVP against analytic derivative away from boundaries; test stability near boundary times.",
+        "Mutants: omit time tangent; swap sine/cosine; omit sigma_d; allow target-gradient leakage."
+      ],
+      "scope_note": "Existing Consistency paper remains the prerequisite; this candidate should focus on continuous-time derivative and stabilization, not duplicate the existing basic consistency loss.",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "rotation-trick",
+      "short_title": "Rotation Trick",
+      "title": "Restructuring Vector Quantization with the Rotation Trick",
+      "conference": "ICLR",
+      "year": 2025,
+      "presentation": "Oral",
+      "program_url": "https://iclr.cc/virtual/2025/poster/30284",
+      "paper_url": "https://arxiv.org/html/2410.06424v1",
+      "code_url": "https://github.com/cfifty/rotation_trick",
+      "priority": "A",
+      "modules": [
+        "Nearest-codebook assignment",
+        "Rotation-and-rescaling surrogate with stop-gradient"
+      ],
+      "toy": {
+        "kind": "paper_figure",
+        "source": "Paper Fig. 2 (16 codebook vectors; two 2D functions), Fig. 3 and Algorithm 1",
+        "description": "Reproduce the 2D gradient-field comparison between STE and the rotation trick; this is an explicit paper illustration, not a claimed full image-training reproduction."
+      },
+      "harness": [
+        "Forward result equals the chosen codebook vector; backward gradient follows the frozen scaled rotation.",
+        "Check gradient angle and norm against an explicit small rotation matrix.",
+        "Mutants: ordinary STE; omit norm scaling; differentiate through the rotation; transpose the rotation."
+      ],
+      "scope_note": "An especially good harness stress test: checking forward values alone cannot distinguish correct code from a wrong gradient estimator. Specify zero-norm and antiparallel behavior before publishing.",
+      "status": "implemented",
+      "implemented_module_ids": [
+        "representation/rotation_trick"
+      ]
+    },
+    {
+      "id": "differential-transformer",
+      "short_title": "Differential Transformer",
+      "title": "Differential Transformer",
+      "conference": "ICLR",
+      "year": 2025,
+      "presentation": "Oral",
+      "program_url": "https://iclr.cc/virtual/2025/poster/29792",
+      "paper_url": "https://arxiv.org/html/2410.05258v1",
+      "code_url": "https://aka.ms/Diff-Transformer",
+      "priority": "A",
+      "modules": [
+        "Difference of two separately normalized attention maps",
+        "Per-head normalization and lambda parameterization"
+      ],
+      "toy": {
+        "kind": "teaching_adaptation",
+        "source": "Paper Sec. 2.1, Fig. 2 and Eq. 1-3",
+        "description": "Tiny causal sequence with a shared distractor; visualize signed attention and common-mode cancellation."
+      },
+      "harness": [
+        "Identical maps and lambda=1 must cancel before normalization.",
+        "Test separate softmax, causal masking, head independence and gradients of lambda.",
+        "Mutants: softmax(A1-lambda*A2); add instead of subtract; mask only one branch; normalize across heads."
+      ],
+      "scope_note": "Reuse ordinary attention as a prerequisite and supply projections where appropriate. Do not equate negative attention with a probability distribution.",
+      "status": "implemented",
+      "implemented_module_ids": [
+        "architecture/differential_attention"
+      ]
+    },
+    {
+      "id": "svdquant",
+      "short_title": "SVDQuant",
+      "title": "SVDQuant: Absorbing Outliers by Low-Rank Component for 4-Bit Diffusion Models",
+      "conference": "ICLR",
+      "year": 2025,
+      "presentation": "Spotlight",
+      "program_url": "https://iclr.cc/virtual/2025/poster/27906",
+      "paper_url": "https://arxiv.org/html/2411.05007v1",
+      "code_url": "https://github.com/mit-han-lab/deepcompressor/",
+      "priority": "A",
+      "modules": [
+        "Smoothing transform that preserves a linear layer",
+        "Low-rank SVD branch plus quantized residual reconstruction"
+      ],
+      "toy": {
+        "kind": "teaching_adaptation",
+        "source": "Paper Fig. 2 and decomposition discussion in Sec. 3",
+        "description": "Small matrix with controlled singular outliers; show residual range and reconstruction error with and without a high-precision low-rank branch."
+      },
+      "harness": [
+        "Before quantization, smoothing and low-rank decomposition must reconstruct the original linear result.",
+        "Test rank zero/full rank and fixed quantization grids, scales, rounding and clipping.",
+        "Mutants: quantize the low-rank branch; quantize original weights instead of residual; invert smoothing on wrong side; add branch twice."
+      ],
+      "scope_note": "CPU problem covers numerical algorithm only. Fused Nunchaku kernel performance requires a separate GPU challenge and is not implied by passing CPU tests.",
+      "status": "implemented",
+      "implemented_module_ids": [
+        "finetuning/svdquant"
+      ]
+    },
+    {
+      "id": "block-diffusion",
+      "short_title": "Block Diffusion",
+      "title": "Block Diffusion: Interpolating Between Autoregressive and Diffusion Language Models",
+      "conference": "ICLR",
+      "year": 2025,
+      "presentation": "Oral",
+      "program_url": "https://iclr.cc/virtual/2025/poster/28004",
+      "paper_url": "https://arxiv.org/html/2503.09573v2",
+      "code_url": "https://github.com/kuleshov-group/bd3lms",
+      "priority": "A",
+      "modules": [
+        "Clean/noisy block diffusion attention mask",
+        "Block-conditional masked denoising loss"
+      ],
+      "toy": {
+        "kind": "paper_example",
+        "source": "Appendix B.6, Fig. 3: sequence length L=6 and block size 2; Fig. 4 gives masking code",
+        "description": "Render and reproduce the exact 12x12 combined clean/noisy attention mask; extend to a tiny token sequence for denoising."
+      },
+      "harness": [
+        "Noised tokens may attend same noisy block and strictly previous clean blocks.",
+        "Clean tokens may attend current/prior clean blocks but no noisy tokens.",
+        "Mutants: allow same clean block to noisy query; use token-causal mask within a block; permit future blocks; swap clean/noisy quadrants."
+      ],
+      "scope_note": "Strong original small example and meaningful leak tests; distinct from current continuous diffusion modules. Specify arbitrary-length tail-block behavior.",
+      "status": "implemented",
+      "implemented_module_ids": [
+        "diffusion/block_diffusion"
+      ]
+    },
+    {
+      "id": "adjoint-matching",
+      "short_title": "Adjoint Matching",
+      "title": "Adjoint Matching: Fine-tuning Flow and Diffusion Generative Models with Memoryless Stochastic Optimal Control",
+      "conference": "ICLR",
+      "year": 2025,
+      "presentation": "Spotlight",
+      "program_url": "https://iclr.cc/virtual/2025/poster/27782",
+      "paper_url": "https://arxiv.org/html/2409.08861v3",
+      "code_url": null,
+      "priority": "B",
+      "modules": [
+        "Backward lean-adjoint recurrence",
+        "Detached adjoint-matching regression objective"
+      ],
+      "toy": {
+        "kind": "teaching_adaptation",
+        "source": "Paper Algorithm 1 and Eq. 37-42",
+        "description": "Analytic linear drift and quadratic terminal reward in one or two dimensions with a supplied trajectory; compare adjoint recurrence with a closed-form reference."
+      },
+      "harness": [
+        "Check terminal reward-gradient sign, reverse-time order and transpose in Jacobian-vector operations.",
+        "Trajectory and target adjoint are detached while fine-tuned velocity receives gradients.",
+        "Mutants: use trainable-control Jacobian instead of base drift; forward-time integration; omit noise scaling; backpropagate through sampled path."
+      ],
+      "scope_note": "Advanced bridge between generative models and reward fine-tuning. Keep memoryless noise schedule and endpoint convention explicit; no verified original small toy was located.",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "in-place-ttt",
+      "short_title": "In-Place TTT",
+      "title": "In-Place Test-Time Training",
+      "conference": "ICLR",
+      "year": 2026,
+      "presentation": "Oral",
+      "program_url": "https://iclr.cc/virtual/2026/poster/10008404",
+      "paper_url": "https://arxiv.org/html/2604.06169v1",
+      "code_url": null,
+      "priority": "A",
+      "modules": [
+        "Chunkwise MLP fast-weight apply/update",
+        "Exclusive prefix-scan implementation with document resets"
+      ],
+      "toy": {
+        "kind": "teaching_adaptation",
+        "source": "Paper Sec. 3.1-3.3, Eq. 1; Appendix 8 Algorithm 1",
+        "description": "Small synthetic key-value chunks with supplied NTP-aligned target tensors; compare sequential and scan implementations."
+      },
+      "harness": [
+        "Current chunk must use weights before that chunk update.",
+        "Match exclusive-prefix scan to sequential oracle; reset fast weights at document boundaries.",
+        "Mutants: inclusive cumsum; update before apply; wrong V-transpose-Z order; omit resets."
+      ],
+      "scope_note": "Not the older similarly named TTT paper. Supplying targets isolates the fast-weight core; generating NTP targets needs an additional careful chunk-boundary/causality contract.",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "pararnn",
+      "short_title": "ParaRNN",
+      "title": "ParaRNN: Unlocking Parallel Training of Nonlinear RNNs for Large Language Models",
+      "conference": "ICLR",
+      "year": 2026,
+      "presentation": "Oral",
+      "program_url": "https://iclr.cc/virtual/2026/poster/10007563",
+      "paper_url": "https://arxiv.org/html/2510.21450v1",
+      "code_url": "https://github.com/apple/ml-pararnn",
+      "priority": "B",
+      "modules": [
+        "Assemble nonlinear recurrence residuals and Jacobians",
+        "Newton correction via associative parallel reduction"
+      ],
+      "toy": {
+        "kind": "teaching_adaptation",
+        "source": "Paper Sec. 2, Algorithm 1-2 and Appendix A",
+        "description": "Short scalar or diagonal-state nonlinear RNN; compare Newton-scan output with exact sequential unrolling."
+      },
+      "harness": [
+        "Test linear case, controlled contractive nonlinear case and non-power-of-two sequence lengths.",
+        "Compare residual decrease and converged output to sequential oracle.",
+        "Mutants: compose affine updates in reverse order; wrong residual sign; omit first-state boundary; reuse stale Jacobians."
+      ],
+      "scope_note": "Paper concerns numerical parallelization. CPU toy demonstrates correctness, not the reported GPU speedup; do not assume three iterations suffice for every RNN.",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "diffusionnft",
+      "short_title": "DiffusionNFT",
+      "title": "DiffusionNFT: Online Diffusion Reinforcement with Forward Process",
+      "conference": "ICLR",
+      "year": 2026,
+      "presentation": "Oral",
+      "program_url": "https://iclr.cc/virtual/2026/poster/10009149",
+      "paper_url": "https://arxiv.org/html/2509.16117v1",
+      "code_url": "https://github.com/NVlabs/DiffusionNFT",
+      "priority": "A",
+      "modules": [
+        "Implicit positive/negative velocity policies",
+        "Reward-weighted dual flow-matching objective"
+      ],
+      "toy": {
+        "kind": "teaching_adaptation",
+        "source": "Paper Sec. 3.2, Eq. 5 and Fig. 4",
+        "description": "Tiny 2D samples with a simple bounded reward and frozen old velocity field; inspect positive versus negative update directions."
+      },
+      "harness": [
+        "Check reward endpoints r=0, r=1 and neutral r=0.5 with analytically known gradients.",
+        "Freeze old velocity and correctly broadcast per-sample rewards.",
+        "Mutants: omit negative loss; use same sign for both policies; swap beta and 1/beta; allow old-model gradients."
+      ],
+      "scope_note": "Useful bridge from GRPO/OPD family to diffusion alignment; separate from PPO-like trajectory likelihood methods. Toy is adapted, not an original paper benchmark.",
+      "status": "implemented",
+      "implemented_module_ids": [
+        "diffusion/diffusion_nft"
+      ]
+    },
+    {
+      "id": "llada",
+      "short_title": "LLaDA",
+      "title": "Large Language Diffusion Models",
+      "conference": "NeurIPS",
+      "year": 2025,
+      "presentation": "Oral",
+      "program_url": "https://neurips.cc/virtual/2025/oral/118609",
+      "paper_url": "https://arxiv.org/abs/2502.09992",
+      "code_url": "https://github.com/ML-GSAI/LLaDA",
+      "priority": "A",
+      "modules": [
+        "随机 masking 与仅对被 mask 位置计算的加权交叉熵",
+        "按置信度选择位置的迭代 unmasking",
+        "分块半自回归采样中的已知上下文保护"
+      ],
+      "toy": {
+        "kind": "teaching-adaptation",
+        "source": "论文方法与官方 generate.py；不是原论文 8B 实验复现",
+        "description": "用短序列、小词表和固定 logits oracle 显示从全 mask 到完整序列的采样轨迹。"
+      },
+      "harness": [
+        "杀掉在所有位置算 loss、漏掉 mask 概率权重的实现",
+        "杀掉覆盖 prompt/已确定 token、top-k 选错轴和步数余额分配错误的实现",
+        "固定模型输出与随机源，验证每步恰好开放规定数量的位置"
+      ],
+      "scope_note": "已核官方节目 decision=Accept (oral)。填补现有连续 diffusion 到离散语言 diffusion 的缺口；优先拆采样和目标函数，不复现 8B 训练。",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "lora-one",
+      "short_title": "LoRA-One",
+      "title": "LoRA-One: One-Step Full Gradient Could Suffice for Fine-Tuning Large Language Models, Provably and Efficiently",
+      "conference": "ICML",
+      "year": 2025,
+      "presentation": "Oral",
+      "program_url": "https://icml.cc/virtual/2025/oral/47237",
+      "paper_url": "https://openreview.net/forum?id=KwIlvmLDLm",
+      "code_url": "https://github.com/YuanheZ/LoRA-One",
+      "priority": "A",
+      "modules": [
+        "对负 full gradient 做 SVD 的谱初始化",
+        "奇异值平方根拆分为两侧低秩因子",
+        "初始化与 alpha/sqrt(rank) 缩放后的有效更新"
+      ],
+      "toy": {
+        "kind": "teaching-adaptation",
+        "source": "论文 Algorithm 1；https://arxiv.org/html/2502.01235v2",
+        "description": "小型线性回归矩阵，用不同奇异谱比较随机初始化和梯度谱初始化；属于教学改编。"
+      },
+      "harness": [
+        "杀掉 SVD 用正梯度、遗漏 sqrt(singular values)、取错奇异子空间的实现",
+        "检查 A@B 的乘积和子空间而不逐元素比较 SVD 向量，避免符号非唯一误判",
+        "杀掉 alpha/r 与该论文 alpha/sqrt(r) 混用的实现"
+      ],
+      "scope_note": "已核官方 decision=Accept (oral)。区别于已有 LoRA 的普通 BA forward；论文新版 arXiv 标题有变化，目录引用 ICML 录用版本。",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "inductive-moment-matching",
+      "short_title": "IMM",
+      "title": "Inductive Moment Matching",
+      "conference": "ICML",
+      "year": 2025,
+      "presentation": "Oral",
+      "program_url": "https://icml.cc/virtual/2025/oral/47188",
+      "paper_url": "https://arxiv.org/abs/2503.07565",
+      "code_url": "https://github.com/lumalabs/imm",
+      "priority": "A",
+      "modules": [
+        "多粒子 kernel moment matching / MMD 目标",
+        "s < r < t 的 induction bootstrap target",
+        "stop-gradient 分支与一步/多步 sampler"
+      ],
+      "toy": {
+        "kind": "teaching-adaptation",
+        "source": "论文 Sections 3–4、Appendix C/D；https://arxiv.org/html/2503.07565v3",
+        "description": "二维 Gaussian mixture 的少步生成；MMD 既展示分布差异也提供确定的小张量单元题，不声称是原论文 toy。"
+      },
+      "harness": [
+        "杀掉只匹配 batch mean、不使用 pairwise kernel 的退化实现",
+        "杀掉 target 未 detach 或两侧均 detach 的实现",
+        "验证时间边界、粒子排列不变性、选定估计器的 diagonal 约定"
+      ],
+      "scope_note": "已核官方 decision=Accept (oral)。官方 event abstract 残留旧名称 MMSD，题名与正式论文均为 IMM；不将其混写成 DMD 或普通 Consistency loss。",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "tarflow",
+      "short_title": "TarFlow",
+      "title": "Normalizing Flows are Capable Generative Models",
+      "conference": "ICML",
+      "year": 2025,
+      "presentation": "Oral",
+      "program_url": "https://icml.cc/virtual/2025/oral/47266",
+      "paper_url": "https://arxiv.org/abs/2412.06329",
+      "code_url": "https://github.com/apple/ml-tarflow",
+      "priority": "A",
+      "modules": [
+        "严格自回归 affine flow 与 log-Jacobian",
+        "逐位置 inverse 和正逆一致性",
+        "跨 flow block 反转自回归方向"
+      ],
+      "toy": {
+        "kind": "teaching-adaptation",
+        "source": "论文方法与作者官方实现；https://arxiv.org/html/2412.06329v2",
+        "description": "二维点云或 4 个 patch 的小 flow，可视化密度变换；属于缩小后的教学模型。"
+      },
+      "harness": [
+        "forward/inverse round-trip 和 autograd Jacobian 对照",
+        "杀掉 logdet 符号、affine scale 漏 exp、causal shift 泄露当前位置的实现",
+        "杀掉 direction reversal 未在 inverse 撤销的实现"
+      ],
+      "scope_note": "已核官方 decision=Accept (oral)。是 normalizing flow，区别于题库已有 flow matching。题目无需大模型 checkpoint。",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "maxsup",
+      "short_title": "MaxSup",
+      "title": "MaxSup: Overcoming Representation Collapse in Label Smoothing",
+      "conference": "NeurIPS",
+      "year": 2025,
+      "presentation": "Oral",
+      "program_url": "https://neurips.cc/virtual/2025/oral/116897",
+      "paper_url": "https://arxiv.org/abs/2502.15798",
+      "code_url": "https://github.com/ZhouYuxuanYX/Maximum-Suppression-Regularization",
+      "priority": "A",
+      "modules": [
+        "把 Label Smoothing 拆成 CE 与 logit regularizer",
+        "CE + alpha * (max(logits) - mean(logits))",
+        "正确/错误分类时的梯度作用比较"
+      ],
+      "toy": {
+        "kind": "teaching-adaptation",
+        "source": "论文 Section 3.2、Eq.6–8；https://arxiv.org/html/2502.15798v3",
+        "description": "三分类固定 logits 和二维簇小分类器，比较 misclassified sample 的更新；为教学改编。"
+      },
+      "harness": [
+        "故意构造 top-1 != ground-truth，杀掉照搬 label smoothing 的实现",
+        "杀掉 max probability 代替 max logit、漏 mean logit、重复加入 smoothing 的实现",
+        "测试 logits 常数平移不变性和非 tie 样本梯度"
+      ],
+      "scope_note": "已核官方 decision=Accept (oral)。短小、核心清楚、无需外部模型，适合成为易到中等难度题。",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "kvzip",
+      "short_title": "KVzip",
+      "title": "KVzip: Query-Agnostic KV Cache Compression with Context Reconstruction",
+      "conference": "NeurIPS",
+      "year": 2025,
+      "presentation": "Oral",
+      "program_url": "https://neurips.cc/virtual/2025/oral/118742",
+      "paper_url": "https://arxiv.org/abs/2505.23416",
+      "code_url": "https://github.com/snu-mllab/KVzip",
+      "priority": "A",
+      "modules": [
+        "从 context reconstruction attention 提取原 cache 的重要性",
+        "跨 query positions 与 GQA groups 的 max 聚合",
+        "按预算筛选并同步 gather K/V 与原始位置"
+      ],
+      "toy": {
+        "kind": "teaching-adaptation",
+        "source": "论文 Section 3.2 Eq.2；https://arxiv.org/html/2505.23416v2",
+        "description": "两层多头短序列 attention，用同一个压缩 cache 回答两种固定 query；只演示算法，不声称复现论文延迟提升。"
+      },
+      "harness": [
+        "杀掉 max 换 mean、GQA 聚合轴错误、未切出原 context keys 的实现",
+        "杀掉 K/V 不同索引、压缩后错误重编号 RoPE 位置的实现",
+        "测试 0/full budget 和排序稳定性"
+      ],
+      "scope_note": "已核官方 decision=Accept (oral)。与现有 FlashAttention 不重复，侧重 KV cache eviction。先固定原 NeurIPS 算法版本，不自动混入 2026 Fast KVzip 更新。",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "chebyshev-policies",
+      "short_title": "Chebyshev Policies",
+      "title": "Chebyshev Policies and the Mountain Car Problem: Reinforcement Learning for Low-Dimensional Control Tasks",
+      "conference": "ICML",
+      "year": 2026,
+      "presentation": "Spotlight (with oral talk)",
+      "program_url": "https://icml.cc/virtual/2026/oral/71071",
+      "paper_url": "https://arxiv.org/abs/2605.22305",
+      "code_url": "https://github.com/JRC-ISIA/paper-2026-chebyshev-policies-low-dimensional-control-tasks",
+      "priority": "A",
+      "modules": [
+        "稳定递推 Chebyshev basis",
+        "多变量 tensor-product policy 与状态归一化",
+        "在 MountainCarContinuous 中计算轨迹 return/regret"
+      ],
+      "toy": {
+        "kind": "paper-native",
+        "source": "论文 Sections 4–5 与官方 repo；https://arxiv.org/html/2605.22305v3",
+        "description": "原生 MountainCarContinuous-v0 低维控制实验，可复用其环境与低阶 policy，缩小训练 budget 并固定初始状态。"
+      },
+      "harness": [
+        "杀掉把 Chebyshev 写成普通 x^k、tensor-product 少交叉项的实现",
+        "测试 T0/T1/端点及可微性，避免只用 arccos 在端点导致 NaN 梯度",
+        "状态缩放和动作范围检查；最优性/完整训练结果不当作单元判分"
+      ],
+      "scope_note": "官方 2026 JSON decision=Accept (spotlight)，同名 poster 为 /virtual/2026/poster/63070；官网另有 oral event。按录用级别标 Spotlight，不仅凭 /oral 路径升级 Oral。非常契合原生 toy 的用户需求。",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "beyond-muon",
+      "short_title": "BeyondMuon",
+      "title": "Delving into Muon and Beyond: Deep Analysis and Extensions",
+      "conference": "ICML",
+      "year": 2026,
+      "presentation": "Spotlight",
+      "program_url": "https://icml.cc/virtual/2026/poster/60694",
+      "paper_url": "https://arxiv.org/abs/2602.04669",
+      "code_url": "https://github.com/marcotchen/BeyondMuon",
+      "priority": "B",
+      "modules": [
+        "谱变换 U Sigma^p V^T (p=0,1/4,1/2,1)",
+        "coupled Newton iteration 的小矩阵实现",
+        "比较 momentum update 与 RMS-normalized update 上的谱压缩"
+      ],
+      "toy": {
+        "kind": "teaching-adaptation",
+        "source": "论文与作者官方 optimizer 代码",
+        "description": "对预设奇异谱的矩阵做谱压缩，增加条件数不同的二次问题优化；教学改编。"
+      },
+      "harness": [
+        "用 SVD oracle 检查不同 p，杀掉始终返回 UV^T 的实现",
+        "矩形矩阵、尺度、零矩阵及迭代精度检查",
+        "杀掉 RMS preconditioning 次序错误或把谱归一化当逐元素幂的实现"
+      ],
+      "scope_note": "官方 decision=Accept (spotlight)；poster URL 不等于普通 Poster。与已上线 GLM-5 MuonSplit 部分重叠，因此次优先；只有保留谱幂族和 coupled iteration 才有新增价值。",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "muonssm",
+      "short_title": "MuonSSM",
+      "title": "MuonSSM: Orthogonalizing State Space Models for Sequence Modeling",
+      "conference": "ICML",
+      "year": 2026,
+      "presentation": "Spotlight (with oral talk)",
+      "program_url": "https://icml.cc/virtual/2026/oral/71058",
+      "paper_url": "https://arxiv.org/abs/2606.30461",
+      "code_url": "https://github.com/t-khanusa/MuonSSM",
+      "priority": "B",
+      "modules": [
+        "对低秩 input injection 应用 Newton–Schulz conditioning",
+        "memory + momentum coupled recurrence",
+        "block-affine recurrence 的串行/scan 等价性"
+      ],
+      "toy": {
+        "kind": "teaching-adaptation",
+        "source": "论文 Section 3 与 Appendix B Algorithm 1；https://arxiv.org/html/2606.30461v1",
+        "description": "短序列 associative recall 或合成 k/v 写入，对照状态更新及梯度传播；教学改编。"
+      },
+      "harness": [
+        "杀掉对 recurrent transition matrix 而非 input injection 做 NS 的实现",
+        "杀掉漏 momentum state、时刻对齐错误、scan 组合顺序错误的实现",
+        "检查 rank-one 注入仍 rank-one，梯度不能仅凭相同前向范数验证"
+      ],
+      "scope_note": "官方 decision=Accept (spotlight)，同名 poster 为 /virtual/2026/poster/65102；另安排 oral talk。与 Kimi KDA 接近但核心在记忆写入的几何条件化。宜放在基本 SSM/DeltaNet 后面。",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "concept-attention",
+      "short_title": "ConceptAttention",
+      "title": "ConceptAttention: Diffusion Transformers Learn Highly Interpretable Features",
+      "conference": "ICML",
+      "year": 2025,
+      "presentation": "Oral",
+      "program_url": "https://icml.cc/virtual/2025/oral/47221",
+      "paper_url": "https://arxiv.org/abs/2502.04320",
+      "code_url": "https://github.com/helblazer811/ConceptAttention",
+      "priority": "B",
+      "modules": [
+        "concept stream 单向读取 image/concept tokens",
+        "在 attention output space 构造 concept saliency maps",
+        "跨层 saliency 聚合"
+      ],
+      "toy": {
+        "kind": "teaching-adaptation",
+        "source": "论文 Section 4、Eq.5–11；https://arxiv.org/html/2502.04320v2",
+        "description": "固定 patch/concept embeddings 的 4x4 彩色块图，以小型 attention 展示 concept maps。真实图像 demo 后续可用离线缓存特征。"
+      },
+      "harness": [
+        "加入 concept 前后 image/prompt 输出必须不变，杀掉双向信息污染",
+        "杀掉用原始 QK attention map 冒充 output-space saliency 的实现",
+        "检查 softmax 轴与跨层平均，以及 concept 顺序置换等变性"
+      ],
+      "scope_note": "已核官方 decision=Accept (oral)。不要求用户下载 Flux。曾在 CVPR workshop 获奖，但此处仅标 ICML 主会 Oral，避免混淆。",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "reg",
+      "short_title": "REG",
+      "title": "Representation Entanglement for Generation: Training Diffusion Transformers Is Much Easier Than You Think",
+      "conference": "NeurIPS",
+      "year": 2025,
+      "presentation": "Oral",
+      "program_url": "https://neurips.cc/virtual/2025/oral/116345",
+      "paper_url": "https://arxiv.org/abs/2507.01467",
+      "code_url": "https://github.com/Martinser/REG",
+      "priority": "B",
+      "modules": [
+        "image latent 与 semantic class token 同时间噪声插值",
+        "token 拼接与两路预测目标",
+        "推理时从噪声联合生成 latent 与 semantic token"
+      ],
+      "toy": {
+        "kind": "teaching-adaptation",
+        "source": "论文 Section 3.2 Eq.8–11；https://arxiv.org/html/2507.01467v2",
+        "description": "二维混合分布加一维语义表示的 joint denoising，保留同步时间与双路目标，属于教学模型。"
+      },
+      "harness": [
+        "杀掉两路用不同时间、只对图像加噪、忽略 semantic target 的实现",
+        "推理不能偷偷读取 clean image 的 class token",
+        "同一时间不等于同一份噪声，分别验证两路传入 noise 与 broadcast"
+      ],
+      "scope_note": "已核官方 decision=Accept (oral)。准确简称为 REG，不是 REPA-E。完整图像训练昂贵，先做局部目标与 joint sampler。",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "unifloral",
+      "short_title": "Unifloral / TD3-AWR",
+      "title": "A Clean Slate for Offline Reinforcement Learning",
+      "conference": "NeurIPS",
+      "year": 2025,
+      "presentation": "Oral",
+      "program_url": "https://neurips.cc/virtual/2025/oral/119623",
+      "paper_url": "https://arxiv.org/abs/2504.11453",
+      "code_url": "https://github.com/EmptyJackson/unifloral",
+      "priority": "B",
+      "modules": [
+        "TD3-AWR 的 critic bootstrap target",
+        "advantage-weighted actor regression",
+        "固定离线数据、禁止额外在线更新的 evaluator"
+      ],
+      "toy": {
+        "kind": "teaching-adaptation",
+        "source": "论文与作者 single-file implementations",
+        "description": "低维连续动作离线数据集或短链 MDP，小型 actor/critic；先检验公式，后增加固定数据的短训练。"
+      },
+      "harness": [
+        "杀掉 terminal bootstrap、target gradient 泄露和 critic 聚合错误",
+        "advantage 权重应随 action quality 单调变化；检查 actor/critic 的梯度隔离",
+        "短训练与评估固定轨迹和 seeds，不用在线调参后的结果作为离线算法成绩"
+      ],
+      "scope_note": "已核官方 decision=Accept (oral)。这篇方法为 Unifloral、TD3-AWR、MoBRAC，不能写成 FQL。整篇更偏框架与评估协议，须锁定作者某个明确算法版本后才做题，优先级低于目标公式更独立的候选。",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "moge",
+      "short_title": "MoGe",
+      "title": "MoGe: Unlocking Accurate Monocular Geometry Estimation for Open-Domain Images with Optimal Training Supervision",
+      "conference": "CVPR",
+      "year": 2025,
+      "presentation": "Oral",
+      "program_url": "https://cvpr.thecvf.com/virtual/2025/oral/35291",
+      "program_pdf_url": "https://media.eventhosts.cc/Conferences/CVPR2025/CVPR_main_conf_2025.pdf#page=20",
+      "program_pdf_page": 20,
+      "paper_url": "https://arxiv.org/abs/2410.19115",
+      "code_url": "https://github.com/microsoft/MoGe",
+      "priority": "A",
+      "modules": [
+        "ROE scale + z-shift alignment：分段线性断点搜索与截断加权 L1 目标",
+        "局部球邻域的多尺度独立对齐损失"
+      ],
+      "toy": {
+        "kind": "teaching-adaptation",
+        "source": "https://arxiv.org/html/2410.19115#S3",
+        "description": "小型点云加入已知尺度、z平移和少量异常点，比较正确对齐与普通L2对齐；不需要视觉主干。"
+      },
+      "harness": [
+        "小N全断点枚举独立oracle核最优目标值",
+        "掩码、异常点、退化深度、尺度/平移不变性",
+        "局部邻域选择与不同球半径边界"
+      ],
+      "scope_note": "重点是论文独有ROE几何对齐；固定CVPR 2025版本，勿误用仓库后来MoGe-2/3。属于核心模块复现，不要求图像到3D完整模型。",
+      "status": "implemented",
+      "implemented_module_ids": [
+        "representation/moge_alignment"
+      ]
+    },
+    {
+      "id": "daps",
+      "short_title": "DAPS",
+      "title": "Improving Diffusion Inverse Problem Solving with Decoupled Noise Annealing",
+      "conference": "CVPR",
+      "year": 2025,
+      "presentation": "Oral",
+      "program_url": "https://cvpr.thecvf.com/virtual/2025/oral/35347",
+      "program_pdf_url": "https://media.eventhosts.cc/Conferences/CVPR2025/CVPR_main_conf_2025.pdf#page=55",
+      "paper_url": "https://arxiv.org/abs/2407.01521",
+      "code_url": "https://github.com/zhangbingliang2019/DAPS",
+      "priority": "A",
+      "modules": [
+        "条件后验能量与Langevin更新",
+        "denoise → posterior sample → re-noise 的解耦退火步"
+      ],
+      "toy": {
+        "kind": "paper-native",
+        "source": "https://arxiv.org/html/2407.01521#A7",
+        "description": "论文Figure 4、Appendix G已有二维Gaussian-mixture逆问题及采样轨迹；正式制作时逐项对照源码核测量公式、观测值和图示。"
+      },
+      "harness": [
+        "固定传入噪声核单步更新和噪声系数",
+        "解析Gaussian后验作独立数值oracle",
+        "二维原生toy核分布距离、模式占比与跨seed稳定性"
+      ],
+      "scope_note": "增加inverse-problem/posterior-sampling知识点，与已有无条件DDPM/DDIM题不同；不以大图FID或完整MRI重建作为CPU判题门槛。",
+      "program_pdf_page": 55,
+      "status": "implemented",
+      "implemented_module_ids": [
+        "diffusion/daps"
+      ]
+    },
+    {
+      "id": "go-with-the-flow",
+      "short_title": "Go-with-the-Flow",
+      "title": "Go-with-the-Flow: Motion-Controllable Video Diffusion Models Using Real-Time Warped Noise",
+      "conference": "CVPR",
+      "year": 2025,
+      "presentation": "Oral",
+      "program_url": "https://cvpr.thecvf.com/virtual/2025/oral/35273",
+      "program_pdf_url": "https://media.eventhosts.cc/Conferences/CVPR2025/CVPR_main_conf_2025.pdf#page=9",
+      "program_pdf_page": 9,
+      "paper_url": "https://arxiv.org/abs/2501.08331",
+      "code_url": "https://github.com/Eyeline-Research/Go-with-the-Flow",
+      "priority": "A",
+      "modules": [
+        "双向flow构造噪声传输图：扩张/收缩/空洞",
+        "条件白噪声拆分、密度传播与单位方差归一化"
+      ],
+      "toy": {
+        "kind": "paper-native-illustration",
+        "source": "https://arxiv.org/html/2501.08331#S3.SS1",
+        "description": "将Figure 3的四个噪声像素扩张/收缩图与Algorithm 1搬成可执行小网格；再扩展为教学平移/缩放动画。"
+      },
+      "harness": [
+        "identity flow、整数平移、出界/空洞、many-to-one和one-to-many",
+        "固定噪声输入的逐元素oracle",
+        "跨大量小样本检验单位方差、帧内协方差和时序相关性"
+      ],
+      "scope_note": "核心是保持空间白噪声分布的warp，不是普通bilinear grid_sample；完整视频diffusion模型无需纳入评测。",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "cut3r",
+      "short_title": "CUT3R",
+      "title": "Continuous 3D Perception Model with Persistent State",
+      "conference": "CVPR",
+      "year": 2025,
+      "presentation": "Oral",
+      "program_url": "https://cvpr.thecvf.com/virtual/2025/oral/35313",
+      "program_pdf_url": "https://media.eventhosts.cc/Conferences/CVPR2025/CVPR_main_conf_2025.pdf#page=32",
+      "program_pdf_page": 32,
+      "paper_url": "https://arxiv.org/abs/2501.12387",
+      "code_url": "https://github.com/CUT3R/CUT3R",
+      "priority": "B",
+      "modules": [
+        "小型persistent-state读写步：观测更新、虚拟视角只读",
+        "相机raymap构造与self/world pointmap坐标转换"
+      ],
+      "toy": {
+        "kind": "teaching-adaptation",
+        "source": "https://arxiv.org/html/2501.12387#S3",
+        "description": "几个合成视角及固定微型decoder，展示观测写入后再查询；原项目的椅子错觉是演示素材而非现成CPU toy。"
+      },
+      "harness": [
+        "分段流式处理与整段顺序处理一致",
+        "raymap query不得更改persistent state",
+        "相机旋转/平移、射线方向及坐标系独立数值oracle"
+      ],
+      "scope_note": "仅选状态语义和几何查询模块；不要声称小toy可验证完整3D重建质量，也避免重复VGGT通用pointmap题。",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "vitt3",
+      "short_title": "ViT³",
+      "title": "ViT³: Unlocking Test-Time Training in Vision",
+      "conference": "CVPR",
+      "year": 2026,
+      "presentation": "Oral",
+      "program_url": "https://media.eventhosts.cc/Conferences/CVPR2026/CVPR_main_conf_2026_15.pdf#page=20",
+      "program_pdf_page": 20,
+      "virtualsite_url": "https://cvpr.thecvf.com/virtual/2026/oral/40332",
+      "paper_url": "https://arxiv.org/abs/2512.01643",
+      "code_url": "https://github.com/LeapLabTHU/ViTTT",
+      "priority": "A",
+      "modules": [
+        "单步full-batch inner update与query readout",
+        "gated-linear / depthwise-convolution inner model的显式梯度"
+      ],
+      "toy": {
+        "kind": "teaching-adaptation",
+        "source": "https://arxiv.org/html/2512.01643v2#S5",
+        "description": "4×4图像token的K/V适应小任务：更新inner权重，再用Q查询；不是修改整个模型的在线训练。"
+      },
+      "harness": [
+        "手推inner gradient与autograd oracle一致",
+        "学习率为0退化检查",
+        "每样本inner权重隔离、局部conv边界、可微外循环梯度"
+      ],
+      "scope_note": "提供投影/归一化辅助代码，聚焦论文的dot-product inner loss、一次full-batch更新和视觉inner结构；与已有Transformer attention/Kimi recurrence区别明确。",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "didicm",
+      "short_title": "DiDiCM",
+      "title": "Advancing Image Classification with Discrete Diffusion Classification Modeling",
+      "conference": "CVPR",
+      "year": 2026,
+      "presentation": "Oral",
+      "program_url": "https://media.eventhosts.cc/Conferences/CVPR2026/CVPR_main_conf_2026_15.pdf#page=20",
+      "program_pdf_page": 20,
+      "virtualsite_url": "https://cvpr.thecvf.com/virtual/2026/oral/40273",
+      "paper_url": "https://arxiv.org/abs/2511.20263",
+      "code_url": "https://github.com/omerb01/didicm",
+      "priority": "A",
+      "modules": [
+        "categorical forward/reverse transition generator与概率推进",
+        "Concrete Score及分类score-entropy目标"
+      ],
+      "toy": {
+        "kind": "paper-native-numerical-example",
+        "source": "https://arxiv.org/html/2511.20263#A1.SS2",
+        "description": "Appendix A.2/A.3已有K=3类概率向量和显式transition矩阵数值例子，可直接变成可视化；小分类数据训练部分另标教学改编。"
+      },
+      "harness": [
+        "矩阵列和为0、transition列和为1及概率非负",
+        "score比值方向与对角项回填",
+        "精确matrix_exp和小步Euler交叉核对、类别置换等变性"
+      ],
+      "scope_note": "补离散扩散/分类后验，非现有连续DDPM换名；需要在题面固定行列概率约定以及保证Euler合法的步长条件。",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "self-swap-guidance",
+      "short_title": "SSG",
+      "title": "Guiding a Diffusion Model by Swapping Its Tokens",
+      "conference": "CVPR",
+      "year": 2026,
+      "presentation": "Oral",
+      "program_url": "https://media.eventhosts.cc/Conferences/CVPR2026/CVPR_main_conf_2026_15.pdf#page=57",
+      "program_pdf_page": 57,
+      "virtualsite_url": "https://cvpr.thecvf.com/virtual/2026/oral/40306",
+      "paper_url": "https://arxiv.org/abs/2604.08048",
+      "code_url": "https://github.com/VISION-SJTU/SSG",
+      "priority": "B",
+      "modules": [
+        "依据cosine dissimilarity选择token对并进行空间/通道swap",
+        "原始与扰动prediction的self-guidance组合"
+      ],
+      "toy": {
+        "kind": "teaching-adaptation",
+        "source": "https://arxiv.org/html/2604.08048#S4",
+        "description": "小token矩阵可视化被交换位置，并用固定微型denoiser展示guidance方向；不承诺toy达到论文图像质量提升。"
+      },
+      "harness": [
+        "batch互不串扰、空间/通道维度区分",
+        "并列相似度、重复索引、零范数token规则固定",
+        "swap比例0和guidance强度0退化，保持原始分支未改动"
+      ],
+      "scope_note": "需先审作者代码，明确冲突token对的置换构造约定。避免只出最后一行guidance公式；核心题应是语义token扰动。",
+      "status": "candidate",
+      "implemented_module_ids": []
+    },
+    {
+      "id": "sencache",
+      "short_title": "SenCache",
+      "title": "SenCache: Accelerating Diffusion Model Inference via Sensitivity-Aware Caching",
+      "conference": "CVPR",
+      "year": 2026,
+      "presentation": "Oral",
+      "program_url": "https://media.eventhosts.cc/Conferences/CVPR2026/CVPR_main_conf_2026_15.pdf#page=57",
+      "program_pdf_page": 57,
+      "virtualsite_url": "https://cvpr.thecvf.com/virtual/2026/oral/40360",
+      "paper_url": "https://arxiv.org/abs/2602.24208",
+      "code_url": "https://github.com/vita-epfl/SenCache",
+      "priority": "B",
+      "modules": [
+        "latent/time敏感度的有限差分校准",
+        "累计位移、时间跨度和最长复用步数的cache状态机"
+      ],
+      "toy": {
+        "kind": "teaching-adaptation",
+        "source": "https://arxiv.org/html/2602.24208v2#S4",
+        "description": "解析denoiser f(x,t)=Ax+bt可精确给出敏感度，绘制不同阈值下NFE与误差；另加非线性版本显示近似范围。"
+      },
+      "harness": [
+        "time变化但latent不变仍需刷新",
+        "从上次真正计算点累计而非逐步重置",
+        "max-cache边界、首次计算、每sample独立状态和实际denoiser调用计数"
+      ],
+      "scope_note": "适合补高效推理题；缓存阈值不等于严格全程误差上界。候选笔记参考截至2026-09-20的v2，正式制作固定论文/代码commit。",
+      "status": "candidate",
+      "implemented_module_ids": []
+    }
+  ]
+}

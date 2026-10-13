@@ -1,0 +1,82 @@
+id: diffusion/block_diffusion
+number: 43
+title: Block Diffusion 分块注意力
+title_en: Block Diffusion Attention
+paper:
+  title: 'Block Diffusion: Interpolating Between Autoregressive and Diffusion Language
+    Models'
+  authors: Marianne Arriola et al.
+  venue: ICLR 2025 Oral
+  arxiv: '2503.09573'
+  url: https://arxiv.org/html/2503.09573v2
+  anchors:
+  - 'Section 3.2: vectorized training over [noisy, clean] sequences'
+  - 'Appendix B.6, Figure 3: specialized mask, L=6, block size 2'
+  - 'Appendix B.7, Figure 4: mask implementation'
+paper_id: block-diffusion
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: block_diffusion_mask
+  signature: 'block_diffusion_mask(length: int, block_size: int, device=None) -> Tensor'
+- name: block_diffusion_attention
+  signature: 'block_diffusion_attention(query: Tensor, key: Tensor, value: Tensor,
+    block_size: int) -> Tensor'
+module:
+  goal: 用一次注意力前向同时处理各噪声块与干净上下文，阻止目标泄漏。
+  goal_en: Process noisy blocks and clean context in one attention pass without leaking
+    clean targets.
+  scope: 实现训练期的专用掩码及稠密注意力；不实现离散扩散采样、NELBO 或 KV cache。
+  scope_en: Implement the specialized training mask and dense attention; discrete
+    diffusion sampling, NELBO and KV caching are outside this module.
+  required_functions:
+  - block_diffusion_mask
+  - block_diffusion_attention
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: Preserve input dtype/device and autograd; CPU float32 and float64.
+  order: Concatenate [noisy length L, clean length L]; mask True means allowed.
+  qkv: Q/K [B,H,2L,D]; V [B,H,2L,Dv]; positive widths, CPU float32/64.
+  blocks: Positive integers; final partial block allowed as a teaching extension;
+    block_size>=L forms one block.
+  context: Noisy own block + strictly earlier clean blocks; clean own/earlier clean
+    blocks only.
+tests:
+  T0: 2
+  T1: 2
+  T2: 2
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 30
+tags:
+- Discrete Diffusion
+- Attention Mask
+- Language Modeling
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/html/2503.09573v2
+  - https://github.com/kuleshov-group/bd3lms
+  - https://iclr.cc/virtual/2025/poster/28004
+  - https://iclr.cc/static/virtual/data/iclr-2025-orals-posters.json
+toy:
+  kind: paper_derived
+  source: https://arxiv.org/html/2503.09573v2
+  anchor: 'Appendix B.6, Figure 3: L=6 and block size 2'
+  adaptation: Recompute the original 12×12 mask and add a deterministic value-perturbation
+    probe for every edge. No language-model training or perplexity claims.
+mutants:
+- id: m1_clean_target_leak
+  bug: Allows the noisy stream to read its own clean block.
+- id: m2_token_causal_within_block
+  bug: Forbids later noisy tokens in the same block.
+- id: m3_noisy_to_clean_leak
+  bug: Allows clean queries to read noisy tokens.
+- id: m4_ignores_mask
+  bug: Runs full bidirectional attention instead of the specialized mask.

@@ -1,0 +1,84 @@
+id: diffusion/daps
+number: 48
+title: DAPS 解耦后验采样
+title_en: DAPS Decoupled Posterior Sampling
+paper:
+  title: Improving Diffusion Inverse Problem Solving with Decoupled Noise Annealing
+  authors: Bingliang Zhang et al.
+  venue: CVPR 2025 Oral
+  arxiv: '2407.01521'
+  url: https://arxiv.org/abs/2407.01521
+  anchors:
+  - 'Section 3.2, Eqs. (5) and (7): Gaussian conditional approximation and Langevin update'
+  - 'Appendix A, Algorithm 1: independent next-level re-noising'
+paper_id: daps
+difficulty: M
+functions:
+- name: posterior_score
+  signature: 'posterior_score(x: Tensor, x0_hat: Tensor, operator: Tensor, measurement: Tensor, r: float, beta:
+    float) -> Tensor'
+- name: langevin_step
+  signature: 'langevin_step(x: Tensor, score: Tensor, eta: float, noise: Tensor) -> Tensor'
+- name: renoise
+  signature: 'renoise(x0: Tensor, sigma_next: float, noise: Tensor) -> Tensor'
+type: implement
+parent: null
+module:
+  goal: 用观测条件 score 做 Langevin 更新，再从干净样本独立加噪进入下一噪声层。
+  goal_en: Use a measurement-conditioned score for Langevin updates, then independently re-noise the clean sample.
+  scope: 实现线性观测下的 DAPS Eq.(7) 内核和重加噪。ODE 输出、噪声、循环由脚手架提供；不训练扩散网络。
+  scope_en: Implement DAPS Eq. (7) for a linear observation and the re-noising kernel. ODE estimates, noises and
+    the loop are supplied; no diffusion network training.
+  required_functions:
+  - posterior_score
+  - langevin_step
+  - renoise
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: CPU float32/float64; preserve dtype/device and do not mutate inputs
+  device: CPU; no pretrained weights or downloads
+  shape: 'x and x0_hat: (B,D); operator A: (M,D); measurement: (B,M). No batch broadcasting.'
+  noise: Explicit standard-normal tensors match x; loop supplies independent draws for Langevin and next-level re-noising.
+  scalars: r,beta positive finite standard deviations; eta,sigma_next finite nonnegative scalars.
+  score: -(x-x0_hat)/r^2 + (measurement-x@A.T)@A/beta^2; no batch mean in a score.
+  annealing: Next noise standard deviation is sigma_next, not a difference of adjacent noise variances.
+  scope: One local DAPS transition; finite-step unadjusted Langevin bias is quantified by its analytic stationary
+    covariance.
+tests:
+  T0: 2
+  T1: 2
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 30
+tags:
+- Inverse Problems
+- Posterior Sampling
+- Langevin Dynamics
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2407.01521
+  - https://arxiv.org/html/2407.01521#S3.SS2
+  - https://github.com/zhangbingliang2019/DAPS/blob/main/cores/mcmc.py
+  - https://github.com/zhangbingliang2019/DAPS
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/abs/2407.01521
+  anchor: Eq. (7), Appendix A Algorithm 1; official cores/mcmc.py Gaussian score and mc_update
+  adaptation: A 2D linear Gaussian local conditional with analytic mean/covariance; supplied denoising estimate.
+    Does not reproduce Appendix G nonlinear measurements or claim full inverse-problem recovery.
+mutants:
+- id: m1_prior_standard_deviation
+  bug: 先验分母使用标准差而不是方差
+- id: m2_reverse_likelihood
+  bug: 观测 score 符号反转
+- id: m3_langevin_half_variance
+  bug: Langevin 噪声漏掉方差中的 2
+- id: m4_renoise_variance_as_scale
+  bug: 重加噪误将方差当成标准差

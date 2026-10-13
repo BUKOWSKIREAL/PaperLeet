@@ -1,0 +1,69 @@
+id: rl/sdpo_topk
+number: 39
+title: SDPO Top-K 与尾部概率散度
+title_en: SDPO Top-K and Tail-Mass KL
+paper:
+  title: Reinforcement Learning via Self-Distillation
+  authors: Jonas Hübotter et al.
+  venue: ICML 2026
+  arxiv: '2601.20802'
+  url: https://arxiv.org/html/2601.20802v2
+  anchors:
+  - 'Appendix A.3: Top-K KL Divergence'
+paper_id: sdpo
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: topk_tail_reverse_kl
+  signature: topk_tail_reverse_kl(student_logits, teacher_logits, k)
+module:
+  goal: 将词表压缩成学生 top-k 项和一个尾部桶，保留分布的总概率质量。
+  goal_en: Coarsen the vocabulary into student top-k entries and one tail bin while preserving total probability
+    mass.
+  scope: 实现 top-k 选择、尾部 logsumexp 和 reverse KL；测试与信息损失曲线已提供。
+  scope_en: Implement top-k selection, complementary logsumexp, and reverse KL; tests and information curves are
+    supplied.
+  required_functions:
+  - topk_tail_reverse_kl
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: CPU float32/float64; preserve dtype/device and student autograd
+  device: CPU; no pretrained models or downloads
+tests:
+  T0: 1
+  T1: 2
+  T2: 3
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 20
+tags:
+- Self-Distillation
+- KL Divergence
+- Top-K
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/html/2601.20802v2
+  - https://github.com/lasgroup/SDPO
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/html/2601.20802v2
+  anchor: 'Appendix A.3: Top-K KL Divergence'
+  adaptation: Increase k for a five-category distribution and plot coarse-grained KL approaching full KL. Full logits
+    remain inputs to make the formula testable; this module does not implement distributed vocabulary communication
+    or benchmark LLM memory savings.
+mutants:
+- id: m1_teacher_topk
+  bug: 从教师而非学生选择 top-k
+- id: m2_drop_tail
+  bug: 丢弃尾部概率质量
+- id: m3_tail_detached
+  bug: 学生尾部质量梯度被截断
+- id: m4_teacher_gradient
+  bug: 教师未冻结

@@ -1,0 +1,89 @@
+id: finetuning/distillm2
+number: 44
+title: DistiLLM-2 双源非对称蒸馏
+title_en: DistiLLM-2 Two-source Asymmetric Distillation
+paper_id: distillm-2
+paper:
+  title: 'DistiLLM-2: A Contrastive Approach Boosts the Distillation of LLMs'
+  authors: Jongwoo Ko et al.
+  venue: ICML 2025 Oral
+  arxiv: 2503.07067v2
+  url: https://arxiv.org/html/2503.07067v2
+  anchors:
+  - 'Section 2.2: SKL/SRKL definitions'
+  - 'Equation (2): teacher SKL and student SRKL'
+type: implement
+parent: null
+difficulty: M
+functions:
+- name: skew_kl
+  signature: 'skew_kl(teacher_logits: Tensor, student_logits: Tensor, alpha: float) -> Tensor'
+- name: skew_reverse_kl
+  signature: 'skew_reverse_kl(teacher_logits: Tensor, student_logits: Tensor, alpha: float) -> Tensor'
+- name: distillm2_loss
+  signature: 'distillm2_loss(teacher_t: Tensor, student_t: Tensor, mask_t: Tensor, teacher_s: Tensor, student_s:
+    Tensor, mask_s: Tensor, alpha_t: float=0.1, alpha_s: float=0.1, beta: float=0.5) -> Tensor'
+module:
+  goal: 实现教师回答的 SKL、学生回答的 SRKL 和 Eq.2 配对损失。
+  goal_en: Implement teacher-response SKL, student-response SRKL and the paired Eq.2 loss.
+  scope: 固定系数、全词表条件分布；响应已提供，保留 1/(2B) 归约。
+  scope_en: Fixed coefficients and full conditional vocabularies; responses are supplied, retaining the 1/(2B) reduction.
+  required_functions:
+  - skew_kl
+  - skew_reverse_kl
+  - distillm2_loss
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: CPU float32/float64; preserve dtype/device and input values
+  device: CPU; no downloads or pretrained weights
+tests:
+  T0: 2
+  T1: 2
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 35
+tags:
+- Distillation
+- Post-training
+- KL Divergence
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/html/2503.07067v2
+  - https://icml.cc/virtual/2025/poster/43884
+  - https://github.com/jongwooko/distillm-2
+toy:
+  kind: teaching_adaptation
+  provenance: teaching_adaptation
+  source: https://arxiv.org/html/2503.07067v2
+  anchor: 'Equation (2): teacher SKL and student SRKL'
+  adaptation: Synthetic two-source conditional distributions; not the paper long-tail toy or a language-model benchmark.
+  seed: 42
+  device: cpu
+  adaptation_zh: 双源合成条件分布教学实验，不是论文长尾 toy 或语言模型基准。
+mutants:
+- id: m1_same_direction
+  bug: Use SKL on student responses too.
+- id: m2_reverse_mixture
+  bug: Reverse mixture has the wrong alpha orientation.
+- id: m3_missing_half
+  bug: Drop the factor one half from Eq.2.
+- id: m4_detached_student
+  bug: Accidentally detach the student logits.
+calibration:
+  seed: 42
+  threads: 2
+  dtype: float64
+  method: One deterministic reference run after the final correction, independent numerical/gradient checks and
+    four rejected mutants; toy thresholds are exercise requirements, not paper benchmark scores.
+  reference_metrics:
+    initial_loss: 0.524419137860215
+    final_loss: 0.0064671340028365915
+    loss_ratio: 0.012331994650737593
+  max_observed_t3_s: 0.029281125753186643
