@@ -1,10 +1,14 @@
 # 贡献题目
 
-以 [第一步规格的“题目包规范”](PaperLeet_第一步_10题试点规格.md#题目包规范) 为准。建议复制 `problems/diffusion/param_conversion/` 作为新题模板；新目录中的 `problem.yaml` 会被 CLI 和网页自动发现，无需修改题库列表。
+先确定论文的核心贡献，再选择可以独立实现和验证的模块。一般每篇选取 1–3 个模块，不设固定数量；完整网络与训练流程可以留作拓展。新目录中的 `problem.yaml` 会被自动发现。维护者在根目录 `papers.yaml` 中定义论文的数字编号、贡献、练习范围和模块顺序；已审核的社区模块则按 arXiv 标识或来源 URL 自动归入论文。
 
 ## 1. 定义约定
 
 为论文添加 arXiv 链接、作者、会议及核验过的公式位置。明确 tensor shape、时间方向、mask、归一化、梯度归属和端点行为。`id` 必须与 `problems/` 下的两级目录对应；`number` 是正整数题号，必须唯一且发布后不可重新编号；新题取当前最大题号加一。`short_id` 仅用于兼容旧的 CLI 别名。
+
+论文编号与模块编号各自独立：首页展示论文编号，CLI 仍接收模块编号。维护模块声明 `paper_id`，对应 `papers.yaml` 的稳定 slug；同一论文的所有模块应引用相同的主要来源。`module.required_functions` 与 `module.provided_functions` 必须无重叠地覆盖 `functions`；每个必做模块至少有一个需要实现的函数。`goal` / `goal_en`、`scope` / `scope_en` 同步描述目标与范围，`optional: false` 表示计入论文核心模块进度。
+
+新增社区模块会按来源归入已有论文；若未列入该论文 `papers.yaml` 的精选列表，默认作为可选拓展，不改变原有必做范围。要扩展必做核心模块，需明确更新精选列表。
 
 ```yaml
 id: diffusion/example
@@ -36,7 +40,7 @@ mutants:
 
 ## 2. 写完整题目包
 
-目录包含 `README.md`、`README.en.md`、`starter.py`、`solution.py`、`notes.md`、`notes.en.md`、`tests/test_*.py`、`mutants/*.py`、`viz/gen.py`。题面按规格写七节：问题、核心公式、公式到代码、本题约定、交互图、运行方式和延伸。starter 只给类型签名、shape、契约和 `raise NotImplementedError`；变体题允许显式导入前置题参考辅助函数。
+目录包含 `README.md`、`README.en.md`、`starter.py`、`solution.py`、`notes.md`、`notes.en.md`、`tests/test_*.py`、`mutants/*.py`、`viz/gen.py`。题面按规格写七节：问题、核心公式、公式到代码、本题约定、交互图、运行方式和延伸。starter 对必做函数保留类型签名、shape、契约和 `raise NotImplementedError`；对辅助函数给出实现。辅助代码调用当前文件中的待实现函数，不能导入参考解来绕过用户实现。测试应验证只补全必做函数就能通过，并确认错误核心实现会被抓到。
 
 每个 mutant 是可独立加载的完整文件，首行说明唯一 bug，与 `solution.py` 的增删行总数不超过 10。合法的不同实现约定也可用作 mutant，但须在坑点中解释它仅不符合当前题目的契约。
 

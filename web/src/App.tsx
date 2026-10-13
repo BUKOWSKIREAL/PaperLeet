@@ -12,24 +12,18 @@ import {
   BookOpen,
   Check,
   CheckCircle2,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Circle,
   Code2,
   Copy,
   ExternalLink,
   FileCode2,
   FlaskConical,
   Globe2,
-  Layers3,
-  ListFilter,
   LockKeyhole,
   Moon,
   Play,
-  Plus,
   RotateCcw,
-  Search,
   Settings2,
   Sun,
   Terminal,
@@ -39,7 +33,8 @@ import {
 import { ArtifactCharts } from "./Visuals";
 import Visuals from "./Lab";
 import { isPassed, layers, status } from "./types";
-import type { Problem, Report, Saved } from "./types";
+import type { Paper, Problem, Report, Saved } from "./types";
+import { PaperDetail, PaperLibrary, paperModules } from "./PaperViews";
 import { decodeProblemHash, parseReport, parseSaved } from "./reports";
 import { LocaleProvider, useI18n } from "./i18n";
 import Submissions from "./Submissions";
@@ -330,12 +325,10 @@ export default function App() {
 function Workspace() {
   const { locale, setLocale, t } = useI18n();
   const [problems, setProblems] = useState<Problem[]>([]),
+    [papers, setPapers] = useState<Paper[]>([]),
     [loadError, setLoadError] = useState(""),
     [id, setId] = useState(getId),
     [saved, setSaved] = useState(loadSaved),
-    [query, setQuery] = useState(""),
-    [diff, setDiff] = useState("all"),
-    [state, setState] = useState("all"),
     [tab, setTab] = useState("description"),
     [rightTab, setRightTab] = useState("code"),
     [online, setOnline] = useState(false),
@@ -354,16 +347,11 @@ function Workspace() {
   const problem = sourceProblem ? localize(sourceProblem) : undefined;
   const submissionPage = id === "submit";
   const current = problem ? saved[problem.id] || {} : {};
-  const solved = problems.filter((p) =>
-    isPassed(p, saved[p.id]?.report),
-  ).length;
-  const active = problems.filter(
-    (p) => status(p, saved[p.id]) === "started",
-  ).length;
-  const layerNames = t(
-    "接口契约|参考对齐|数学性质|真实行为",
-    "Contract|Reference|Properties|Behavior",
-  ).split("|");
+  const selectedPaper = papers.find((paper) =>
+    problem ? paper.id === problem.paper_id : id === `papers/${paper.id}`,
+  );
+  const siblingModules = selectedPaper ? paperModules(selectedPaper, problems) : sourceProblem ? [sourceProblem] : [];
+  const moduleIndex = siblingModules.findIndex((p) => p.id === problem?.id);
   function loadCatalog() {
     return fetch(
       `${import.meta.env.BASE_URL}data/catalog.json?v=${Date.now()}`,
@@ -381,6 +369,7 @@ function Workspace() {
       })
       .then((data) => {
         setProblems(Array.isArray(data) ? data : data.problems);
+        setPapers(Array.isArray(data.papers) ? data.papers : []);
         setLoadError("");
       })
       .catch((e) => setLoadError(e.message));
@@ -466,7 +455,14 @@ function Workspace() {
         throw Error(
           t("判题服务返回了无效结果", "The judge returned an invalid result"),
         );
-      update(problem.id, { report });
+      update(problem.id, {
+        report,
+        acceptedReport: isPassed(problem, report)
+          ? report
+          : isPassed(problem, current.acceptedReport)
+            ? current.acceptedReport
+            : isPassed(problem, current.report) ? current.report : undefined,
+      });
       setTab("tests");
       setOnline(true);
       setToast(t("判题已完成", "Run complete"));
@@ -496,14 +492,6 @@ function Workspace() {
       );
     }
   }
-  const filtered = problems.filter(
-    (p) =>
-      (diff === "all" || p.difficulty === diff) &&
-      (state === "all" || status(p, saved[p.id]) === state) &&
-      `${p.title} ${p.translations?.en?.title || ""} ${p.paper?.title} ${p.number}`
-        .toLowerCase()
-        .includes(query.toLowerCase()),
-  );
   const tabs = [
     ["description", t("题目", "Description")],
     ["explanation", t("讲解", "Explanation")],
@@ -523,7 +511,7 @@ function Workspace() {
           <Brand />
           <nav>
             <a className={!problem && !submissionPage ? "active" : ""} href="#">
-              {t("题库", "Problems")}
+              {t("论文题库", "Papers")}
             </a>
             <button
               className={problem ? "active" : ""}
@@ -593,281 +581,17 @@ function Workspace() {
       ) : !problems.length ? (
         <main className="loading">
           <span className="spinner" />
-          {t("正在加载论文题库…", "Loading problems…")}
+          {t("正在加载论文题库…", "Loading papers…")}
         </main>
       ) : !problem ? (
-        <main className="home">
-          <div className="home-intro">
-            <div>
-              <div className="eyebrow">
-                <span />
-                PAPER TO CODE
-              </div>
-              <h1>
-                {t("读懂论文，", "Understand papers.")}
-                <span>{t("从实现开始。", " Build the ideas.")}</span>
-              </h1>
-              <p>
-                {t(
-                  "选择一道题，在网页上写代码，用测试验证你的理解。",
-                  "Choose a problem, write code in your browser, and test your understanding.",
-                )}
-              </p>
-            </div>
-            <a className="button subtle" href="#/submit">
-              <Plus size={15} />
-              {t("提交论文", "Submit paper")}
-            </a>
-          </div>
-          <div className="home-columns">
-            <div className="main-column">
-              <section className="problem-list">
-                <div className="list-title">
-                  <h2>
-                    {t("全部题目", "All problems")}{" "}
-                    <span>{problems.length}</span>
-                  </h2>
-                  <span>Python · PyTorch</span>
-                </div>
-                <div className="filter-bar">
-                  <div className="select-wrap">
-                    <ListFilter size={14} />
-                    <select
-                      aria-label={t("难度筛选", "Filter difficulty")}
-                      value={diff}
-                      onChange={(e) => setDiff(e.target.value)}
-                    >
-                      <option value="all">
-                        {t("全部难度", "All difficulties")}
-                      </option>
-                      <option value="E">Easy</option>
-                      <option value="M">Medium</option>
-                      <option value="H">Hard</option>
-                    </select>
-                    <ChevronDown size={12} />
-                  </div>
-                  <div className="select-wrap">
-                    <select
-                      aria-label={t("状态筛选", "Filter status")}
-                      value={state}
-                      onChange={(e) => setState(e.target.value)}
-                    >
-                      <option value="all">
-                        {t("全部状态", "All statuses")}
-                      </option>
-                      <option value="todo">{t("未开始", "Not started")}</option>
-                      <option value="started">
-                        {t("进行中", "In progress")}
-                      </option>
-                      <option value="done">{t("已通过", "Solved")}</option>
-                    </select>
-                    <ChevronDown size={12} />
-                  </div>
-                </div>
-                <label className="search">
-                  <Search size={17} />
-                  <input
-                    placeholder={t(
-                      "搜索题号、标题或论文…",
-                      "Search by number, title, or paper…",
-                    )}
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                  />
-                  <kbd>⌕</kbd>
-                </label>
-                <div className="table-head">
-                  <span>{t("状态", "Status")}</span>
-                  <span>{t("题目 / 论文", "Problem / Paper")}</span>
-                  <span>{t("难度", "Difficulty")}</span>
-                  <span>{t("预计用时", "Time")}</span>
-                  <span />
-                </div>
-                <div className="problem-rows">
-                  {filtered.map((source) => {
-                    const p = localize(source);
-                    return (
-                      <a
-                        className="problem-row"
-                        key={p.id}
-                        href={`#/${p.number}`}
-                      >
-                        <span className={`row-state ${status(p, saved[p.id])}`}>
-                          {status(p, saved[p.id]) === "done" ? (
-                            <CheckCircle2 size={18} />
-                          ) : status(p, saved[p.id]) === "started" ? (
-                            <span className="in-progress-dot" />
-                          ) : (
-                            <Circle size={17} />
-                          )}
-                        </span>
-                        <div className="problem-info">
-                          <strong>
-                            <span>{p.number}.</span>
-                            {p.title}
-                            {p.parent && <em>{t("变体", "Variant")}</em>}
-                          </strong>
-                          <small>
-                            {p.paper?.venue || p.paper?.authors} <i>·</i>{" "}
-                            {p.paper?.title}
-                          </small>
-                        </div>
-                        <span className={`difficulty ${p.difficulty}`}>
-                          {difficulty(p.difficulty)}
-                        </span>
-                        <span className="duration">
-                          {p.estimated_minutes || 25} min
-                        </span>
-                        <ChevronRight size={16} />
-                      </a>
-                    );
-                  })}
-                </div>
-                {!filtered.length && (
-                  <div className="no-results">
-                    <Search size={25} />
-                    <p>{t("没有符合条件的题目", "No matching problems")}</p>
-                    <button
-                      className="text-button"
-                      onClick={() => {
-                        setQuery("");
-                        setDiff("all");
-                        setState("all");
-                      }}
-                    >
-                      {t("清除筛选", "Clear filters")}
-                    </button>
-                  </div>
-                )}
-                <div className="table-footer">
-                  <span>
-                    {t("显示", "Showing")} {filtered.length} / {problems.length}
-                  </span>
-                  <span>
-                    {t(
-                      "从论文里的一个核心方法开始。",
-                      "One idea from a paper at a time.",
-                    )}
-                  </span>
-                </div>
-              </section>
-            </div>
-            <aside className="home-sidebar">
-              <section className="progress-card">
-                <div className="aside-title">
-                  <h3>{t("你的进度", "Your progress")}</h3>
-                  <span>{t("自动保存", "Autosaved")}</span>
-                </div>
-                <div
-                  className="progress-circle"
-                  style={{
-                    background: `conic-gradient(var(--accent) ${(solved / problems.length) * 360}deg, var(--line) 0deg)`,
-                  }}
-                >
-                  <div>
-                    <b>
-                      {solved}
-                      <span> / {problems.length}</span>
-                    </b>
-                    <small>{t("已通过题目", "PROBLEMS SOLVED")}</small>
-                  </div>
-                </div>
-                <div className="progress-stats">
-                  <div>
-                    <i className="green-dot" />
-                    <b>{solved}</b>
-                    <span>{t("已通过", "Solved")}</span>
-                  </div>
-                  <div>
-                    <i className="yellow-dot" />
-                    <b>{active}</b>
-                    <span>{t("进行中", "Started")}</span>
-                  </div>
-                  <div>
-                    <i />
-                    <b>{problems.length - solved - active}</b>
-                    <span>{t("未开始", "To do")}</span>
-                  </div>
-                </div>
-              </section>
-              <section className="method-card">
-                <div className="aside-title">
-                  <h3>{t("四层验证", "Four layers of testing")}</h3>
-                  <Layers3 size={17} />
-                </div>
-                <p>
-                  {t(
-                    "从接口到实际行为，逐步检查实现。",
-                    "Check your implementation from interface to behavior.",
-                  )}
-                </p>
-                {layers.map((l, i) => (
-                  <div className="method-step" key={l}>
-                    <b>{l}</b>
-                    <div>
-                      <strong>{layerNames[i]}</strong>
-                      <span>
-                        {
-                          [
-                            t(
-                              "形状、类型和边界输入",
-                              "Shapes, types, and edge cases",
-                            ),
-                            t(
-                              "与参考结果逐项对齐",
-                              "Agreement with reference outputs",
-                            ),
-                            t(
-                              "把数学性质写成断言",
-                              "Mathematical properties as assertions",
-                            ),
-                            t(
-                              "验证训练或采样行为",
-                              "Training and sampling behavior",
-                            ),
-                          ][i]
-                        }
-                      </span>
-                    </div>
-                  </div>
-                ))}
-                <button className="text-button" onClick={() => setGuide(true)}>
-                  {t("如何开始", "How to get started")} <ArrowRight size={14} />
-                </button>
-              </section>
-              <section className="start-card">
-                <span className="tiny-label">PAPER → PROBLEM</span>
-                <h3>{t("把论文变成一道题", "Turn a paper into a problem")}</h3>
-                <p>
-                  {t(
-                    "生成实现和测试，再经人工评审进入题库。",
-                    "Generate code and tests, then review them before publication.",
-                  )}
-                </p>
-                <a href="#/submit">
-                  {t("提交论文", "Submit paper")} <ArrowRight size={15} />
-                </a>
-              </section>
-            </aside>
-          </div>
-          <footer className="home-footer">
-            <span>
-              PaperLeet <i>·</i> Read. Implement. Understand.
-            </span>
-            <span>
-              {t(
-                "代码和练习进度保存在当前浏览器。",
-                "Code and practice progress are saved in this browser.",
-              )}
-            </span>
-          </footer>
-        </main>
+        selectedPaper ? <PaperDetail paper={selectedPaper} problems={problems} saved={saved} onGuide={() => setGuide(true)} /> :
+        <PaperLibrary papers={papers} problems={problems} saved={saved} onGuide={() => setGuide(true)} />
       ) : (
         <>
           <div className="workspace-toolbar">
-            <a className="back-link" href="#">
+            <a className="back-link" href={selectedPaper ? `#/papers/${selectedPaper.id}` : "#"}>
               <ArrowLeft size={15} />
-              {t("题库", "Problems")}
+              {selectedPaper ? `${selectedPaper.number}. ${selectedPaper.short_title}` : t("论文题库", "Papers")}
             </a>
             <span className="toolbar-divider" />
             <b>
@@ -876,21 +600,23 @@ function Workspace() {
             <div className="problem-navigation">
               <button
                 className="icon-button"
-                aria-label={t("上一题", "Previous problem")}
+                aria-label={t("上一个模块", "Previous module")}
+                disabled={moduleIndex <= 0}
                 onClick={() =>
-                  (location.hash = `/${problems[(problems.indexOf(sourceProblem!) + problems.length - 1) % problems.length].number}`)
+                  (location.hash = `/${siblingModules[moduleIndex - 1].number}`)
                 }
               >
                 <ChevronLeft size={15} />
               </button>
               <span>
-                {problems.indexOf(sourceProblem!) + 1} / {problems.length}
+                {moduleIndex + 1} / {siblingModules.length}
               </span>
               <button
                 className="icon-button"
-                aria-label={t("下一题", "Next problem")}
+                aria-label={t("下一个模块", "Next module")}
+                disabled={moduleIndex >= siblingModules.length - 1}
                 onClick={() =>
-                  (location.hash = `/${problems[(problems.indexOf(sourceProblem!) + 1) % problems.length].number}`)
+                  (location.hash = `/${siblingModules[moduleIndex + 1].number}`)
                 }
               >
                 <ChevronRight size={15} />
@@ -911,7 +637,7 @@ function Workspace() {
                     ) : key === "lab" ? (
                       <FlaskConical size={14} />
                     ) : key === "notes" &&
-                      !isPassed(problem, current.report) ? (
+                      status(problem, current) !== "done" ? (
                       <LockKeyhole size={12} />
                     ) : null}
                     {label}
@@ -933,7 +659,7 @@ function Workspace() {
                 ) : tab === "lab" ? (
                   <Visuals key={problem.id} problem={problem} />
                 ) : tab === "notes" ? (
-                  !isPassed(problem, current.report) ? (
+                  status(problem, current) !== "done" ? (
                     <div className="empty-state">
                       <div className="empty-icon">
                         <LockKeyhole size={25} />
@@ -1000,9 +726,9 @@ function Workspace() {
                       <div className="heading-kicker">
                         <FileCode2 size={18} />
                         <span>
-                          {t("题目", "PROBLEM")} {problem.number}
+                          {t("模块", "MODULE")} {problem.number}
                         </span>
-                        {isPassed(problem, current.report) && (
+                        {status(problem, current) === "done" && (
                           <span className="accepted">
                             <CheckCircle2 size={14} />
                             {t("已通过", "Solved")}
@@ -1053,6 +779,13 @@ function Workspace() {
                       </div>
                       <ExternalLink size={14} />
                     </a>
+                    {problem.module && <section className="module-scope-card">
+                      <h3>{t("本模块的目标", "Your implementation goal")}</h3>
+                      <p>{t(problem.module.goal, problem.module.goal_en)}</p>
+                      <p className="module-scope-detail">{t(problem.module.scope, problem.module.scope_en)}</p>
+                      <div className="module-functions"><span>{t("需要实现", "Implement")}</span>{problem.module.required_functions.map((name) => <code key={name}>{name}</code>)}</div>
+                      {!!problem.module.provided_functions.length && <div className="module-functions provided-functions"><span>{t("已提供", "Provided")}</span>{problem.module.provided_functions.map((name) => <code key={name}>{name}</code>)}</div>}
+                    </section>}
                     {tab === "explanation" && (
                       <Visuals key={problem.id} problem={problem} />
                     )}
@@ -1299,7 +1032,7 @@ function Workspace() {
               PAPERLEET
             </div>
             <h2 id="guide-title">
-              {t("在网页里完成一道题", "Solve a problem in your browser")}
+              {t("实现论文里的核心模块", "Implement a paper’s core modules")}
             </h2>
             <p>
               {t(
@@ -1309,11 +1042,11 @@ function Workspace() {
             </p>
             <ol>
               <li>
-                <b>{t("选择题目", "Choose a problem")}</b>
+                <b>{t("选择论文与模块", "Choose a paper and module")}</b>
                 <small>
                   {t(
-                    "阅读题面、函数接口和约定，必要时打开原论文。",
-                    "Read the problem, function signatures, and conventions. Open the paper for context.",
+                    "先了解论文的核心思想和练习范围，再选择模块，阅读接口与约定。",
+                    "Read the paper’s core idea and selected scope, then choose a module and review its contract.",
                   )}
                 </small>
               </li>

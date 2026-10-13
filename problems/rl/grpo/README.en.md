@@ -1,8 +1,10 @@
-# Group Relative Policy Optimization
+# GRPO Group-Relative Policy Objective
 
 ## 1. What the paper solves
 
 GRPO samples a group of responses for each prompt and uses relative rewards in place of a value model, reducing the critic cost of reinforcement learning for language models. [DeepSeekMath Section 4.1](https://arxiv.org/html/2402.03300v3#S4.SS1) presents the objective and group estimator.
+
+Module goal: Implement within-group advantages and the clipped policy objective averaged over responses. Implement the advantage and loss functions; masking helpers, diagnostics, and sampling experiments are supplied. Completing this exercise completes one selected core module of the paper.
 
 ## 2. Core equations and task
 
@@ -34,6 +36,8 @@ advantages [N] → [N,1] → multiply by each token's ratio
 Mask the pessimistic token objective
 Sum each row / valid row length → average over responses
 ```
+
+The starter supplies `masked_logprobs(logp, old_logp, ref_logp, mask)` and `token_statistics(ratio, kl, mask, clip_eps)`. The first neutralizes padding; the second returns all three detached diagnostics. Call these helpers while implementing group-relative advantages, the clipped surrogate, and per-response aggregation.
 
 Isolate padding before exponentiation. Otherwise extreme log-probability differences at invalid positions can produce `inf*0`. Old and reference policies are fixed snapshots; stop their gradients even if callers pass differentiable tensors.
 

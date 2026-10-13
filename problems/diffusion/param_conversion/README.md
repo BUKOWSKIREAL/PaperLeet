@@ -1,12 +1,14 @@
-# x₀ / ε / v 参数化互转
+# v 参数化与逆变换
 
 ## 1. 论文解决什么问题
 
 扩散网络可以预测干净数据、加入的噪声，也可以预测速度。Salimans 与 Ho 在少步蒸馏中研究这些参数化：同一个训练样本，换一种预测目标会改变端点稳定性与误差权重。
 
+本模块精选论文附录 D 中支持少步采样的参数化技术。只需实现 `make_v`、`v_to_x0` 和 `v_to_eps`；其余转换辅助函数已经提供。完成本模块表示掌握这组旋转关系，师生模型、蒸馏目标及逐轮减步训练属于论文的其他内容。
+
 ## 2. 核心公式
 
-设 $x_0,\epsilon,x_t\in\mathbb R^{B\times D}$，$\alpha=\sqrt{\bar\alpha_t}$、$\sigma=\sqrt{1-\bar\alpha_t}$ 可广播到输入形状，且 $\alpha^2+\sigma^2=1$。本题的 alpha 是标准差系数，和 D1 中单步 alpha 的含义不同。
+设 $x_0,\epsilon,x_t\in\mathbb R^{B\times D}$，$\alpha=\sqrt{\bar\alpha_t}$、$\sigma=\sqrt{1-\bar\alpha_t}$ 可广播到输入形状，且 $\alpha^2+\sigma^2=1$。本题的 alpha 是标准差系数，和前向加噪模块中单步 alpha 的含义不同。
 
 $$x_t=\alpha x_0+\sigma\epsilon,\qquad v=\alpha\epsilon-\sigma x_0.$$
 
@@ -20,17 +22,17 @@ $$\|\hat v-v\|^2=\frac{\|\hat x_0-x_0\|^2}{\sigma^2}=\frac{\|\hat\epsilon-\epsil
 
 ## 3. 从公式到代码
 
-实现 starter 中六个函数。所有函数都保持输入 shape 与 dtype，不沿 batch 聚合。
+实现三个核心函数：
 
-```text
-输入 pred、x_t: [B,...]，alpha、sigma: 可广播的系数
-根据 src 恢复 x0 或 epsilon
-根据 dst 返回目标表示
-src == dst 时返回原预测
-涉及除法时，将分母下限设为 1e-8
-```
+| 函数 | 输入与输出 | 要点 |
+| --- | --- | --- |
+| `make_v` | `x0, eps, alpha, sigma` → v | 计算旋转的切向量 |
+| `v_to_x0` | `x_t, v, alpha, sigma` → x0 | 直接使用逆旋转 |
+| `v_to_eps` | `x_t, v, alpha, sigma` → epsilon | 直接使用逆旋转 |
 
-`convert` 的来源与目标均在 `x0 / eps / v` 中选择；未知字符串抛出 `ValueError`。同参数化转换不应产生额外数值误差。尤其要直接实现 v 到 x0 与 epsilon 的转换，保持它们在纯信号、纯噪声两端的稳定性。
+张量形状为 `[B,...]`，系数可广播到该形状。保持输入 shape 和 dtype，不沿 batch 聚合；两项逆变换均无需除法，因而在纯信号与纯噪声端点保持稳定。
+
+`eps_to_x0`、`x0_to_eps` 与 `convert` 已提供。分母下限 `1e-8`、字符串检查和同参数化直接返回都由这些辅助函数处理。`convert` 会调用你实现的三个核心函数。
 
 ## 4. 本题约定
 
@@ -53,13 +55,10 @@ src == dst 时返回原预测
 
 ## 6. 怎么运行
 
-```bash
-paperleet init diffusion/param_conversion
-paperleet test diffusion/param_conversion
-```
+在浏览器中打开模块 **7**，补全三个 v 参数化函数后运行测试。
 
-T2 会验证六种往返、有限差分、端点和误差权重恒等式；报告中的误差位置能帮助分辨广播错误与公式错误。
+测试会通过提供的转换入口检查六种往返关系，并独立检查有限差分、端点和误差权重恒等式。无需实现蒸馏训练流程。
 
 ## 7. 延伸
 
-下一题实现 DDPM 后验，把 epsilon 预测真正接入采样。D5 会出现另一种速度：它对线性时间求导，与本题对旋转角求导的 v 不应混用。原始噪声参数化见 [Ho 等，2020](https://arxiv.org/abs/2006.11239)。
+论文的完整方法还包括师生蒸馏与逐轮缩减采样步数，可继续阅读 [Progressive Distillation](https://arxiv.org/abs/2202.00512)。Flow Matching 使用对线性时间求导的另一种速度，与这里对旋转角求导的 v 不应混用。

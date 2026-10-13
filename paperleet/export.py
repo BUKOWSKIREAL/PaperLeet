@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 
 from paperleet.catalog import problems, root
+from paperleet.paper_catalog import paper_catalog, module_scope
 from paperleet.judge.loader import load_implementation
 from paperleet.judge.pytest_plugin import jsonable
 
@@ -49,6 +50,8 @@ def vizdata(entry):
 def export_catalog():
     catalog = []
     entries = problems()
+    papers, membership = paper_catalog(entries)
+    papers_by_id = {paper["id"]: paper for paper in papers}
     aliases = {entry["short_id"]: str(entry["number"]) for entry in entries if entry.get("short_id")}
     alias_pattern = re.compile(r"(?<![\w-])(" + "|".join(re.escape(key) for key in aliases) + r")(?![\w-])") if aliases else None
 
@@ -58,6 +61,11 @@ def export_catalog():
     for entry in entries:
         directory = entry["directory"]
         data = {key: value for key, value in entry.items() if key != "directory"}
+        data["paper_id"] = membership[entry["id"]]
+        data["module"] = module_scope(entry)
+        curated = papers_by_id[data["paper_id"]].get("curated_module_ids")
+        if curated is not None and entry["id"] not in curated:
+            data["module"] = {**data["module"], "optional": True}
         for field, filename in (("readme", "README.md"), ("starter", "starter.py"), ("solution", "solution.py"), ("notes", "notes.md")):
             path = directory / filename
             data[field] = path.read_text(encoding="utf-8") if path.exists() else ""
@@ -78,6 +86,6 @@ def export_catalog():
     destination = root() / "web" / "public" / "data" / "catalog.json"
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = destination.with_suffix(".json.tmp")
-    temporary.write_text(json.dumps({"problems": catalog}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    temporary.write_text(json.dumps({"papers": papers, "problems": catalog}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     temporary.replace(destination)
     return destination

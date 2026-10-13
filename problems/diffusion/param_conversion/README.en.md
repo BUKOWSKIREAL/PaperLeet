@@ -1,8 +1,10 @@
-# x₀ / ε / v Parameterization Conversion
+# v-Parameterization and Inverse Rotation
 
 ## 1. What the paper solves
 
 A diffusion network can predict clean data, added noise, or velocity. Salimans and Ho study these parameterizations for distillation into fewer sampling steps. Changing the prediction target for the same training sample changes endpoint stability and the weighting of prediction errors.
+
+This module selects the supporting parameterization technique from Appendix D. Implement only `make_v`, `v_to_x0`, and `v_to_eps`; the other conversion helpers are supplied. Completing this module covers these rotation identities. Teacher–student targets and progressive training remain separate parts of the paper.
 
 ## 2. Core equations
 
@@ -20,17 +22,17 @@ The prediction target therefore also implies a loss weighting. See [Progressive 
 
 ## 3. From equations to code
 
-Implement the six functions in the starter. Preserve input shape and dtype, without aggregating over the batch.
+Implement three core functions:
 
-```text
-Inputs pred, x_t: [B,...]; alpha, sigma: broadcastable coefficients
-Recover x0 or epsilon according to src
-Return the representation selected by dst
-If src == dst, return the original prediction
-For divisions, clamp the denominator to at least 1e-8
-```
+| Function | Inputs and output | Key idea |
+| --- | --- | --- |
+| `make_v` | `x0, eps, alpha, sigma` → v | Compute the rotation’s tangent |
+| `v_to_x0` | `x_t, v, alpha, sigma` → x0 | Apply the inverse rotation directly |
+| `v_to_eps` | `x_t, v, alpha, sigma` → epsilon | Apply the inverse rotation directly |
 
-Both source and destination for `convert` must be one of `x0 / eps / v`; raise `ValueError` for unknown strings. Identity conversion should introduce no numerical error. Implement v-to-x0 and v-to-epsilon directly to preserve stability at both the pure-signal and pure-noise endpoints.
+Tensors have shape `[B,...]`; coefficients broadcast to that shape. Preserve shape and dtype without aggregating over the batch. Neither inverse requires division, preserving stability at the pure-signal and pure-noise endpoints.
+
+`eps_to_x0`, `x0_to_eps`, and `convert` are provided. They handle the `1e-8` denominator floor, string validation, and identity conversions. `convert` calls your three core functions.
 
 ## 4. Conventions
 
@@ -53,10 +55,10 @@ Move through time to inspect amplification factors $1/\alpha$ and $1/\sigma$, an
 
 ## 6. Run your implementation
 
-Open problem **7**, complete the six functions in the browser editor, and click **Run tests**. Use the failure details to locate discrepancies.
+Open module **7** in the browser, complete the three v-parameterization functions, and run the tests.
 
-T2 checks all six round trips, finite differences, endpoints, and the error-weight identity. The positions of numerical errors help distinguish broadcasting mistakes from formula mistakes.
+Tests use the supplied conversion entry point to check six round trips, then independently check finite differences, endpoints, and the error-weight identity. Distillation training is outside this exercise.
 
 ## 7. Further exploration
 
-Next, implement the DDPM posterior to connect noise predictions to sampling. Problem **10** introduces a different velocity: its derivative is with respect to linear time, whereas this exercise differentiates with respect to a rotation angle. See [Ho et al., 2020](https://arxiv.org/abs/2006.11239) for the original noise parameterization.
+For teacher–student targets and progressive step reduction, continue reading [Progressive Distillation](https://arxiv.org/abs/2202.00512). Flow Matching uses a different velocity, differentiated with respect to linear time; this module differentiates with respect to a rotation angle.

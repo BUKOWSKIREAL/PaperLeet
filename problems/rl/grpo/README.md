@@ -1,8 +1,10 @@
-# Group Relative Policy Optimization
+# GRPO 组相对策略目标
 
 ## 1. 这篇论文解决什么
 
 GRPO 对同一 prompt 采样一组回答，用相对奖励代替 value 模型，减少语言模型强化学习中的 critic 成本。[DeepSeekMath 第 4.1 节](https://arxiv.org/html/2402.03300v3#S4.SS1) 给出目标与组内估计。
+
+本模块目标：实现组内相对 advantage 与按回答聚合的截断策略目标。 只实现 advantage 和 loss 两个函数；mask 辅助、诊断量与采样实验已提供。 完成后记为这篇论文的一个核心模块。
 
 ## 2. 核心公式与题面
 
@@ -32,6 +34,8 @@ logp/old/ref [N,L] → 冻结 old/ref → 构造 ratio 与 k3
 advantages [N] → [N,1] → 与每个 token 的 ratio 相乘
 逐 token 悲观目标乘 mask → 每行求和/有效长度 → 回答平均
 ```
+
+starter 已提供 `masked_logprobs(logp, old_logp, ref_logp, mask)` 与 `token_statistics(ratio, kl, mask, clip_eps)`。前者将 padding 位置置零，后者返回所需的三个 detach 诊断量。可直接调用，集中实现组相对 advantage、clipped surrogate 和按回答聚合。
 
 先隔离 padding，再计算指数，可避免无效位置的极大 log-prob 差造成 `inf*0`。旧策略与参考策略是训练时的固定快照，即使调用者误传了可求导张量也必须切断它们的梯度。
 

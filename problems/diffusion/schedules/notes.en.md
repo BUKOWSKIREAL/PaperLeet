@@ -1,4 +1,4 @@
-# Noise schedules: Review after passing
+# Forward noising: Review after passing
 
 - The first cumulative alpha is not 1; the first *previous-time* cumulative alpha is 1. `test_reference` and `test_linear_endpoints` catch index shifts.
 - Beta is a variance. The multiplier on noise must be a standard deviation. Missing square roots shrink the variance at intermediate times; see `test_variance_preserving`.

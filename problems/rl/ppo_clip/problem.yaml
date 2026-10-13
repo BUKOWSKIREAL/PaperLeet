@@ -1,8 +1,8 @@
 id: rl/ppo_clip
 number: 2
-title_en: PPO Clipped Surrogate
+title_en: PPO Clipped Policy Objective
 short_id: R2
-title: PPO Clipped Surrogate
+title: PPO 截断策略目标
 paper:
   title: Proximal Policy Optimization Algorithms
   authors: John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, Oleg Klimov
@@ -15,19 +15,21 @@ type: implement
 parent: null
 difficulty: M
 functions:
+- name: clipped_surrogate
+  signature: 'clipped_surrogate(new_logp: Tensor, old_logp: Tensor, advantages: Tensor, clip_eps: float=0.2)
+    -> Tensor'
 - name: ppo_loss
-  signature: 'ppo_loss(new_logp: Tensor, old_logp: Tensor, advantages: Tensor, new_values:
-    Tensor, old_values: Tensor, returns: Tensor, entropy: Tensor | None=None, clip_eps:
-    float=0.2, vf_clip: float | None=0.2, vf_coef: float=0.5, ent_coef: float=0.0,
-    norm_adv: bool=True) -> dict[str, Tensor]'
+  signature: 'ppo_loss(new_logp: Tensor, old_logp: Tensor, advantages: Tensor, new_values: Tensor, old_values:
+    Tensor, returns: Tensor, entropy: Tensor | None=None, clip_eps: float=0.2, vf_clip: float | None=0.2,
+    vf_coef: float=0.5, ent_coef: float=0.0, norm_adv: bool=True) -> dict[str, Tensor]'
 conventions:
   normalization: minibatch 样本标准差 correction=1，B=1 时标准差视为 0
   value_clipping: vf_clip=0.2；最大平方误差乘 1/2
   snapshots: old_logp / old_values detach
 tests:
-  T0: 1
+  T0: 2
   T1: 1
-  T2: 6
+  T2: 7
   T3: 1
 t3_budget_s: 10
 mutants:
@@ -39,23 +41,22 @@ mutants:
   bug: 采样策略没有 detach
 - id: m4_ratio_no_exp
   bug: 概率比未 exp
-- id: m5_vclip_min
-  bug: value loss 使用 min
+- id: m5_advantage_sign
+  bug: 丢弃 advantage 的负号
 viz:
 - clip_objective
 - trust_region
-estimated_minutes: 30
+estimated_minutes: 15
 formula: L^{PG}=-\mathbb{E}[\min(rA,\operatorname{clip}(r)A)]
 tags:
-- Reinforcement Learning
-- R2
+- Policy Gradient
+- Clipping
 sources_verified: '2026-10-13'
 calibration:
   seed: 42
   threads: 2
   dtype: float32
-  method: Upper error thresholds = reference × 1.5; reward lower bounds specified
-    by pilot
+  method: Upper error thresholds = reference × 1.5; reward lower bounds specified by pilot
   metrics:
     fixed_batch_max_kl:
       reference: 0.09324019402265549
@@ -63,3 +64,14 @@ calibration:
     best_arm_probability:
       reference: 0.9993019104003906
       minimum: 0.9
+paper_id: ppo
+module:
+  goal: 实现悲观截断目标，验证正负 advantage 下的四种梯度情形。
+  goal_en: Implement the pessimistic clipped objective and verify gradients for both advantage signs.
+  scope: 只实现 clipped_surrogate；价值损失、熵、归一化与训练循环已提供。
+  scope_en: Implement only clipped_surrogate; value loss, entropy, normalization, and training are supplied.
+  required_functions:
+  - clipped_surrogate
+  provided_functions:
+  - ppo_loss
+  optional: false

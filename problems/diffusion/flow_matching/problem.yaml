@@ -1,12 +1,11 @@
 id: diffusion/flow_matching
 number: 10
-title_en: Flow Matching Velocity Fields
+title_en: Conditional Path and Velocity Regression
 short_id: D5
-title: Flow Matching 速度场
+title: 条件路径与速度回归
 paper:
   title: Flow Matching for Generative Modeling
-  authors: Yaron Lipman, Ricky T. Q. Chen, Heli Ben-Hamu, Maximilian Nickel, Matt
-    Le
+  authors: Yaron Lipman, Ricky T. Q. Chen, Heli Ben-Hamu, Maximilian Nickel, Matt Le
   venue: ICLR 2023
   arxiv: '2210.02747'
   anchors:
@@ -17,18 +16,18 @@ parent: null
 difficulty: M
 functions:
 - name: sample_t
-  signature: 'sample_t(batch: int, generator: torch.Generator | None, dist: str=''uniform'',
-    m: float=0.0, s: float=1.0) -> Tensor'
+  signature: 'sample_t(batch: int, generator: torch.Generator | None, dist: str=''uniform'', m: float=0.0,
+    s: float=1.0) -> Tensor'
 - name: interpolate
   signature: 'interpolate(x0: Tensor, x1: Tensor, t: Tensor) -> Tensor'
 - name: cfm_target
   signature: 'cfm_target(x0: Tensor, x1: Tensor) -> Tensor'
 - name: cfm_loss
-  signature: 'cfm_loss(model: Callable[[Tensor, Tensor], Tensor], x1: Tensor, x0:
-    Tensor, t: Tensor) -> Tensor'
+  signature: 'cfm_loss(model: Callable[[Tensor, Tensor], Tensor], x1: Tensor, x0: Tensor, t: Tensor) ->
+    Tensor'
 - name: euler_sample
-  signature: 'euler_sample(model: Callable[[Tensor, Tensor], Tensor], x0: Tensor,
-    num_steps: int, return_traj: bool=False) -> Tensor | tuple[Tensor, Tensor]'
+  signature: 'euler_sample(model: Callable[[Tensor, Tensor], Tensor], x0: Tensor, num_steps: int, return_traj:
+    bool=False) -> Tensor | tuple[Tensor, Tensor]'
 conventions:
   index: 数组 0..T-1 对应论文 1..T
   seed: 42
@@ -55,11 +54,12 @@ viz:
 - steps_compare
 - convention_bug
 - loss_curve
-estimated_minutes: 35
+estimated_minutes: 20
 tags:
-- Diffusion
+- Flow Matching
+- Conditional Paths
+- Velocity Regression
 - PyTorch
-- D5
 verified_sources:
   checked_at: '2026-10-13'
   links:
@@ -86,3 +86,18 @@ calibration:
   reference_mmd: 0.012716249370520849
   reference_outlier_fraction: 0.12300000339746475
   reference_duration_s: 1.810870666988194
+paper_id: flow-matching
+module:
+  goal: 实现线性条件路径、目标速度和条件 Flow Matching 损失。
+  goal_en: Implement the linear conditional path, target velocity, and conditional Flow Matching loss.
+  scope: 实现 interpolate、cfm_target 和 cfm_loss；时间采样、Euler 求解器和测试训练循环已提供。
+  scope_en: Implement interpolate, cfm_target, and cfm_loss. Time sampling, the Euler solver, and the
+    test training loop are provided.
+  required_functions:
+  - interpolate
+  - cfm_target
+  - cfm_loss
+  provided_functions:
+  - sample_t
+  - euler_sample
+  optional: false

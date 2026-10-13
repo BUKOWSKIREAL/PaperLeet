@@ -1,8 +1,8 @@
 id: diffusion/ddpm_sampling
 number: 8
-title_en: DDPM Posterior & Ancestral Sampling
+title_en: Posterior and Reverse Denoising Step
 short_id: D3
-title: DDPM 后验与祖先采样
+title: 后验与反向去噪一步
 paper:
   title: Denoising Diffusion Probabilistic Models
   authors: Jonathan Ho, Ajay Jain, Pieter Abbeel
@@ -16,16 +16,15 @@ parent: null
 difficulty: M
 functions:
 - name: q_posterior
-  signature: 'q_posterior(x0: Tensor, x_t: Tensor, t: Tensor, betas: Tensor, alpha_bars:
-    Tensor, alpha_bars_prev: Tensor) -> tuple[Tensor, Tensor]'
+  signature: 'q_posterior(x0: Tensor, x_t: Tensor, t: Tensor, betas: Tensor, alpha_bars: Tensor, alpha_bars_prev:
+    Tensor) -> tuple[Tensor, Tensor]'
 - name: p_sample_step
-  signature: 'p_sample_step(eps_pred: Tensor, x_t: Tensor, t: Tensor, betas: Tensor,
-    alpha_bars: Tensor, alpha_bars_prev: Tensor, noise: Tensor, var_type: str=''posterior'')
-    -> Tensor'
+  signature: 'p_sample_step(eps_pred: Tensor, x_t: Tensor, t: Tensor, betas: Tensor, alpha_bars: Tensor,
+    alpha_bars_prev: Tensor, noise: Tensor, var_type: str=''posterior'') -> Tensor'
 - name: ddpm_sample
-  signature: 'ddpm_sample(eps_model: Callable[[Tensor, Tensor], Tensor], shape: tuple[int,
-    ...], betas: Tensor, generator: torch.Generator, var_type: str=''posterior'',
-    return_traj: bool=False) -> Tensor | tuple[Tensor, Tensor]'
+  signature: 'ddpm_sample(eps_model: Callable[[Tensor, Tensor], Tensor], shape: tuple[int, ...], betas:
+    Tensor, generator: torch.Generator, var_type: str=''posterior'', return_traj: bool=False) -> Tensor
+    | tuple[Tensor, Tensor]'
 conventions:
   index: 数组 0..T-1 对应论文 1..T
   seed: 42
@@ -51,11 +50,12 @@ mutants:
 viz:
 - reverse_particles
 - variance_compare
-estimated_minutes: 35
+estimated_minutes: 25
 tags:
 - Diffusion
+- Gaussian Posterior
+- Reverse Diffusion
 - PyTorch
-- D3
 verified_sources:
   checked_at: '2026-10-13'
   links:
@@ -79,3 +79,16 @@ calibration:
   reference_mmd:
     posterior: 0.0018059701052701715
     beta: 0.0017941779100192345
+paper_id: ddpm
+module:
+  goal: 实现 DDPM 高斯后验，并把噪声预测转成一次反向更新。
+  goal_en: Implement the DDPM Gaussian posterior and convert a noise prediction into one reverse update.
+  scope: 实现 q_posterior 和 p_sample_step；完整采样循环和测试中的噪声预测器已提供。
+  scope_en: Implement q_posterior and p_sample_step. The sampling loop and the test noise predictor are
+    provided.
+  required_functions:
+  - q_posterior
+  - p_sample_step
+  provided_functions:
+  - ddpm_sample
+  optional: false

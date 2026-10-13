@@ -1,8 +1,8 @@
 id: rl/gae
 number: 1
-title_en: Generalized Advantage Estimation
+title_en: GAE Backward Recurrence
 short_id: R1
-title: Generalized Advantage Estimation
+title: GAE 反向递推
 paper:
   title: High-Dimensional Continuous Control Using Generalized Advantage Estimation
   authors: John Schulman, Philipp Moritz, Sergey Levine, Michael Jordan, Pieter Abbeel
@@ -16,9 +16,8 @@ parent: null
 difficulty: M
 functions:
 - name: compute_gae
-  signature: 'compute_gae(rewards: Tensor, values: Tensor, next_values: Tensor, terminated:
-    Tensor, truncated: Tensor, gamma: float=0.99, lam: float=0.95) -> tuple[Tensor,
-    Tensor]'
+  signature: 'compute_gae(rewards: Tensor, values: Tensor, next_values: Tensor, terminated: Tensor, truncated:
+    Tensor, gamma: float=0.99, lam: float=0.95) -> tuple[Tensor, Tensor]'
 conventions:
   layout: '[T,N] 时间在前'
   truncation: bootstrap 保留 next_values，递推在 terminated 或 truncated 停止
@@ -43,16 +42,25 @@ viz:
 estimated_minutes: 25
 formula: \hat A_t=\delta_t+\gamma\lambda(1-d_t)\hat A_{t+1}
 tags:
-- Reinforcement Learning
-- R1
+- Advantage Estimation
+- Temporal Difference
 sources_verified: '2026-10-13'
 calibration:
   seed: 42
   threads: 2
   dtype: float64
-  method: Upper error thresholds = reference × 1.5; reward lower bounds specified
-    by pilot
+  method: Upper error thresholds = reference × 1.5; reward lower bounds specified by pilot
   metrics:
     lambda_one_bias:
       reference: 0.005332078586133618
       threshold: 0.007998117879200427
+paper_id: gae
+module:
+  goal: 从 TD 残差实现 GAE 反向递推，正确处理 episode 边界。
+  goal_en: Implement the backward GAE recurrence from TD residuals with correct episode boundaries.
+  scope: 只实现 advantage 与 value target；轨迹和价值估计由测试提供。
+  scope_en: Implement advantages and value targets; trajectories and value estimates are supplied.
+  required_functions:
+  - compute_gae
+  provided_functions: []
+  optional: false

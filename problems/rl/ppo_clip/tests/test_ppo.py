@@ -10,6 +10,30 @@ def call(impl, lp, adv, **kw):
 
 
 @pytest.mark.t0
+def test_core_function_contract(impl):
+    """The required core accepts three minibatch vectors and returns the minimized scalar loss."""
+    old=torch.tensor([-.5,-1.,-2.],dtype=torch.float64)
+    advantage=torch.tensor([1.,-2.,4.],dtype=old.dtype)
+    got=impl.clipped_surrogate(old,old,advantage)
+    assert got.shape==(),f'core loss expected scalar, got {got.shape}'
+    assert got.dtype==old.dtype,f'core dtype expected {old.dtype}, got {got.dtype}'
+    close(got,-advantage.mean())
+
+
+@pytest.mark.t2
+def test_core_four_quadrants_and_frozen_targets(impl):
+    """The core alone implements clipping gradients and freezes old policy and advantage targets."""
+    ratio=torch.tensor([1.5,.5,.5,1.5],dtype=torch.float64)
+    new=ratio.log().requires_grad_()
+    old=torch.zeros_like(new,requires_grad=True)
+    advantage=torch.tensor([1.,1.,-1.,-1.],dtype=new.dtype,requires_grad=True)
+    impl.clipped_surrogate(new,old,advantage,.2).backward()
+    close(new.grad,torch.tensor([0.,-.125,0.,.375],dtype=new.dtype))
+    for name,x in [('old_logp',old),('advantages',advantage)]:
+        assert x.grad is None or torch.all(x.grad==0),f'{name} expected frozen target, got {x.grad}'
+
+
+@pytest.mark.t0
 def test_scalar_contract(impl):
     """The objective and every diagnostic aggregate a minibatch into one scalar."""
     out=call(impl,torch.zeros(4),torch.ones(4))

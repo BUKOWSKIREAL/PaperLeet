@@ -1,8 +1,36 @@
 import { parseReport } from "./reports";
 
+export type Paper = {
+  id: string;
+  number: number;
+  title: string;
+  short_title: string;
+  authors: string | string[];
+  venue?: string;
+  year?: number;
+  url: string;
+  arxiv?: string;
+  tags: string[];
+  summary: string;
+  summary_en: string;
+  scope: string;
+  scope_en: string;
+  module_ids: string[];
+};
+
 export type Problem = {
   id: string;
   number: number;
+  paper_id: string;
+  module: {
+    goal: string;
+    goal_en: string;
+    scope: string;
+    scope_en: string;
+    required_functions: string[];
+    provided_functions: string[];
+    optional: boolean;
+  };
   short_id?: string;
   translations?: { en?: { title: string; readme: string; notes: string } };
   title: string;
@@ -46,7 +74,7 @@ export type Report = {
   tests: TestResult[];
   mutation?: Record<string, string[]> | null;
 };
-export type Saved = { code?: string; report?: Report; updated?: string };
+export type Saved = { code?: string; report?: Report; acceptedReport?: Report; updated?: string };
 export const layers = ["T0", "T1", "T2", "T3"];
 export const layerLabels = ["接口契约", "参考对齐", "数学性质", "真实行为"];
 export function isPassed(p: Problem, r?: Report) {
@@ -77,7 +105,7 @@ export function isPassed(p: Problem, r?: Report) {
   }
 }
 export function status(p: Problem, s: Saved = {}) {
-  return isPassed(p, s.report)
+  return isPassed(p, s.acceptedReport) || isPassed(p, s.report)
     ? "done"
     : s.code !== undefined || s.report
       ? "started"

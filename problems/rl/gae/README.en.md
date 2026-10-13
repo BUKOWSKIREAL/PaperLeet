@@ -1,8 +1,10 @@
-# Generalized Advantage Estimation
+# GAE Backward Recurrence
 
 ## 1. What the paper solves
 
 Policy gradients need to estimate how much better an action is than the current policy's average choice. GAE connects one-step temporal-difference estimates with Monte Carlo returns, using one parameter to control the estimator's bias and variance. See [Section 3, Equations 16–18](https://arxiv.org/html/1506.02438v6#S3).
+
+Module goal: Implement the backward GAE recurrence from TD residuals with correct episode boundaries. Implement advantages and value targets; trajectories and value estimates are supplied. Completing this exercise completes one selected core module of the paper.
 
 ## 2. Core equations and task
 

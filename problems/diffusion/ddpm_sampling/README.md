@@ -1,8 +1,10 @@
-# DDPM 后验与祖先采样
+# 后验与反向去噪一步
 
 ## 1. 论文解决什么问题
 
 DDPM 将生成过程拆成许多小的去噪步骤。训练时可解析的高斯后验提供学习目标，采样时网络预测的噪声决定每一步往哪里走。
+
+这是 DDPM 论文的第二个核心模块。只需实现 `q_posterior` 与 `p_sample_step`，把解析后验和噪声预测接成一次反向更新。完整采样循环 `ddpm_sample` 与测试使用的噪声预测器已经提供。
 
 ## 2. 核心公式
 
@@ -20,15 +22,18 @@ $x_t,\hat\epsilon,z$ 都是 `[B,...]`，t 是 `[B]`，每一行可以选择不�
 
 ## 3. 从公式到代码
 
+实现两个核心函数：
+
 ```text
-q_posterior: 按 [B] 时间提取系数，组合 x0 和 xt
-p_sample_step: 从 eps 恢复 x0，计算均值，选择方差
-把 t=0 的噪声乘零
-ddpm_sample: 初始化标准高斯 [B,D]
-按 T-1,T-2,...,0 逐步调用 eps_model，再更新样本
+q_posterior: 按 [B] 时间提取系数，组合 x0 与 x_t，返回均值和方差
+p_sample_step: 从 epsilon 预测恢复 x0，调用 q_posterior
+按 var_type 选择 posterior 或 beta 方差
+把 t=0 的噪声贡献置零，得到更新后的样本
 ```
 
-实现三个公开函数，`return_traj=True` 返回 `(samples, trajectory)`；轨迹形状为 `[T+1,B,...]`，包含初始噪声。采样随机数必须来自调用者提供的 generator。
+`q_posterior` 返回均值 `[B,...]` 和可广播的方差 `[B,1,...]`。`p_sample_step` 返回与 `x_t` 同形状、同 dtype 的张量。未知 `var_type` 抛出 `ValueError`。
+
+`_extract` 和 `ddpm_sample` 已提供。后者管理初始高斯噪声、降序时间循环、调用者的 generator 与轨迹记录；每一步都会调用你的 `p_sample_step`。`return_traj=True` 时返回 `(samples, trajectory)`，轨迹 `[T+1,B,...]` 包含初始噪声。
 
 ## 4. 本题约定
 
@@ -47,16 +52,13 @@ ddpm_sample: 初始化标准高斯 [B,D]
 
 <viz id="variance_compare" />
 
-拖动时间比较 beta 与后验方差，最后一步两者差异最大，但都必须停止注入噪声。导入自己的报告后，可叠加采样点、真实样本以及 MMD 阈值。
+拖动时间比较 beta 与后验方差，最后一步两者差异最大，但都必须停止注入噪声。运行测试后，结果面板可叠加采样点、真实样本以及 MMD 阈值。
 
 ## 6. 怎么运行
 
-```bash
-paperleet init diffusion/ddpm_sampling
-paperleet test diffusion/ddpm_sampling
-```
+在浏览器中打开模块 **8**，补全 `q_posterior` 与 `p_sample_step` 后运行测试。
 
-T2 以精度相加独立推导后验。T3 用 1000 步、2000 个样本检查两种方差，MMD 阈值来自固定种子参考值乘 1.5，并检查模式占比和离群点。
+T2 以高斯精度相加独立推导后验。T3 将你的单步更新接入提供的采样循环，用 1000 步、2000 个样本检查两种方差。MMD 阈值来自固定种子参考值乘 1.5，并检查模式占比和离群点。
 
 ## 7. 延伸
 

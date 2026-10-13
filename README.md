@@ -4,7 +4,7 @@
 
 Read papers, implement the methods, and test your understanding through mathematical properties and actual behavior.
 
-The first pilot includes **5 RL problems and 5 diffusion problems**. The website uses a LeetCode-style problem list and split workspace: problem statements, paper explanations, and interactive labs on the left; a Python editor and T0–T3 test reports on the right. All problem statements, function signatures, reference solutions, buggy variants, and visualization data come from `problems/`.
+The pilot includes **9 papers and 10 focused core modules**. Start with a paper, read its contribution and selected scope, then implement its core modules in a LeetCode-style split workspace. Supporting code is supplied so each exercise focuses on the paper’s key mechanism. Completing a paper means passing its selected core modules. Paper organization lives in `papers.yaml`; statements, implementations, tests, and visualization data live in `problems/`.
 
 ## Run locally
 
@@ -23,18 +23,18 @@ Open the URL shown in the terminal (default: **http://127.0.0.1:5173**). On subs
 
 ## Solve your first problem
 
-1. Choose a problem, such as **7 · x₀ / ε / v Parameterization**.
-2. Read the statement on the left and complete the implementation in the Python editor on the right.
+1. Choose a paper, such as **6 · DDPM**, then open its **Forward Noising** module.
+2. Read the goal and complete only the required functions in the Python editor. Schedules and other supporting functions are already implemented.
 3. Click **Run all tests** and wait for the test results to appear automatically.
 4. Use each test layer's failure explanations, expected values, and actual values to revise your code, then run it again.
 
-Passing the full test suite automatically marks the problem as complete and unlocks its notes on common pitfalls. Running only a subset of tests does not qualify as passing the full suite. Drafts and progress are saved in your current browser. Use the Chinese / English toggle in the upper-right corner to switch the interface, problem statements, and explanations. The pilot problems have fixed numbers 1–10; internal directory names remain unchanged for compatibility with existing drafts and commands.
+Passing the full test suite automatically marks the problem as complete and unlocks its notes on common pitfalls. Running only a subset of tests does not qualify as passing the full suite. Drafts and progress are saved in your current browser. Use the Chinese / English toggle in the upper-right corner to switch the interface, problem statements, and explanations. The paper library uses numeric IDs 1–9. Module IDs 1–10 and internal directory names stay stable for existing drafts and CLI commands. A later failed run does not erase a previously accepted result. Existing drafts are preserved; use the editor reset action after saving your code if you want the new starter with supplied helpers.
 
 The website runs code through the judge service and displays results automatically, with no report files to manage manually. The local service listens on `127.0.0.1:8765`, and Vite proxies `/api` requests to it. Code is saved to `workspace/` and executed by Python/PyTorch on your machine. This setup is intended for personal local use; it does not yet provide an isolated code sandbox for multiple users.
 
 ## Submit paper
 
-Click **Submit paper / 提交论文** in the top navigation and provide a paper URL, an optional official code URL, and what you want to practice. The model reads these sources and generates Chinese and English problem statements, starter code, a reference implementation, layered tests, and buggy variants. Candidates proceed to human review after passing isolated validation. Only the current version approved by a human reviewer receives a numeric problem ID and enters the problem bank.
+Click **Submit paper / 提交论文** in the top navigation and provide a paper URL, an optional official code URL, and what you want to practice. The model reads these sources and generates Chinese and English problem statements, starter code, a reference implementation, layered tests, and buggy variants. Candidates proceed to human review after passing isolated validation. Only the current version approved by a human reviewer receives a numeric problem ID and enters the paper library as a module. Export groups modules that cite the same arXiv paper or source URL under one paper. The generator currently creates one candidate module per submission.
 
 Generation requires `OPENAI_API_KEY` and `PAPERLEET_MODEL` to be configured in the terminal used to start the service. Validation requires Docker to be running and the following image to be built from the repository root:
 
@@ -63,22 +63,23 @@ paperleet ci
 
 `paperleet ci` checks that every reference solution passes, every mutant triggers at least one genuine test failure, each mutant changes at most 10 lines, results remain consistent across three runs, and the T3 CPU budget and total runtime meet the limits. Results are written to `reports/ci.json`, with full reference reports for each problem also saved under `reports/`. Import and syntax errors do not count as valid mutant detections.
 
-## Problems
+## Papers and selected core modules
 
-| ID | Problem | Difficulty | Focus |
+| Paper ID | Paper | Core modules | Module IDs |
 | --- | --- | --- | --- |
-| 1 | Generalized Advantage Estimation | Medium | Backward recurrence, episode boundaries, and bias–variance tradeoffs |
-| 2 | PPO Clipped Surrogate | Medium | Gradients in all four quadrants, value clipping, and trust regions |
-| 3 | Direct Preference Optimization | Easy | Label shifting, masking, and numerically stable preference loss |
-| 4 | Group Relative Policy Optimization | Medium | Within-group normalization, per-token KL, and aggregation |
-| 5 | Dr. GRPO | Medium | Length bias and reward normalization variants |
-| 6 | Noise Schedules & Forward Diffusion | Easy | Linear/cosine schedules and forward noising |
-| 7 | x₀ / ε / v Parameterization | Easy | Round-trip conversions, tangent vectors, and endpoint stability |
-| 8 | DDPM Posterior & Sampling | Medium | Independent Gaussian posterior derivation and analytical oracle sampling |
-| 9 | DDIM | Medium | η, timestep skipping, deterministic sampling, and inversion |
-| 10 | Flow Matching | Medium | Interpolation, velocity, Euler integration, and training a small model |
+| 1 | GAE | Backward advantage recurrence and episode boundaries | 1 |
+| 2 | PPO | Clipped policy surrogate | 2 |
+| 3 | DPO | Preference loss and implicit rewards | 3 |
+| 4 | DeepSeekMath | GRPO group-relative advantages and policy objective | 4 |
+| 5 | Dr. GRPO | Advantage scaling and fixed-budget normalization | 5 |
+| 6 | DDPM | Forward noising; posterior and reverse step | 6, 8 |
+| 7 | Progressive Distillation | v-parameterization and conversions | 7 |
+| 8 | DDIM | Single-step sampling update | 9 |
+| 9 | Flow Matching | Conditional path, target velocity, and regression loss | 10 |
 
-Every problem includes `problem.yaml`, paper explanations in Chinese and English, starter code, a reference solution, notes on common pitfalls unlocked after passing, layered tests, and buggy variants. Problems 6 and 7 do not require T3 tests. The length trend in problem 5 is shown for illustration and is not used for grading.
+Scope is selected per paper. The Progressive Distillation module covers its supporting v-parameterization technique; distillation training is not included. The cosine schedule accompanying DDPM is supplied related work from Improved DDPM. Full network assembly and large training runs are outside this pilot's required work.
+
+Each module declares `module.required_functions` and `module.provided_functions`. The starter leaves only required functions unfinished, and the judge exercises them through the supplied supporting code. All modules include bilingual statements and notes, reference implementations, layered tests, and buggy variants. Module IDs 6 and 7 do not require T3 tests; module 5's length trend is illustrative and is not graded.
 
 ## Visualizations and static builds
 
@@ -100,7 +101,8 @@ You can deploy `web/dist/` to static hosting such as GitHub Pages, but static pa
 
 ```text
 paperleet/         CLI, pytest runner, local service, shared mathematical utilities
-problems/          Self-contained problem packages (rl / diffusion)
+papers.yaml        Curated papers, contributions, scope, and module ordering
+problems/          Self-contained core module packages (rl / diffusion)
 web/               Vite + React + TypeScript
 tests/             Judge framework integration tests
 workspace/         Personal code, ignored by Git

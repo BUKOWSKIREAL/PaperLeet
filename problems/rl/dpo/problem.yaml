@@ -1,13 +1,12 @@
 id: rl/dpo
 number: 3
-title_en: Direct Preference Optimization
+title_en: DPO Preference Objective and Implicit Rewards
 short_id: R3
-title: Direct Preference Optimization
+title: DPO 偏好目标与隐式奖励
 paper:
-  title: 'Direct Preference Optimization: Your Language Model is Secretly a Reward
-    Model'
-  authors: Rafael Rafailov, Archit Sharma, Eric Mitchell, Stefano Ermon, Christopher
-    D. Manning, Chelsea Finn
+  title: 'Direct Preference Optimization: Your Language Model is Secretly a Reward Model'
+  authors: Rafael Rafailov, Archit Sharma, Eric Mitchell, Stefano Ermon, Christopher D. Manning, Chelsea
+    Finn
   venue: NeurIPS 2023
   arxiv: '2305.18290'
   anchors:
@@ -18,12 +17,10 @@ parent: null
 difficulty: E
 functions:
 - name: sequence_logprob
-  signature: 'sequence_logprob(logits: Tensor, input_ids: Tensor, loss_mask: Tensor)
-    -> Tensor'
+  signature: 'sequence_logprob(logits: Tensor, input_ids: Tensor, loss_mask: Tensor) -> Tensor'
 - name: dpo_loss
-  signature: 'dpo_loss(pi_chosen: Tensor, pi_rejected: Tensor, ref_chosen: Tensor,
-    ref_rejected: Tensor, beta: float=0.1, label_smoothing: float=0.0) -> tuple[Tensor,
-    Tensor, Tensor]'
+  signature: 'dpo_loss(pi_chosen: Tensor, pi_rejected: Tensor, ref_chosen: Tensor, ref_rejected: Tensor,
+    beta: float=0.1, label_smoothing: float=0.0) -> tuple[Tensor, Tensor, Tensor]'
 conventions:
   layout: logits [B,T,V]；先右移标签/mask，再求回答 token log-prob 总和
   label_smoothing: 保守 DPO 混合正反标签，不是 robust DPO 的无偏噪声校正
@@ -34,33 +31,44 @@ tests:
   T3: 1
 t3_budget_s: 10
 mutants:
-- id: m1_no_shift
-  bug: 标签未右移
-- id: m2_mask_offbyone
-  bug: mask 偏移错误
+- id: m1_omit_reference
+  bug: 偏好边际忽略参考模型
+- id: m2_omit_beta
+  bug: 隐式奖励遗漏 beta 系数
 - id: m3_naive_logsigmoid
   bug: log sigmoid 不稳定
 - id: m4_reward_grad
   bug: 奖励未 detach
-- id: m5_mean_not_sum
-  bug: token 平均代替求和
+- id: m5_batch_sum
+  bug: 偏好对求和代替 batch 平均
 viz:
 - shift_mask_grid
 - loss_vs_margin
 - t3_reward_scatter
-estimated_minutes: 20
+estimated_minutes: 15
 formula: L=-\log\sigma(\beta[(\log\pi_c-\log\pi_c^{ref})-(\log\pi_r-\log\pi_r^{ref})])
 tags:
-- Reinforcement Learning
-- R3
+- Preference Optimization
+- Implicit Rewards
 sources_verified: '2026-10-13'
 calibration:
   seed: 42
   threads: 2
   dtype: float32
-  method: Upper error thresholds = reference × 1.5; reward lower bounds specified
-    by pilot
+  method: Upper error thresholds = reference × 1.5; reward lower bounds specified by pilot
   metrics:
     policy_kl:
       reference: 0.00044954195618629456
       threshold: 0.0006743129342794418
+paper_id: dpo
+module:
+  goal: 从策略与参考模型的序列分数实现偏好损失和隐式奖励。
+  goal_en: Compute the preference loss and implicit rewards from policy and reference sequence scores.
+  scope: 只实现 dpo_loss；序列 log-prob 聚合与小型训练实验已提供。
+  scope_en: Implement only dpo_loss; sequence log-prob aggregation and the toy training experiment are
+    supplied.
+  required_functions:
+  - dpo_loss
+  provided_functions:
+  - sequence_logprob
+  optional: false

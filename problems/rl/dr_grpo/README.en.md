@@ -1,12 +1,14 @@
-# Dr. GRPO: Removing Two Biases
+# Dr. GRPO Length and Difficulty Bias Corrections
 
 ## 1. What the paper solves
 
 Dr. GRPO examines two normalizations in group-relative optimization. Averaging by response length changes per-token weights; scaling by group standard deviation changes weights across prompts. [Sections 3.1–3.2](https://arxiv.org/html/2503.20783v2#S3.SS2) describe the corresponding corrections.
 
+Module goal: Remove group standard-deviation scaling and use a fixed length denominator to correct two normalization biases. Implement the two normalization corrections; the token objective, masking helpers, and diagnostics are supplied. Completing this exercise completes one selected core module of the paper.
+
 ## 2. Core equations and task
 
-Building on the previous exercise, implement `drgrpo_advantages` and `drgrpo_loss`. Rewards `[B*G]` remain contiguous by group. All three log-probability tensors and the mask have shape `[N,L]`; advantages have shape `[N]`, with $N=BG$. Group size must be at least two and divide the reward count.
+Using the supplied GRPO token objective, implement `drgrpo_advantages` and `drgrpo_loss`. Rewards `[B*G]` remain contiguous by group. All three log-probability tensors and the mask have shape `[N,L]`; advantages have shape `[N]`, with $N=BG$. Group size must be at least two and divide the reward count.
 
 $$
 \hat A_i=r_i-\bar r_g,\qquad
@@ -27,7 +29,7 @@ Mask objective → sum over all tokens → divide by N*max_len
 Keep valid-token normalization for diagnostics
 ```
 
-The starter imports `token_objective(logp, old_logp, ref_logp, advantages, clip_eps, beta)` from problem **4**'s reference implementation. It returns `(objective, ratio, kl)`, with $-\beta k3$ already included in the objective. Reusing it keeps attention on the two normalization changes. Isolate padding correctly before aggregation, and do not let other responses' lengths alter the target response's denominator.
+The starter imports `token_objective(logp, old_logp, ref_logp, advantages, clip_eps, beta)` from problem **4**'s reference implementation. It returns `(objective, ratio, kl)`, with $-\beta k3$ already included in the objective. The starter also supplies `masked_logprobs` and `token_statistics` for padding and diagnostics. Reuse these helpers to focus on the two normalization changes; completing another exercise first is not required. Isolate padding correctly before aggregation, and do not let other responses' lengths alter the target response's denominator.
 
 ## 4. Conventions
 

@@ -1,6 +1,8 @@
 import torch
 from torch import Tensor
 
+
+# Required: implement the core functions below.
 def grpo_advantages(rewards: Tensor, group_size: int, scale_std: bool=True, eps: float=0.0001) -> Tensor:
     """rewards [B*G] contains adjacent groups of G answers to each prompt.
     Use sample std (correction=1) plus eps when scale_std=True.
@@ -14,3 +16,18 @@ def grpo_loss(logp: Tensor, old_logp: Tensor, ref_logp: Tensor, advantages: Tens
     loss and detached kl_mean, clipfrac, ratio_mean, averaged over valid tokens.
     clipfrac counts abs(ratio-1)>clip_eps."""
     raise NotImplementedError()
+
+
+# Provided: keep these helpers and call them as needed.
+def masked_logprobs(logp: Tensor, old_logp: Tensor, ref_logp: Tensor, mask: Tensor):
+    """Provided helper: neutralize padding before exponential calculations."""
+    active = mask.bool()
+    return tuple(torch.where(active, x, torch.zeros_like(x)) for x in (logp, old_logp, ref_logp))
+
+def token_statistics(ratio: Tensor, kl: Tensor, mask: Tensor, clip_eps: float) -> dict:
+    """Provided helper: detached diagnostics averaged over valid tokens."""
+    with torch.no_grad():
+        denom = mask.sum().clamp_min(1)
+        return dict(kl_mean=(kl * mask).sum() / denom,
+                    clipfrac=(((ratio - 1).abs() > clip_eps) * mask).sum() / denom,
+                    ratio_mean=(ratio * mask).sum() / denom)

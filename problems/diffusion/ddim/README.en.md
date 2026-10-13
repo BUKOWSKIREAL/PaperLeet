@@ -1,8 +1,10 @@
-# DDIM Deterministic Few-Step Sampling
+# DDIM Subsequence Update
 
 ## 1. What the paper solves
 
 DDPM's training objective specifies noisy marginal distributions at each time without uniquely determining sampling trajectories. DDIM uses this freedom to reuse an existing noise predictor and generate samples in fewer denoising steps.
+
+Implement only `ddim_step`, the paper’s central update across a timestep subsequence. Timestep selection and the full sampling loop are supplied. Inversion helpers and visualizations remain available for optional exploration.
 
 ## 2. Core equations
 
@@ -18,15 +20,18 @@ Set b=1 on the final update to reach the true clean endpoint. A point distributi
 
 ## 3. From equations to code
 
+Implement only `ddim_step(x_t, eps_pred, ab_t, ab_prev, eta, noise)`:
+
 ```text
-timesteps[k] = T-1-k*(T//num_steps), for k = 0, ..., n-1
-For each descending time: predict epsilon and call ddim_step
-When no next time exists, set alpha_bar_prev=1
-Invert in ascending order: evaluate epsilon at the current state
-Then move to the noisier time
+Recover x0 from the current ab_t and epsilon prediction
+Compute sigma from the current and target cumulative coefficients
+Subtract sigma² from the direction variance
+Combine the clean prediction, epsilon direction, and supplied noise
 ```
 
-Implement `ddim_step`, `ddim_timesteps`, `ddim_sample`, and `ddim_invert`. Sampling can return a trajectory of shape `[n+1,B,D]` including both endpoints. Inversion uses a first-order approximation: the clean endpoint has no trained timestep index, so the first call uses index zero; later calls use the time corresponding to the current state. At finite step counts, this is not an exact algebraic inverse of a nonlinear sampling map.
+Return the shape and dtype of `x_t`. `ab_t` and `ab_prev` broadcast to the sample. The final clean endpoint uses `ab_prev=1`, eliminating both the direction and random terms. With `eta=0`, the result is independent of the supplied noise.
+
+`ddim_timesteps` and `ddim_sample` are provided. The sampler calls your `ddim_step` for each pair of times and can return a `[n+1,B,D]` trajectory including both endpoints. `ddim_invert` is also supplied for optional round-trip experiments; you do not need to implement it.
 
 ## 4. Conventions
 
@@ -51,10 +56,10 @@ Choose a data point and step count to inspect inverted noise, reconstructed posi
 
 ## 6. Run your implementation
 
-Open problem **9**, implement the four functions in the browser editor, and click **Run tests**. Inspect numeric checks and trajectory diagnostics in the results panel.
+Open module **9** in the browser, complete only `ddim_step`, and run the tests.
 
-T2 checks determinism, the point-distribution endpoint, posterior variance, inversion, and discretization convergence. T3 uses the same eight-Gaussian oracle to check fifty-step generation quality and records eta=1 as a comparison.
+Core checks cover determinism, the point-distribution clean endpoint, and posterior variance. Integration checks use the supplied helpers for timestep selection, inversion, and convergence. T3 checks fifty-step generation quality with an eight-Gaussian oracle and records eta=1 as a comparison.
 
 ## 7. Further exploration
 
-Problem **10** moves from discrete denoising updates to a continuous velocity field. For few-step error and time boundaries, see [Progressive Distillation](https://arxiv.org/abs/2202.00512).
+The supplied inversion is a first-order approximation. Its first call from the clean endpoint uses index zero; later calls evaluate epsilon at the current state and time. At finite step counts, it is generally not the exact algebraic inverse of a nonlinear sampling map. Compare round-trip errors in the visualization without implementing additional code. For few-step error, see [Progressive Distillation](https://arxiv.org/abs/2202.00512).

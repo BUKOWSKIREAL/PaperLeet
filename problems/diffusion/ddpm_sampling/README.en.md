@@ -1,8 +1,10 @@
-# DDPM Posterior and Ancestral Sampling
+# Posterior and Reverse Denoising Step
 
 ## 1. What the paper solves
 
 DDPM decomposes generation into many small denoising steps. An analytic Gaussian posterior supplies a training target; at sampling time, predicted noise determines where each step moves.
+
+This is the second selected core module of DDPM. Implement only `q_posterior` and `p_sample_step`, connecting the analytic posterior and noise prediction into one reverse update. The full `ddpm_sample` loop and the test noise predictor are supplied.
 
 ## 2. Core equations
 
@@ -20,15 +22,19 @@ This exercise replaces the network with the exact score of an eight-component Ga
 
 ## 3. From equations to code
 
+Implement two core functions:
+
 ```text
-q_posterior: extract coefficients using [B] times; combine x0 and xt
-p_sample_step: recover x0 from eps, compute the mean, select the variance
-Zero the noise contribution wherever t=0
-ddpm_sample: initialize standard Gaussian noise [B,D]
-For T-1, T-2, ..., 0: call eps_model, then update the samples
+q_posterior: extract coefficients at [B] times; combine x0 and x_t
+Return the posterior mean and variance
+p_sample_step: recover x0 from epsilon, then call q_posterior
+Choose posterior or beta variance according to var_type
+Zero the noise contribution wherever t=0 and return the updated sample
 ```
 
-Implement the three public functions. With `return_traj=True`, return `(samples, trajectory)`, where the trajectory has shape `[T+1,B,...]` and includes the initial noise. All sampling randomness must use the caller's generator.
+`q_posterior` returns a mean of shape `[B,...]` and broadcastable variance `[B,1,...]`. `p_sample_step` returns the shape and dtype of `x_t`. Raise `ValueError` for an unknown `var_type`.
+
+`_extract` and `ddpm_sample` are supplied. The sampler handles initial Gaussian noise, descending times, the caller’s generator, and trajectory collection; each update calls your `p_sample_step`. With `return_traj=True`, it returns `(samples, trajectory)` with shape `[T+1,B,...]` including initial noise.
 
 ## 4. Conventions
 
@@ -51,9 +57,9 @@ Move through time to compare beta and posterior variance. Their final-step diffe
 
 ## 6. Run your implementation
 
-Open problem **8**, complete the three functions in the browser editor, and click **Run tests**. Sampling diagnostics appear with the test results.
+Open module **8** in the browser, complete `q_posterior` and `p_sample_step`, and run the tests.
 
-T2 derives the posterior independently through Gaussian precision addition. T3 checks both variance choices with 1,000 steps and 2,000 samples. The MMD threshold is 1.5 times the fixed-seed reference result; mode proportions and outliers are also checked.
+T2 derives the posterior independently through Gaussian precision addition. T3 connects your update to the supplied loop, checking both variance choices with 1,000 steps and 2,000 samples. The MMD threshold is 1.5 times the fixed-seed reference result; mode proportions and outliers are also checked.
 
 ## 7. Further exploration
 

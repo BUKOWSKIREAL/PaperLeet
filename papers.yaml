@@ -1,0 +1,92 @@
+# Paper numbers are public library IDs; module numbers remain stable CLI IDs.
+papers:
+  - id: gae
+    number: 1
+    short_title: GAE
+    year: 2016
+    tags: [Reinforcement Learning, Advantage Estimation]
+    summary: 用指数加权的 TD 残差估计优势，通过 λ 控制偏差与方差。
+    summary_en: "Estimate advantages from exponentially weighted TD residuals, with lambda controlling the bias–variance tradeoff."
+    scope: 实现 GAE 的反向递推和 episode 边界处理。
+    scope_en: "Implement the backward GAE recurrence and episode boundary handling."
+    module_ids: [rl/gae]
+  - id: ppo
+    number: 2
+    short_title: PPO
+    year: 2017
+    tags: [Reinforcement Learning, Policy Optimization]
+    summary: 在策略目标中截断概率比，限制过大的策略更新带来的收益。
+    summary_en: "Clip probability ratios in the policy objective to limit the incentive for excessively large updates."
+    scope: 实现 clipped surrogate 及其梯度行为；价值损失、归一化和统计代码已提供。
+    scope_en: "Implement the clipped surrogate and its gradient behavior; value loss, normalization, and diagnostics are supplied."
+    module_ids: [rl/ppo_clip]
+  - id: dpo
+    number: 3
+    short_title: DPO
+    year: 2023
+    tags: [Preference Learning, Language Models]
+    summary: 将偏好对上的隐式奖励差转化为直接优化语言模型的分类目标。
+    summary_en: "Turn the implicit reward margin of preference pairs into an objective that directly optimizes a language model."
+    scope: 实现偏好损失与隐式奖励；token 对齐和序列 log-prob 计算已提供。
+    scope_en: "Implement the preference loss and implicit rewards; token alignment and sequence log-probability calculation are supplied."
+    module_ids: [rl/dpo]
+  - id: deepseekmath
+    number: 4
+    short_title: DeepSeekMath · GRPO
+    year: 2024
+    tags: [Reinforcement Learning, Group Relative Advantages]
+    summary: 使用同一问题的一组回答构造相对优势，并通过 GRPO 目标更新策略。
+    summary_en: "Construct relative advantages from a group of responses to the same prompt and update the policy with the GRPO objective."
+    scope: 选取论文的 GRPO 模块：组内相对优势、截断目标和回答级聚合。
+    scope_en: "Focus on the paper's GRPO module: group-relative advantages, clipped objectives, and response-level aggregation."
+    module_ids: [rl/grpo]
+  - id: dr-grpo
+    number: 5
+    short_title: Dr. GRPO
+    year: 2025
+    tags: [Reinforcement Learning, Objective Normalization]
+    summary: 分析 GRPO 的长度与难度偏差，并调整优势缩放和损失归一化。
+    summary_en: "Analyze length and difficulty biases in GRPO and adjust advantage scaling and loss normalization."
+    scope: 实现去除组内标准差缩放与固定生成长度归一化这两处修正。
+    scope_en: "Implement two corrections: remove group standard-deviation scaling and normalize by a fixed generation budget."
+    module_ids: [rl/dr_grpo]
+  - id: ddpm
+    number: 6
+    short_title: DDPM
+    year: 2020
+    tags: [Diffusion, Denoising]
+    summary: 用逐步加噪的前向过程和学习去噪的反向过程构造生成模型。
+    summary_en: "Build a generative model from a forward noising process and a learned reverse denoising process."
+    scope: 实现闭式前向加噪，以及高斯后验和 epsilon 参数化的反向一步；调度器与采样循环已提供。
+    scope_en: "Implement closed-form forward noising, the Gaussian posterior, and an epsilon-parameterized reverse step; schedules and sampling loops are supplied."
+    module_ids: [diffusion/schedules, diffusion/ddpm_sampling]
+  - id: progressive-distillation
+    number: 7
+    short_title: Progressive Distillation
+    year: 2022
+    tags: [Diffusion, Parameterization]
+    summary: 逐步将多步采样器蒸馏为更少步数的学生；这里选取其中的 v 参数化技术。
+    summary_en: "Progressively distill a sampler into students with fewer steps; the selected module studies its v-parameterization technique."
+    scope: 实现 v 参数化与 x₀、epsilon 的转换。当前模块覆盖这一支撑技术；蒸馏目标和训练流程尚未收录。
+    scope_en: "Implement v-parameterization and conversions to x0 and epsilon. This module covers that supporting technique; the distillation objective and training procedure are not included."
+    module_ids: [diffusion/param_conversion]
+  - id: ddim
+    number: 8
+    short_title: DDIM
+    year: 2021
+    tags: [Diffusion, Sampling]
+    summary: 使用非马尔可夫采样更新实现跳步生成，并以 eta 控制随机性。
+    summary_en: "Use a non-Markovian sampling update to skip timesteps, with eta controlling stochasticity."
+    scope: 实现 DDIM 单步更新和干净端点；时间步选择、循环与反演探索代码已提供。
+    scope_en: "Implement the DDIM update and clean endpoint; timestep selection, loops, and inversion exploration code are supplied."
+    module_ids: [diffusion/ddim]
+  - id: flow-matching
+    number: 9
+    short_title: Flow Matching
+    year: 2023
+    tags: [Flow Matching, Continuous Flows]
+    summary: 通过回归条件概率路径的速度场学习连续生成流。
+    summary_en: "Learn a continuous generative flow by regressing the velocity field of conditional probability paths."
+    scope: 实现条件路径、目标速度和 CFM 回归损失；时间采样、Euler 积分和训练辅助代码已提供。
+    scope_en: "Implement the conditional path, target velocity, and CFM regression loss; time sampling, Euler integration, and training helpers are supplied."
+    module_ids: [diffusion/flow_matching]

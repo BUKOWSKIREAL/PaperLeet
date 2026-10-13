@@ -4,7 +4,7 @@
 
 读论文，写实现，用数学性质和真实行为验证理解。
 
-第一步试点包含 **RL 5 题 + Diffusion 5 题**。网页采用 LeetCode 风格的题库与分栏工作区：左侧题面、论文讲解和实验台，右侧 Python 编辑器与 T0–T3 判题报告。所有题面、签名、参考解、错误变体和可视化数据都来自 `problems/`。
+当前试点包含 **9 篇论文、10 个核心模块**。先选择论文，了解核心贡献和本次练习范围，再进入模块的 LeetCode 风格分栏工作区。辅助代码直接提供，练习聚焦论文的关键机制。“论文完成”表示选定核心模块全部通过。论文组织保存在 `papers.yaml`，题面、实现、测试和可视化数据来自 `problems/`。
 
 ## 本地启动
 
@@ -23,18 +23,18 @@ make dev
 
 ## 开始第一题
 
-1. 在题库中选择一题，例如 **7 · x₀ / ε / v Parameterization**。
-2. 阅读左侧题面，在右侧 Python 编辑器中补全实现。
+1. 在题库中选择论文，例如 **6 · DDPM**，再打开“前向加噪”模块。
+2. 阅读模块目标，在右侧编辑器中补全标注为需要实现的函数；调度器等辅助函数已经提供。
 3. 点击“运行全部测试”，等待判题结果自动显示。
 4. 根据各层测试的失败原因、期望值与实际值修改代码，再次运行。
 
-完整测试全部通过后，完成状态自动更新并解锁坑点。只跑部分测试不会解锁“全部通过”状态。草稿和学习进度保存在当前浏览器中。右上角可切换中文 / English，界面、题面和讲解随之切换。题号固定为 1–10；内部目录名保持不变，以兼容已有草稿和命令。
+完整测试全部通过后，完成状态自动更新并解锁坑点。只跑部分测试不会解锁“全部通过”状态。草稿和学习进度保存在当前浏览器中。右上角可切换中文 / English，界面、题面和讲解随之切换。论文入口使用数字编号 1–9；模块编号 1–10 和内部目录名保持不变，兼容已有草稿和 CLI 命令。后续运行失败不会抹掉此前已通过的记录。旧草稿会保留；如需新版辅助代码，可先备份代码，再使用编辑器的重置功能。
 
 网页通过判题服务执行代码并自动显示结果，无需手动处理报告文件。本地服务监听 `127.0.0.1:8765`，Vite 代理 `/api` 请求；代码保存到 `workspace/`，由本机 Python/PyTorch 执行。目前的执行方式面向个人本地使用，尚未提供隔离的多用户代码沙箱。
 
 ## Submit paper
 
-点击顶部 **Submit paper / 提交论文**，填写论文链接、可选的官方代码链接和希望练习的内容。模型读取来源，生成中英文题面、starter、参考实现、分层测试和错误变体；通过隔离验证后，进入人工评审。只有人工批准的当前版本才会分配数字题号并进入题库。
+点击顶部 **Submit paper / 提交论文**，填写论文链接、可选的官方代码链接和希望练习的内容。模型读取来源，生成中英文题面、starter、参考实现、分层测试和错误变体；通过隔离验证后，进入人工评审。只有人工批准的当前版本才会分配数字模块编号并进入论文题库。导出时会根据 arXiv 标识或来源 URL，将同篇论文的模块合并到一个入口。目前生成器每次提交生成一个候选模块。
 
 生成需要在启动服务的终端配置 `OPENAI_API_KEY` 和 `PAPERLEET_MODEL`。验证需要启动 Docker，并在仓库根目录构建镜像：
 
@@ -63,22 +63,23 @@ paperleet ci
 
 `paperleet ci` 检查参考解全部通过、每个 mutant 至少被一个真实失败抓到、每个 mutant 差异不超过 10 行、重复三次一致、T3 CPU 预算与总运行时间。结果写入 `reports/ci.json`，每题完整参考报告也保存在 `reports/`。导入/语法错误不会被当作有效 mutant 检出。
 
-## 题单
+## 论文与核心模块
 
-| ID | 题目 | 难度 | 重点 |
+| 论文编号 | 论文 | 选定核心模块 | 模块编号 |
 | --- | --- | --- | --- |
-| 1 | Generalized Advantage Estimation | Medium | 反向递推、episode 边界与偏差方差 |
-| 2 | PPO Clipped Surrogate | Medium | 四象限梯度、value clipping 与信赖域 |
-| 3 | Direct Preference Optimization | Easy | 标签移位、mask、稳定偏好损失 |
-| 4 | Group Relative Policy Optimization | Medium | 组内归一、逐 token KL 与聚合 |
-| 5 | Dr. GRPO | Medium | 长度偏置与奖励标准化的变体 |
-| 6 | Noise Schedules & Forward Diffusion | Easy | 线性/cosine 调度、前向加噪 |
-| 7 | x₀ / ε / v Parameterization | Easy | 往返变换、切向量与端点稳定性 |
-| 8 | DDPM Posterior & Sampling | Medium | 独立高斯后验、解析 oracle 采样 |
-| 9 | DDIM | Medium | η、跳步、确定性采样与反演 |
-| 10 | Flow Matching | Medium | 插值、速度、Euler 与小模型训练 |
+| 1 | GAE | 优势反向递推与 episode 边界 | 1 |
+| 2 | PPO | 截断策略目标 | 2 |
+| 3 | DPO | 偏好损失与隐式奖励 | 3 |
+| 4 | DeepSeekMath | GRPO 组内相对优势与策略目标 | 4 |
+| 5 | Dr. GRPO | 优势缩放与固定长度归一化 | 5 |
+| 6 | DDPM | 前向加噪；后验与反向一步 | 6、8 |
+| 7 | Progressive Distillation | v 参数化与转换 | 7 |
+| 8 | DDIM | 单步采样更新 | 9 |
+| 9 | Flow Matching | 条件路径、目标速度与回归损失 | 10 |
 
-每题均包含 `problem.yaml`、中英文论文讲解、starter、参考解、通过后解锁的坑点、分层测试与错误变体。第 6、7 题无需 T3；第 5 题的长度趋势只作展示，不据此判分。
+每篇论文单独划定练习范围。Progressive Distillation 当前选取其中的 v 参数化支撑技术，尚未包含蒸馏训练。DDPM 配套的 cosine 调度来自 Improved DDPM，作为相关工作辅助代码提供。完整网络组装和大规模训练不属于本次必做范围。
+
+每个模块通过 `module.required_functions` 和 `module.provided_functions` 声明需要实现及已经提供的函数，starter 仅将必做函数留空。判题仍会使用辅助代码调用用户实现。每个模块均包含中英文题面和坑点、参考解、分层测试与错误变体。模块 6、7 无需 T3；模块 5 的长度趋势只作展示，不据此判分。
 
 ## 可视化与静态构建
 
@@ -100,7 +101,8 @@ npm run build
 
 ```text
 paperleet/         CLI、pytest runner、本地服务、公共数学工具
-problems/          独立题目包（rl / diffusion）
+papers.yaml        论文、核心贡献、练习范围与模块顺序
+problems/          独立核心模块包（rl / diffusion）
 web/               Vite + React + TypeScript
 tests/             判题框架的集成测试
 workspace/         个人代码，忽略于 Git

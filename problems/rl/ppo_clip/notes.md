@@ -1,7 +1,9 @@
-# PPO：通过后复盘
+# PPO 截断目标：通过后复盘
 
-- **把 clip 当成双向梯度截断**：只用 `clip(r)*A` 会把不利方向也截平；`test_four_quadrant_gradient` 用四个符号组合给出精确梯度。
-- **把 policy 的 min 与 value 的 max 混用**：policy 使用悲观收益下界，value 使用悲观误差上界；`test_value_loss_lower_bound` 选择当前预测恰好等于 target、旧预测相距很远的例子，使差异无法隐藏。
-- **旧模型收到梯度**：旧 log-prob 或 value 是快照，即使输入带 `requires_grad` 也必须 detach。`test_old_values_are_constants` 检查两种快照。
-- **std 默认值和单样本边界**：本题与 [CleanRL ppo.py](https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/ppo.py) 一样使用样本标准差；B=1 额外约定标准差为零。核验日期 2026-10-13。`test_advantage_affine_invariance` 与参考对照检查归一化。实现细节稳定文章：[ICLR Blog Track 2022](https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/)。
-- **把 PPO 当作严格 KL 约束**：截断不保证任意学习率、优化器下 KL 有界。`test_bandit_learning_and_kl` 固定完整训练配置，在没有 KL 早停的条件下标定门槛；该数字不应直接移用到大模型训练。
+- **只计算截断分支**：`clip(r)*A` 会把不利方向也截平。`test_core_four_quadrants_and_frozen_targets` 直接检查核心函数的四种梯度；`test_four_quadrant_gradient` 检查接入训练辅助后的结果。
+- **用 max 代替 min**：PPO 取收益的悲观下界。负 advantage 也要保留符号，不能先取绝对值再截断。
+- **把 log-prob 差当作概率比**：概率比是 `exp(new_logp - old_logp)`。同一策略的 ratio 应为一，策略梯度应退化为普通 policy gradient。
+- **旧策略或 advantage 收到梯度**：二者都是这个优化步骤的固定目标。核心函数应自行 detach；测试会直接调用它检查计算图。
+- **把 clipping 当作严格 KL 约束**：截断不能保证任意学习率或优化器下 KL 有界。现成 bandit 实验固定了训练配置，门槛只适用于这个实验。
+
+`ppo_loss` 中的归一化、value clipping、熵和诊断量均已提供。它们的集成测试用于确认核心函数能接入训练；进一步研究这些实现约定可以作为完成本模块后的拓展。

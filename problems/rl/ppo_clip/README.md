@@ -1,52 +1,45 @@
-# PPO Clipped Surrogate
+# PPO 截断策略目标
 
 ## 1. 这篇论文解决什么
 
 同一批轨迹训练多轮会让策略远离采样时的分布。PPO 用概率比的悲观截断目标实现简单的一阶更新；核心见[论文式 7 与式 9](https://arxiv.org/pdf/1707.06347)。
 
+本模块目标：实现悲观截断目标，验证正负 advantage 下的四种梯度情形。 只实现 clipped_surrogate；价值损失、熵、归一化与训练循环已提供。 完成后记为这篇论文的一个核心模块。
+
 ## 2. 核心公式与题面
 
-实现 `ppo_loss`，所有输入是 `[B]`，返回 `loss, pg_loss, v_loss, entropy, approx_kl, clipfrac` 六个标量。当前 log-prob 和价值保留梯度，旧策略、旧价值、回报和 advantage 是固定目标。
+只需实现 `clipped_surrogate(new_logp, old_logp, advantages, clip_eps=0.2)`。三个输入都是 `[B]`，返回用于最小化的策略损失标量。`advantages` 已经准备好，函数内部冻结它与 `old_logp`，保留 `new_logp` 的梯度。
 
 $$
 r=e^{\log\pi_\theta-\log\pi_{old}},\qquad
 L^{PG}=-\mathbb E[\min(r\hat A,\operatorname{clip}(r,1-\epsilon,1+\epsilon)\hat A)].
 $$
 
-正 advantage 遇到过大的概率比时停止奖励进一步提高概率；负 advantage 遇到过小的概率比时停止奖励继续降低概率。反向移动仍会受到惩罚，所以不能单独把概率比截断后乘 advantage。
+正 advantage 遇到过大的概率比时停止奖励进一步提高概率；负 advantage 遇到过小的概率比时停止奖励继续降低概率。反向移动仍会受到惩罚，所以需要保留未截断分支与截断分支中的较小值。
 
-$$
-V_c=V_{old}+\operatorname{clip}(V-V_{old},-c,c),\quad
-L^V=\tfrac12\mathbb E[\max((V-R)^2,(V_c-R)^2)].
-$$
-
-总损失 $L=L^{PG}+c_vL^V-c_e\mathbb E[H]$，按最小化实现。默认 $\epsilon=c=0.2,c_v=0.5,c_e=0$。`vf_clip=None` 关闭价值截断，`entropy=None` 把熵项视为零。
+starter 已完整提供 `ppo_loss`。它调用你的核心函数，负责 advantage 归一化、value clipping、熵和诊断量，最后接入现成的 bandit 实验。保留这段辅助代码即可。
 
 ## 3. 从公式到代码
 
 ```text
-输入: 六个 [B] 向量，可选 entropy [B]
-冻结 old_logp、old_values 与训练目标
-可选归一化 advantage: [B]
-逐样本构造 ratio、截断 surrogate、两个 value error
-各项按 batch 平均 → 标量 loss
-在 no_grad 下计算 approx_kl 与 clipfrac
+三个 [B] 向量 → 冻结 old_logp 和 advantages
+log-prob 差取 exp → ratio [B]
+分别计算 ratio * advantage 与 clipped_ratio * advantage
+逐元素取较小值 → 对 batch 求负均值 → 标量
 ```
 
-`approx_kl = mean(r-1-log(r))`，`clipfrac = mean(abs(r-1)>epsilon)`。前者逐样本非负；后者只是超出区间的比例，并不等价于梯度真正被截掉的比例。
+核心检查是 ratio 高于/低于截断范围、advantage 正/负时的四种梯度。提供的 wrapper 只使用核心函数返回的策略损失；实现这个函数即可完成整套测试。
 
-## 4. 本题约定
+## 4. 已提供的训练辅助与约定
 
-| 项目 | 本题 | CleanRL `ppo.py` |
-|---|---|---|
-| advantage 标准差 | 无偏样本标准差，外加 $10^{-8}$ | 相同 |
-| 单样本归一化 | 标准差视为零，归一后为零 | 本题补充边界规则 |
-| value clipping | 可关闭，默认 0.2 | 默认开启、共用 clip coefficient |
-| 旧量梯度 | 函数内部 detach | 通常由 rollout 存储保证 |
+| 项目 | 已提供行为 |
+|---|---|
+| advantage 归一化 | 样本标准差加 $10^{-8}$；单样本标准差视为零 |
+| value loss | 可选 value clipping，两个平方误差取最大值后乘 $1/2$ |
+| entropy | 可选熵奖励；缺省为零 |
+| diagnostics | detach 的 `approx_kl = mean(r-1-log(r))` 与 `clipfrac` |
 
-对照来源为 [CleanRL 源码](https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/ppo.py) 与 [37 个实现细节](https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/)，核对日期为 2026-10-13。PPO 截断并不构成严格的 KL 上界；本题 KL 门槛只针对固定学习率、固定 batch 的小实验，训练循环没有偷偷加入 KL 早停。
-
-训练中 advantage 的正负号决定应该提高还是降低该动作概率；先把这个方向判断清楚，再检查截断边界。建议在纸上画出四个象限，手算一个样本的梯度，与报告中的期望值逐项对照。
+这些辅助项沿用现有判题约定，测试保留它们的集成检查。你需要填写的只有策略截断目标。PPO clipping 不构成严格的 KL 上界；bandit 中的 KL 门槛只针对固定学习率和固定 batch 的小实验。
 
 ## 5. 交互可视化
 
@@ -56,12 +49,14 @@ $$
 
 ## 6. 怎么运行
 
+在浏览器中打开本论文的 **PPO 截断策略目标** 模块，填写 `clipped_surrogate`，保留已提供的 `ppo_loss`，然后运行测试。
+
 ```bash
 paperleet init rl/ppo_clip
 paperleet test rl/ppo_clip
 ```
 
-编辑 `workspace/rl/ppo_clip.py`。四象限梯度测试定位 policy clipping；价值下界测试定位 value clipping；五臂 bandit 实验验证多轮训练后最优臂概率超过 0.9。
+本地编辑 `workspace/rl/ppo_clip.py`。先查看核心函数与四象限梯度测试，再查看现成 bandit 实验。
 
 ## 7. 延伸
 

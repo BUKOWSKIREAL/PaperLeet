@@ -1,8 +1,10 @@
-# Generalized Advantage Estimation
+# GAE 反向递推
 
 ## 1. 这篇论文解决什么
 
 策略梯度需要知道一个动作比当前策略的平均选择好多少。GAE 把单步 TD 与 Monte Carlo 回报连接起来，让同一个参数控制估计的偏差和方差。[论文第 3 节，式 16–18](https://arxiv.org/html/1506.02438v6#S3)。
+
+本模块目标：从 TD 残差实现 GAE 反向递推，正确处理 episode 边界。 只实现 advantage 与 value target；轨迹和价值估计由测试提供。 完成后记为这篇论文的一个核心模块。
 
 ## 2. 核心公式与题面
 

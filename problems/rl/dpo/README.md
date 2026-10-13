@@ -1,28 +1,28 @@
-# Direct Preference Optimization
+# DPO 偏好目标与隐式奖励
 
 ## 1. 这篇论文解决什么
 
 DPO 把 KL 正则化奖励最大化改写为偏好对上的分类目标，训练时不需要单独拟合奖励模型。[论文第 4 节](https://arxiv.org/html/2305.18290v3#S4) 从最优策略推导这个等价关系。
 
+本模块目标：从策略与参考模型的序列分数实现偏好损失和隐式奖励。 只实现 dpo_loss；序列 log-prob 聚合与小型训练实验已提供。 完成后记为这篇论文的一个核心模块。
+
 ## 2. 核心公式与题面
 
-先实现 `sequence_logprob`：输入 logits `[B,T,V]`、token id 和回答 mask `[B,T]`，输出 `[B]`。位置 $t$ 的 logits 预测位置 $t+1$ 的 token；只求回答部分 log-prob 的总和。第一项标签没有前驱预测，最后一项 logits 没有对应标签。
+只需实现 `dpo_loss`。starter 已提供 `sequence_logprob`，处理 next-token 标签移位、回答 mask 和 log-prob 求和，直接产生目标函数所需的序列分数。
 
-再实现 `dpo_loss`。四个序列 log-prob 都是 `[B]`，返回 loss 标量，以及两个已经 detach 的奖励向量。
+四个序列 log-prob 都是 `[B]`，返回 loss 标量，以及两个已经 detach 的奖励向量。
 
 $$
 h=(\log\pi_c-\log\pi^{ref}_c)-(\log\pi_r-\log\pi^{ref}_r),\qquad
 L=-\mathbb E[(1-\varepsilon)\log\sigma(\beta h)+\varepsilon\log\sigma(-\beta h)].
 $$
 
-$c,r$ 分别代表 chosen 和 rejected，$\beta$ 默认为 0.1，标签平滑 $\varepsilon$ 默认为零。隐式奖励为 $\beta(\log\pi-\log\pi^{ref})$。这是相对参考策略的奖励，所以不能拿 chosen 的原始 log-prob 当作预测偏好分数。
+$c,r$ 分别代表 chosen 和 rejected，$\beta$ 默认为 0.1，标签平滑 $\varepsilon$ 默认为零，此时就是原论文的核心目标；非零平滑是保留的可选兼容参数。隐式奖励为 $\beta(\log\pi-\log\pi^{ref})$。这是相对参考策略的奖励，所以不能拿 chosen 的原始 log-prob 当作预测偏好分数。
 
 ## 3. 从公式到代码
 
 ```text
-logits[:, :-1]: [B,T-1,V] → log_softmax
-用 input_ids[:, 1:] 取出标签分数: [B,T-1]
-乘 loss_mask[:, 1:]，沿时间求和 → [B]
+已提供 sequence_logprob → 四个 [B] 序列分数
 冻结 reference；计算 chosen / rejected reward 和 margin
 用稳定的 log-sigmoid 合并正反标签 → 标量 loss
 ```
@@ -55,7 +55,7 @@ paperleet init rl/dpo
 paperleet test rl/dpo
 ```
 
-编辑 `workspace/rl/dpo.py`。双循环测试帮助核对移位；极端 margin 测试帮助核对数值稳定性；行为测试在本地训练一个小 categorical 策略。
+编辑 `workspace/rl/dpo.py` 中的 `dpo_loss`，保留已提供的 `sequence_logprob`。优先查看 reference-adjusted margin、beta 缩放、梯度与极端值测试。序列测试检查辅助代码的集成，现成行为实验训练一个小 categorical 策略。
 
 ## 7. 延伸
 

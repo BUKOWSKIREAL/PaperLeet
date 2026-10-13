@@ -11,7 +11,7 @@ const server = await createServer({
 try {
   const { default: Lab } = await server.ssrLoadModule("/src/Lab.tsx");
   const { ArtifactCharts } = await server.ssrLoadModule("/src/Visuals.tsx");
-  const { isPassed } = await server.ssrLoadModule("/src/types.ts");
+  const { isPassed, status } = await server.ssrLoadModule("/src/types.ts");
   const { parseReport, parseSaved, decodeProblemHash } =
     await server.ssrLoadModule("/src/reports.ts");
   const { decodeViz } = await server.ssrLoadModule("/src/vizData.ts");
@@ -219,6 +219,21 @@ try {
   assert.deepEqual(Object.keys(recovered).sort(), ["corrupt", "example"]);
   assert.equal(recovered.corrupt.code, "draft survives");
   assert.equal(recovered.corrupt.report, undefined);
+  assert.equal(status(problem, {...recovered.example, report: undefined}), "done",
+    "Legacy success should survive a reset of the latest report");
+  const acceptedThenFailed = parseSaved({example: {acceptedReport: report, report: {
+    ...report, error: "Later run failed",
+  }}});
+  assert.equal(status(problem, acceptedThenFailed.example), "done", "A later failed attempt must not erase completion");
+  const wrongAcceptance = parseSaved({other: {acceptedReport: report}});
+  assert.equal(wrongAcceptance.other, undefined, "Completion must belong to the same module");
+  assert.equal(status(problem, {acceptedReport: partial}), "todo", "A passing subset does not complete a module");
+  const { paperProgress } = await server.ssrLoadModule("/src/PaperViews.tsx");
+  const paper = {module_ids: ["example", "optional"]};
+  const practice = {problems: [{...problem, module: {optional: false}},
+    {...problem, id: "optional", module: {optional: true}}], saved: acceptedThenFailed};
+  assert.deepEqual(paperProgress(paper, practice), {completed: 1, total: 1, state: "done"},
+    "Optional extensions must not invalidate a paper's completed core modules");
   for (const invalid of [null, [], 4, "bad"])
     assert.deepEqual(parseSaved(invalid), {});
   assert.equal(decodeProblemHash("#/%E0%A4%A"), "");

@@ -1,7 +1,9 @@
-# PPO: Review after passing
+# PPO clipped objective: Review after passing
 
-- **Treating clipping as a two-sided gradient cutoff.** Using only `clip(r)*A` also flattens the unfavorable direction. `test_four_quadrant_gradient` gives exact gradients for four sign combinations.
-- **Swapping policy `min` and value `max`.** The policy objective takes a pessimistic lower bound on reward; the value objective takes a pessimistic upper bound on error. `test_value_loss_lower_bound` makes the current prediction equal the target while the old prediction is far away, exposing the difference.
-- **Sending gradients to the old model.** Old log-probabilities and values are snapshots. Detach them even when the input has `requires_grad=True`. `test_old_values_are_constants` checks both snapshots.
-- **Using the wrong standard deviation or mishandling a single sample.** This exercise follows [CleanRL's `ppo.py`](https://github.com/vwxyzjn/cleanrl/blob/master/cleanrl/ppo.py) in using sample standard deviation, with an additional rule that it is zero when B=1. The original exercise checked this on 2026-10-13. `test_advantage_affine_invariance` and reference comparisons check normalization. See also the [2022 ICLR Blog Track article](https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/).
-- **Assuming PPO is a strict KL constraint.** Clipping cannot bound KL for arbitrary learning rates and optimizers. `test_bandit_learning_and_kl` fixes the full training configuration and calibrates its threshold without KL early stopping. That number should not be copied directly into large-model training.
+- **Keeping only the clipped branch.** `clip(r)*A` also flattens unfavorable directions. `test_core_four_quadrants_and_frozen_targets` checks all four gradient cases directly; `test_four_quadrant_gradient` checks integration with the supplied adapter.
+- **Using max instead of min.** PPO takes a pessimistic lower bound on reward. Keep negative advantages signed; taking their absolute value changes the optimization direction.
+- **Using the log-probability difference as a ratio.** The ratio is `exp(new_logp - old_logp)`. Identical policies give a ratio of one and recover the ordinary policy gradient.
+- **Sending gradients into the old policy or advantages.** Both are fixed targets for this update. Detach them inside the core function; tests call it directly to inspect gradient connectivity.
+- **Treating clipping as a strict KL constraint.** Clipping does not bound KL for arbitrary learning rates or optimizers. The supplied bandit experiment uses a fixed training configuration, and its threshold applies to that experiment.
+
+Normalization, value clipping, entropy, and diagnostics are supplied in `ppo_loss`. Their integration tests check that your core function works in training. Studying these implementation conventions is an extension after completing this module.

@@ -1,12 +1,11 @@
 id: rl/dr_grpo
 number: 5
-title_en: Dr. GRPO · Remove Two Biases
+title_en: Dr. GRPO Length and Difficulty Bias Corrections
 short_id: R5
-title: Dr. GRPO · Remove Two Biases
+title: Dr. GRPO 长度与难度偏置修正
 paper:
   title: 'Understanding R1-Zero-Like Training: A Critical Perspective'
-  authors: Zichen Liu, Changyu Chen, Wenjun Li, Penghui Qi, Tianyu Pang, Chao Du,
-    Wee Sun Lee, Min Lin
+  authors: Zichen Liu, Changyu Chen, Wenjun Li, Penghui Qi, Tianyu Pang, Chao Du, Wee Sun Lee, Min Lin
   venue: arXiv 2025
   arxiv: '2503.20783'
   anchors:
@@ -19,9 +18,17 @@ functions:
 - name: drgrpo_advantages
   signature: 'drgrpo_advantages(rewards: Tensor, group_size: int) -> Tensor'
 - name: drgrpo_loss
-  signature: 'drgrpo_loss(logp: Tensor, old_logp: Tensor, ref_logp: Tensor, advantages:
-    Tensor, mask: Tensor, max_len: int, clip_eps: float=0.2, beta: float=0.04) ->
-    tuple[Tensor, dict]'
+  signature: 'drgrpo_loss(logp: Tensor, old_logp: Tensor, ref_logp: Tensor, advantages: Tensor, mask:
+    Tensor, max_len: int, clip_eps: float=0.2, beta: float=0.04) -> tuple[Tensor, dict]'
+- name: token_objective
+  signature: 'token_objective(logp: Tensor, old_logp: Tensor, ref_logp: Tensor, advantages: Tensor, clip_eps:
+    float=0.2, beta: float=0.04) -> tuple[Tensor, Tensor, Tensor]'
+- name: masked_logprobs
+  signature: 'masked_logprobs(logp: Tensor, old_logp: Tensor, ref_logp: Tensor, mask: Tensor) -> tuple[Tensor,
+    Tensor, Tensor]'
+- name: token_statistics
+  signature: 'token_statistics(ratio: Tensor, kl: Tensor, mask: Tensor, clip_eps: float) -> dict[str,
+    Tensor]'
 conventions:
   normalization: N × 外部固定 max_len
   advantages: 奖励减组均值，不除标准差
@@ -47,14 +54,29 @@ viz:
 estimated_minutes: 20
 formula: L=-\frac{1}{NL_{max}}\sum_{i,t}m_{i,t}(s_{i,t}-\beta k3_{i,t})
 tags:
-- Reinforcement Learning
-- R5
+- Length Bias
+- Reward Normalization
 sources_verified: '2026-10-13'
 calibration:
   seed: 42
   threads: 2
   dtype: float32
-  method: Upper error thresholds = reference × 1.5; reward lower bounds specified
-    by pilot
+  method: Upper error thresholds = reference × 1.5; reward lower bounds specified by pilot
   metrics:
     display_only: true
+paper_id: dr-grpo
+module:
+  goal: 通过去掉组内标准差与使用固定长度分母，实现两处归一化修正。
+  goal_en: Remove group standard-deviation scaling and use a fixed length denominator to correct two normalization
+    biases.
+  scope: 只实现两处归一化修正；逐 token 目标、mask 辅助与诊断量已提供。
+  scope_en: Implement the two normalization corrections; the token objective, masking helpers, and diagnostics
+    are supplied.
+  required_functions:
+  - drgrpo_advantages
+  - drgrpo_loss
+  provided_functions:
+  - token_objective
+  - masked_logprobs
+  - token_statistics
+  optional: false

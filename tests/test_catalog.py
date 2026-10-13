@@ -7,6 +7,7 @@ import yaml
 from paperleet.catalog import problem, problems
 from paperleet.export import export_catalog, vizdata, web_readme
 from paperleet.judge.runner import run_batch
+from paperleet.paper_catalog import paper_catalog, module_scope, source_key
 
 
 def package(tmp_path, canonical, number, **metadata):
@@ -80,3 +81,59 @@ def test_generated_packages_never_fall_back_to_host_execution(tmp_path, monkeypa
     with pytest.raises(ValueError, match="on the host"):
         vizdata(problem("11"))
     assert not sentinel.exists()
+
+
+def test_paper_source_deduplication_and_explicit_module_order(tmp_path, monkeypatch):
+    monkeypatch.setenv("PAPERLEET_ROOT", str(tmp_path))
+    package(tmp_path, "diffusion/forward", 6, paper={"title": "DDPM", "arxiv": "2006.11239"})
+    package(tmp_path, "diffusion/reverse", 8, paper={"title": "DDPM", "url": "https://arxiv.org/pdf/2006.11239v2.pdf"})
+    package(tmp_path, "community/new", 11, paper={"title": "Same paper", "url": "https://arxiv.org/abs/2006.11239v3"})
+    (tmp_path / "papers.yaml").write_text(yaml.safe_dump({"papers": [{
+        "id": "ddpm", "number": 1, "short_title": "DDPM",
+        "module_ids": ["diffusion/forward", "diffusion/reverse"],
+    }]}))
+    exported = json.loads(export_catalog().read_text())
+    assert len(exported["papers"]) == 1
+    assert exported["papers"][0]["module_ids"] == ["diffusion/forward", "diffusion/reverse", "community/new"]
+    assert {module["paper_id"] for module in exported["problems"]} == {"ddpm"}
+    assert [module["number"] for module in exported["problems"]] == [6, 8, 11]
+    assert [module["module"]["optional"] for module in exported["problems"]] == [False, False, True]
+
+
+@pytest.mark.parametrize("definitions, message", [
+    ([{"id": "p", "number": 1, "module_ids": ["demo/missing"]}], "unknown module"),
+    ([{"id": "p", "number": 1, "module_ids": ["demo/a", "demo/a"]}], "more than one paper"),
+    ([{"id": "p", "number": True, "module_ids": ["demo/a"]}], "positive integers"),
+    ([{"id": "p", "number": 1, "module_ids": ["demo/a"]},
+      {"id": "q", "number": 1, "module_ids": ["demo/b"]}], "positive integers"),
+    ([{"id": "p", "number": 1, "module_ids": ["demo/a", "demo/b"]}], "different primary papers"),
+])
+def test_bad_paper_membership_cannot_export(tmp_path, monkeypatch, definitions, message):
+    monkeypatch.setenv("PAPERLEET_ROOT", str(tmp_path))
+    package(tmp_path, "demo/a", 1, paper={"arxiv": "2006.11239"})
+    package(tmp_path, "demo/b", 2, paper={"arxiv": "2010.02502"})
+    (tmp_path / "papers.yaml").write_text(yaml.safe_dump({"papers": definitions}))
+    with pytest.raises(ValueError, match=message):
+        export_catalog()
+
+
+def test_legacy_packages_still_get_paper_cards(tmp_path, monkeypatch):
+    monkeypatch.setenv("PAPERLEET_ROOT", str(tmp_path))
+    package(tmp_path, "demo/a", 1)
+    package(tmp_path, "demo/b", 2)
+    papers, membership = paper_catalog(problems())
+    assert len(papers) == 2
+    assert membership == {"demo/a": "paper-1", "demo/b": "paper-2"}
+
+
+def test_required_and_provided_functions_cannot_overlap():
+    entry = {"id": "demo/a", "title": "Example", "functions": [{"name": "core"}, {"name": "helper"}]}
+    module = module_scope(entry)
+    assert module["required_functions"] == ["core", "helper"]
+    entry["module"] = {**module, "provided_functions": ["helper"]}
+    with pytest.raises(ValueError, match="partition"):
+        module_scope(entry)
+
+
+def test_arxiv_source_versions_share_identity():
+    assert source_key({"arxiv": "2006.11239"}) == source_key({"url": "https://arxiv.org/html/2006.11239v2"})

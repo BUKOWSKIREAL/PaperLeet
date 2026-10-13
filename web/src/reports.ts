@@ -120,7 +120,21 @@ export function parseSaved(value: unknown): Record<string, Saved> {
     } catch {
       /* One broken report must not prevent recovery of other drafts. */
     }
-    if (saved.code !== undefined || saved.report) entries.push([id, saved]);
+    try {
+      const accepted = parseReport(entry.acceptedReport);
+      if (accepted.problem === id && !accepted.error && !accepted.mutation &&
+          accepted.tests.length > 0 && accepted.tests.every((test) => test.passed))
+        saved.acceptedReport = accepted;
+    } catch {
+      /* Completion is validated against the current module by status(). */
+    }
+    // Retain successes from the original storage format before the latest
+    // report is replaced or the editor is reset. status() checks full coverage.
+    if (!saved.acceptedReport && saved.report && !saved.report.error &&
+        !saved.report.mutation && saved.report.tests.length > 0 &&
+        saved.report.tests.every((test) => test.passed))
+      saved.acceptedReport = saved.report;
+    if (saved.code !== undefined || saved.report || saved.acceptedReport) entries.push([id, saved]);
   }
   return Object.fromEntries(entries);
 }

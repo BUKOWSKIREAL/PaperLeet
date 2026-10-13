@@ -1,8 +1,10 @@
-# DDIM 确定性少步采样
+# DDIM 跳步更新
 
 ## 1. 论文解决什么问题
 
 DDPM 的训练目标只要求各时间的边缘加噪分布，并没有把采样轨迹唯一固定。DDIM 利用这一自由度复用已有噪声预测器，以更少的去噪步骤生成样本。
+
+本模块只要求实现 `ddim_step`，直接抓住论文的跳步更新公式。时间子序列和完整采样循环已经提供；反演辅助代码与可视化保留为可选探索。
 
 ## 2. 核心公式
 
@@ -18,14 +20,18 @@ $$x_{\mathrm{prev}}=\sqrt b\hat x_0+\sqrt{1-b-\sigma^2}\hat\epsilon+\sigma z.$$
 
 ## 3. 从公式到代码
 
+只实现 `ddim_step(x_t, eps_pred, ab_t, ab_prev, eta, noise)`：
+
 ```text
-timesteps[k] = T-1-k*(T//num_steps)，k 从 0 到 n-1
-对每个降序时间：预测 epsilon，调用 ddim_step
-下一时间不存在时，令 alpha_bar_prev=1
-反演：按升序遍历，在当前位置求 epsilon，再推到更噪的时间
+用当前 ab_t 与 epsilon 预测恢复 x0
+从当前和目标累计系数计算 sigma
+从方向项方差中扣除 sigma²
+组合 x0 预测、epsilon 方向和调用者提供的噪声
 ```
 
-实现 `ddim_step`、`ddim_timesteps`、`ddim_sample`、`ddim_invert`。采样可返回包含起点与终点的 `[n+1,B,D]` 轨迹。反演采用一阶近似：干净端点没有训练索引，首次使用索引零的 epsilon；之后总在当前状态对应的时间预测。它不会在有限步数下严格求得非线性映射的代数逆。
+返回与 `x_t` 同形状、同 dtype 的张量。`ab_t` 与 `ab_prev` 可广播到样本；最终干净端点使用 `ab_prev=1`，此时方向项和随机项都消失。`eta=0` 时输出与传入噪声无关。
+
+`ddim_timesteps` 和 `ddim_sample` 已提供。采样循环会对每一对时间调用你的 `ddim_step`，并可返回包含起点与终点的 `[n+1,B,D]` 轨迹。`ddim_invert` 也已提供，用于可选的往返实验，无需自行实现。
 
 ## 4. 本题约定
 
@@ -50,13 +56,10 @@ timesteps[k] = T-1-k*(T//num_steps)，k 从 0 到 n-1
 
 ## 6. 怎么运行
 
-```bash
-paperleet init diffusion/ddim
-paperleet test diffusion/ddim
-```
+在浏览器中打开模块 **9**，只补全 `ddim_step` 后运行测试。
 
-T2 检查确定性、单点端点、后验方差、反演与离散化收敛。T3 用相同八高斯 oracle 检查五十步生成质量，并记录 eta=1 的对照数值。
+核心检查覆盖确定性、单点干净端点和后验方差；集成检查使用提供的辅助函数验证时间子序列、反演与收敛。T3 通过八高斯 oracle 检查五十步生成质量，并记录 eta=1 的对照数值。
 
 ## 7. 延伸
 
-D5 将离散去噪更新推广到连续速度场。关于少步误差与时间边界，也可阅读 [Progressive Distillation](https://arxiv.org/abs/2202.00512)。
+提供的反演是一阶近似：从干净端点出发时首次使用索引零，之后在当前位置和时间求 epsilon。有限步数下，它通常不是非线性采样映射的精确代数逆。可用反演可视化比较不同步数的往返误差；这部分无需补全代码。少步误差还可参考 [Progressive Distillation](https://arxiv.org/abs/2202.00512)。

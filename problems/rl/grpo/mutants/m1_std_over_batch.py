@@ -3,6 +3,21 @@ import torch
 from torch import Tensor
 
 
+def masked_logprobs(logp: Tensor, old_logp: Tensor, ref_logp: Tensor, mask: Tensor):
+    """Provided helper: neutralize padding before exponential calculations."""
+    active = mask.bool()
+    return tuple(torch.where(active, x, torch.zeros_like(x)) for x in (logp, old_logp, ref_logp))
+
+
+def token_statistics(ratio: Tensor, kl: Tensor, mask: Tensor, clip_eps: float) -> dict:
+    """Provided helper: detached diagnostics averaged over valid tokens."""
+    with torch.no_grad():
+        denom = mask.sum().clamp_min(1)
+        return dict(kl_mean=(kl * mask).sum() / denom,
+                    clipfrac=(((ratio - 1).abs() > clip_eps) * mask).sum() / denom,
+                    ratio_mean=(ratio * mask).sum() / denom)
+
+
 def grpo_advantages(rewards: Tensor, group_size: int, scale_std: bool = True, eps: float = 1e-4) -> Tensor:
     """Adjacent groups [B*G], sample std (correction=1), G >= 2."""
     if group_size < 2 or rewards.numel() % group_size:
@@ -15,7 +30,7 @@ def grpo_advantages(rewards: Tensor, group_size: int, scale_std: bool = True, ep
 
 def token_objective(logp: Tensor, old_logp: Tensor, ref_logp: Tensor, advantages: Tensor,
                     clip_eps: float = 0.2, beta: float = 0.04):
-    """Shared ratio, clipping and k3 computation used by the R5 variant."""
+    """Shared ratio, clipping and k3 computation used by the Dr. GRPO module."""
     ratio = (logp - old_logp.detach()).exp()
     diff = ref_logp.detach() - logp
     kl = diff.exp() - diff - 1
@@ -27,14 +42,12 @@ def token_objective(logp: Tensor, old_logp: Tensor, ref_logp: Tensor, advantages
 def grpo_loss(logp: Tensor, old_logp: Tensor, ref_logp: Tensor, advantages: Tensor,
               mask: Tensor, clip_eps: float = 0.2, beta: float = 0.04) -> tuple[Tensor, dict]:
     """[N,L] token log-probs; mean tokens within each response, then responses."""
-    active = mask.bool()
-    logp, old_logp, ref_logp = [torch.where(active, x, torch.zeros_like(x)) for x in (logp, old_logp, ref_logp)]
-    objective, ratio, kl = token_objective(logp, old_logp, ref_logp, advantages, clip_eps, beta)
+    logp, old_logp, ref_logp = masked_logprobs(logp, old_logp, ref_logp, mask)
+    ratio = (logp - old_logp.detach()).exp()
+    diff = ref_logp.detach() - logp
+    kl = diff.exp() - diff - 1
+    advantage = advantages.detach().unsqueeze(-1)
+    objective = torch.minimum(ratio * advantage, ratio.clamp(1 - clip_eps, 1 + clip_eps) * advantage) - beta * kl
     lengths = mask.sum(-1).clamp_min(1)
     loss = -((objective * mask).sum(-1) / lengths).mean()
-    with torch.no_grad():
-        denom = mask.sum().clamp_min(1)
-        stats = dict(kl_mean=(kl * mask).sum() / denom,
-                     clipfrac=(((ratio - 1).abs() > clip_eps) * mask).sum() / denom,
-                     ratio_mean=(ratio * mask).sum() / denom)
-    return loss, stats
+    return loss, token_statistics(ratio, kl, mask, clip_eps)

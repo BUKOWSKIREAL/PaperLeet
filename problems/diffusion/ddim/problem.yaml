@@ -1,8 +1,8 @@
 id: diffusion/ddim
 number: 9
-title_en: DDIM Deterministic Few-Step Sampling
+title_en: DDIM Subsequence Update
 short_id: D4
-title: DDIM 确定性少步采样
+title: DDIM 跳步更新
 paper:
   title: Denoising Diffusion Implicit Models
   authors: Jiaming Song, Chenlin Meng, Stefano Ermon
@@ -16,17 +16,17 @@ parent: null
 difficulty: M
 functions:
 - name: ddim_step
-  signature: 'ddim_step(x_t: Tensor, eps_pred: Tensor, ab_t: Tensor, ab_prev: Tensor,
-    eta: float, noise: Tensor) -> Tensor'
+  signature: 'ddim_step(x_t: Tensor, eps_pred: Tensor, ab_t: Tensor, ab_prev: Tensor, eta: float, noise:
+    Tensor) -> Tensor'
 - name: ddim_timesteps
   signature: 'ddim_timesteps(T: int, num_steps: int) -> Tensor'
 - name: ddim_sample
-  signature: 'ddim_sample(eps_model: Callable[[Tensor, Tensor], Tensor], x_T: Tensor,
-    alpha_bars: Tensor, num_steps: int, eta: float=0.0, generator: torch.Generator
-    | None=None, return_traj: bool=False) -> Tensor | tuple[Tensor, Tensor]'
+  signature: 'ddim_sample(eps_model: Callable[[Tensor, Tensor], Tensor], x_T: Tensor, alpha_bars: Tensor,
+    num_steps: int, eta: float=0.0, generator: torch.Generator | None=None, return_traj: bool=False) ->
+    Tensor | tuple[Tensor, Tensor]'
 - name: ddim_invert
-  signature: 'ddim_invert(eps_model: Callable[[Tensor, Tensor], Tensor], x0: Tensor,
-    alpha_bars: Tensor, num_steps: int) -> Tensor'
+  signature: 'ddim_invert(eps_model: Callable[[Tensor, Tensor], Tensor], x0: Tensor, alpha_bars: Tensor,
+    num_steps: int) -> Tensor'
 conventions:
   index: 数组 0..T-1 对应论文 1..T
   seed: 42
@@ -54,11 +54,12 @@ viz:
 - eta_steps_grid
 - trajectories
 - inversion_demo
-estimated_minutes: 35
+estimated_minutes: 20
 tags:
 - Diffusion
+- Implicit Sampling
+- Denoising
 - PyTorch
-- D4
 verified_sources:
   checked_at: '2026-10-13'
   links:
@@ -78,3 +79,18 @@ calibration:
   machine: arm64
   checked_at: '2026-10-13'
   reference_mmd: 0.0005244404740719633
+paper_id: ddim
+module:
+  goal: 实现 DDIM 的一次跳步更新，正确组合干净预测、方向项与随机方差。
+  goal_en: Implement one DDIM update, combining the clean prediction, direction, and stochastic variance
+    correctly.
+  scope: 只需实现 ddim_step；时间子序列与采样循环已提供，反演代码用于可选探索。
+  scope_en: Implement ddim_step only. Timestep selection and sampling are provided; inversion is an optional
+    exploration helper.
+  required_functions:
+  - ddim_step
+  provided_functions:
+  - ddim_timesteps
+  - ddim_sample
+  - ddim_invert
+  optional: false

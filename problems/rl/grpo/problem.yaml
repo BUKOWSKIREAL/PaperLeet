@@ -1,13 +1,12 @@
 id: rl/grpo
 number: 4
-title_en: Group Relative Policy Optimization
+title_en: GRPO Group-Relative Policy Objective
 short_id: R4
-title: Group Relative Policy Optimization
+title: GRPO 组相对策略目标
 paper:
-  title: 'DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language
-    Models'
-  authors: Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Xiao Bi,
-    Haowei Zhang, Mingchuan Zhang, Y. K. Li, Y. Wu, Daya Guo
+  title: 'DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models'
+  authors: Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Xiao Bi, Haowei Zhang, Mingchuan
+    Zhang, Y. K. Li, Y. Wu, Daya Guo
   venue: arXiv 2024
   arxiv: '2402.03300'
   anchors:
@@ -18,12 +17,17 @@ parent: null
 difficulty: M
 functions:
 - name: grpo_advantages
-  signature: 'grpo_advantages(rewards: Tensor, group_size: int, scale_std: bool=True,
-    eps: float=0.0001) -> Tensor'
+  signature: 'grpo_advantages(rewards: Tensor, group_size: int, scale_std: bool=True, eps: float=0.0001)
+    -> Tensor'
 - name: grpo_loss
-  signature: 'grpo_loss(logp: Tensor, old_logp: Tensor, ref_logp: Tensor, advantages:
-    Tensor, mask: Tensor, clip_eps: float=0.2, beta: float=0.04) -> tuple[Tensor,
-    dict]'
+  signature: 'grpo_loss(logp: Tensor, old_logp: Tensor, ref_logp: Tensor, advantages: Tensor, mask: Tensor,
+    clip_eps: float=0.2, beta: float=0.04) -> tuple[Tensor, dict]'
+- name: masked_logprobs
+  signature: 'masked_logprobs(logp: Tensor, old_logp: Tensor, ref_logp: Tensor, mask: Tensor) -> tuple[Tensor,
+    Tensor, Tensor]'
+- name: token_statistics
+  signature: 'token_statistics(ratio: Tensor, kl: Tensor, mask: Tensor, clip_eps: float) -> dict[str,
+    Tensor]'
 conventions:
   std: TRL v0.23.1 std(dim=1)：correction=1，eps=1e-4
   aggregation: 先有效 token 平均，再回答平均；全 padding 回答贡献 0
@@ -53,16 +57,29 @@ viz:
 estimated_minutes: 30
 formula: \hat A_i=(r_i-\bar r_g)/(s_g+10^{-4})
 tags:
-- Reinforcement Learning
-- R4
+- Group-Relative Advantages
+- Policy Gradient
 sources_verified: '2026-10-13'
 calibration:
   seed: 42
   threads: 2
   dtype: float32
-  method: Upper error thresholds = reference × 1.5; reward lower bounds specified
-    by pilot
+  method: Upper error thresholds = reference × 1.5; reward lower bounds specified by pilot
   metrics:
     final_reward:
       reference: 0.9827682375907898
       minimum: 0.9
+paper_id: deepseekmath
+module:
+  goal: 实现组内相对 advantage 与按回答聚合的截断策略目标。
+  goal_en: Implement within-group advantages and the clipped policy objective averaged over responses.
+  scope: 只实现 advantage 和 loss 两个函数；mask 辅助、诊断量与采样实验已提供。
+  scope_en: Implement the advantage and loss functions; masking helpers, diagnostics, and sampling experiments
+    are supplied.
+  required_functions:
+  - grpo_advantages
+  - grpo_loss
+  provided_functions:
+  - masked_logprobs
+  - token_statistics
+  optional: false

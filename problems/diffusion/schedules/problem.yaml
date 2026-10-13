@@ -1,8 +1,8 @@
 id: diffusion/schedules
 number: 6
-title_en: Noise Schedules & Forward Diffusion
+title_en: Closed-Form Forward Noising
 short_id: D1
-title: 噪声调度与前向加噪
+title: 前向闭式加噪
 paper:
   title: Denoising Diffusion Probabilistic Models
   authors: Jonathan Ho, Ajay Jain, Pieter Abbeel
@@ -10,21 +10,18 @@ paper:
   arxiv: '2006.11239'
   anchors:
   - 'Eq. (4): forward marginal'
-  - 'Nichol & Dhariwal Eq. (16): cosine schedule'
 type: implement
 parent: null
 difficulty: E
 functions:
 - name: linear_betas
-  signature: 'linear_betas(T: int, beta_start: float=0.0001, beta_end: float=0.02)
-    -> Tensor'
+  signature: 'linear_betas(T: int, beta_start: float=0.0001, beta_end: float=0.02) -> Tensor'
 - name: cosine_betas
   signature: 'cosine_betas(T: int, s: float=0.008, max_beta: float=0.999) -> Tensor'
 - name: make_schedule
   signature: 'make_schedule(betas: Tensor) -> dict[str, Tensor]'
 - name: q_sample
-  signature: 'q_sample(x0: Tensor, t: Tensor, noise: Tensor, alpha_bars: Tensor) ->
-    Tensor'
+  signature: 'q_sample(x0: Tensor, t: Tensor, noise: Tensor, alpha_bars: Tensor) -> Tensor'
 conventions:
   index: 数组 0..T-1 对应论文 1..T
   seed: 42
@@ -50,14 +47,29 @@ mutants:
 viz:
 - schedule_curves
 - forward_cloud
-estimated_minutes: 20
+estimated_minutes: 15
 tags:
 - Diffusion
+- Forward Diffusion
+- Gaussian Marginals
 - PyTorch
-- D1
 verified_sources:
   checked_at: '2026-10-13'
   links:
   - https://arxiv.org/abs/2006.11239
   - https://arxiv.org/abs/2102.09672
   - https://github.com/openai/improved-diffusion/blob/main/improved_diffusion/gaussian_diffusion.py
+paper_id: ddpm
+module:
+  goal: 实现 DDPM 的闭式前向分布，直接得到任意时间的带噪样本。
+  goal_en: Implement the DDPM forward marginal to sample any noise level directly.
+  scope: 只需实现 q_sample；调度构造已提供，cosine 调度属于 Improved DDPM 的拓展。
+  scope_en: Implement q_sample only. Schedule construction is provided; the cosine schedule is an Improved
+    DDPM extension.
+  required_functions:
+  - q_sample
+  provided_functions:
+  - linear_betas
+  - cosine_betas
+  - make_schedule
+  optional: false

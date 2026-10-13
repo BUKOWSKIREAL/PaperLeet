@@ -1,7 +1,9 @@
-# DPO: Review after passing
+# DPO preference objective: Review after passing
 
-- **Failing to shift labels or masks.** Logits at position t predict label t+1; the prompt boundary must use the label-side mask. `test_sequence_double_loop` checks the definition, while `test_shift_and_mask_isolation` checks that irrelevant positions have no effect.
-- **Averaging instead of summing.** This changes the sequence-probability objective and its treatment of response length. This exercise implements standard DPO sequence log-probabilities. `test_sequence_double_loop` uses unequal effective lengths to catch the change. Other methods can legitimately choose length normalization under their own contracts.
-- **Underflow in `log(sigmoid(...))`.** A very negative margin can make sigmoid zero and the loss infinite. `test_extreme_margin_stability` checks both finite losses and exact gradients.
-- **Keeping computation graphs on diagnostic rewards.** Returned rewards may be stored in logs. They must be detached, and the reference must remain fixed. `test_gradient_direction_and_rewards` checks values, directions, and graph connectivity.
-- **Confusing conservative DPO with robust DPO.** This exercise uses a convex combination of forward and reversed label losses. [TRL v0.23.1 documentation](https://huggingface.co/docs/trl/v0.23.1/dpo_trainer) describes cDPO; the robust loss additionally uses a label-noise correction denominator. Matching parameter names do not make the formulas interchangeable. The original exercise checked this version on 2026-10-13; `test_reference` checks the smoothing convention.
+- **Omitting the reference policy.** The preference margin measures improvements relative to the reference. When policy and reference match, the margin is zero and the loss is `log(2)`.
+- **Omitting beta or scaling only the final loss.** Beta scales implicit rewards and the margin inside the sigmoid. `test_beta_margin_scaling` checks this relationship.
+- **Underflow in log-sigmoid.** Applying sigmoid first to a very negative margin can produce zero and an infinite loss. `test_extreme_margin_stability` checks finite losses and exact gradients.
+- **Summing instead of averaging the batch.** Each preference pair contributes one sample loss; take the mean. Batch size should not change the gradient scale for the same data distribution.
+- **Retaining graphs on diagnostic rewards.** Detach returned rewards and keep the reference fixed. `test_gradient_direction_and_rewards` checks values, directions, and graph connectivity.
+
+The supplied `sequence_logprob` uses a label-side mask and sums response-token log-probabilities. Shifting tests check this helper's integration; you do not need to reimplement it. The default `label_smoothing=0` gives original DPO. Nonzero smoothing retains the conservative DPO convention as an extension; see [TRL v0.23.1 documentation](https://huggingface.co/docs/trl/v0.23.1/dpo_trainer).

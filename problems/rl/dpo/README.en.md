@@ -1,28 +1,28 @@
-# Direct Preference Optimization
+# DPO Preference Objective and Implicit Rewards
 
 ## 1. What the paper solves
 
 DPO rewrites KL-regularized reward maximization as a classification objective on preference pairs, eliminating the need to fit a separate reward model during training. [Section 4](https://arxiv.org/html/2305.18290v3#S4) derives the equivalence from the optimal policy.
 
+Module goal: Compute the preference loss and implicit rewards from policy and reference sequence scores. Implement only dpo_loss; sequence log-prob aggregation and the toy training experiment are supplied. Completing this exercise completes one selected core module of the paper.
+
 ## 2. Core equations and task
 
-First implement `sequence_logprob`. Inputs are logits `[B,T,V]`, token IDs `[B,T]`, and a response mask `[B,T]`; output is `[B]`. Logits at position $t$ predict the token at $t+1$. Sum log-probabilities only over response tokens. The first label has no preceding prediction; the last logits have no corresponding next label.
+Implement only `dpo_loss`. The supplied `sequence_logprob` helper handles next-token label shifting, response masking, and summation to produce the sequence scores.
 
-Then implement `dpo_loss`. The four sequence log-probabilities have shape `[B]`. Return a scalar loss and two detached reward vectors.
+ The four sequence log-probabilities have shape `[B]`. Return a scalar loss and two detached reward vectors.
 
 $$
 h=(\log\pi_c-\log\pi^{ref}_c)-(\log\pi_r-\log\pi^{ref}_r),\qquad
 L=-\mathbb E[(1-\varepsilon)\log\sigma(\beta h)+\varepsilon\log\sigma(-\beta h)].
 $$
 
-Here $c$ and $r$ mean chosen and rejected. Defaults are $\beta=0.1$ and label smoothing $\varepsilon=0$. The implicit reward is $\beta(\log\pi-\log\pi^{ref})$. It measures improvement relative to the reference policy, so the chosen response's raw log-probability alone is not a predicted preference score.
+Here $c$ and $r$ mean chosen and rejected. Defaults are $\beta=0.1$ and label smoothing $\varepsilon=0$, giving the original paper objective. Nonzero smoothing is an optional compatibility parameter. The implicit reward is $\beta(\log\pi-\log\pi^{ref})$. It measures improvement relative to the reference policy, so the chosen response's raw log-probability alone is not a predicted preference score.
 
 ## 3. From equations to code
 
 ```text
-logits[:, :-1]: [B,T-1,V] → log_softmax
-Gather label scores using input_ids[:, 1:]: [B,T-1]
-Multiply by loss_mask[:, 1:] and sum over time → [B]
+Supplied sequence_logprob → four [B] sequence-score vectors
 Detach the reference; compute chosen/rejected rewards and their margin
 Combine positive and reversed labels with stable log-sigmoid → scalar loss
 ```
@@ -50,9 +50,9 @@ If the reference model already favors one response, the policy must improve its 
 
 ## 6. Run your implementation
 
-Open problem **3**, write both functions in the browser editor, and click **Run tests**. Read failure details and experiment outputs in the results panel.
+Open this paper's **DPO Preference Objective and Implicit Rewards** module, implement `dpo_loss`, and keep the supplied `sequence_logprob`. Run the tests and inspect the reference-adjusted margin, beta scaling, gradient, and extreme-value checks.
 
-The double-loop test checks shifting. Extreme-margin tests check numerical stability. The behavioral test trains a small categorical policy.
+Sequence tests check the supplied helper's integration. The behavioral test supplies training for a small categorical policy.
 
 ## 7. Further exploration
 

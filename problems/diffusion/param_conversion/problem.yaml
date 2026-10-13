@@ -1,8 +1,8 @@
 id: diffusion/param_conversion
 number: 7
-title_en: x₀ / ε / v Parameterization
+title_en: v-Parameterization and Inverse Rotation
 short_id: D2
-title: x₀ / ε / v 参数化互转
+title: v 参数化与逆变换
 paper:
   title: Progressive Distillation for Fast Sampling of Diffusion Models
   authors: Tim Salimans, Jonathan Ho
@@ -16,11 +16,9 @@ parent: null
 difficulty: E
 functions:
 - name: eps_to_x0
-  signature: 'eps_to_x0(x_t: Tensor, eps: Tensor, alpha: Tensor, sigma: Tensor) ->
-    Tensor'
+  signature: 'eps_to_x0(x_t: Tensor, eps: Tensor, alpha: Tensor, sigma: Tensor) -> Tensor'
 - name: x0_to_eps
-  signature: 'x0_to_eps(x_t: Tensor, x0: Tensor, alpha: Tensor, sigma: Tensor) ->
-    Tensor'
+  signature: 'x0_to_eps(x_t: Tensor, x0: Tensor, alpha: Tensor, sigma: Tensor) -> Tensor'
 - name: make_v
   signature: 'make_v(x0: Tensor, eps: Tensor, alpha: Tensor, sigma: Tensor) -> Tensor'
 - name: v_to_x0
@@ -28,8 +26,8 @@ functions:
 - name: v_to_eps
   signature: 'v_to_eps(x_t: Tensor, v: Tensor, alpha: Tensor, sigma: Tensor) -> Tensor'
 - name: convert
-  signature: 'convert(pred: Tensor, src: str, dst: str, x_t: Tensor, alpha: Tensor,
-    sigma: Tensor) -> Tensor'
+  signature: 'convert(pred: Tensor, src: str, dst: str, x_t: Tensor, alpha: Tensor, sigma: Tensor) ->
+    Tensor'
 conventions:
   index: 数组 0..T-1 对应论文 1..T
   seed: 42
@@ -54,13 +52,31 @@ mutants:
 viz:
 - param_circle
 - error_amplification
-estimated_minutes: 20
+estimated_minutes: 15
 tags:
 - Diffusion
+- Parameterization
+- Numerical Stability
 - PyTorch
-- D2
 verified_sources:
   checked_at: '2026-10-13'
   links:
   - https://arxiv.org/abs/2202.00512
   - https://arxiv.org/html/2202.00512v2#A4
+paper_id: progressive-distillation
+module:
+  goal: 实现附录 D 中的 v 参数化及无除法的逆变换，理解端点稳定性。
+  goal_en: Implement Appendix D’s v-parameterization and division-free inverse rotation to understand
+    endpoint stability.
+  scope: 精选论文中的参数化模块：实现 make_v、v_to_x0、v_to_eps；本模块不包含师生蒸馏训练。
+  scope_en: 'Selected parameterization module: implement make_v, v_to_x0, and v_to_eps. Teacher–student
+    distillation training is outside this module.'
+  required_functions:
+  - make_v
+  - v_to_x0
+  - v_to_eps
+  provided_functions:
+  - eps_to_x0
+  - x0_to_eps
+  - convert
+  optional: false
