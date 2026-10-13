@@ -2,7 +2,7 @@
 
 [English](hosting.md) | [简体中文](hosting.zh-CN.md)
 
-这套部署提供论文题库、机构账号、社区，以及当前 10 个正式维护模块的在线判题。部署文件和本地容器测试不会自动创建公网网站；还需要服务器、域名，以及真实可用的邮件配置。
+这套部署提供论文题库、账号、社区，以及当前 10 个正式维护模块的在线判题。上线需要服务器和域名。若内测暂不做真实注册，可以使用[测试账号](test-accounts.zh-CN.md)：设置 `PAPERLEET_AUTH_MODE=test`，为每位参与者创建登录名和访问码即可。只有机构邮箱登录模式才需要 Supabase 和邮件配置。
 
 ## 服务器与架构
 
@@ -20,6 +20,8 @@
 
 ## 配置邀请与邮箱验证
 
+使用管理员创建的内测账号时选择 `test`；使用真实邮箱验证时选择 `institutional`（默认值）。[测试账号说明](test-accounts.zh-CN.md)可以替代下面的邮箱配置步骤，服务器、域名、存储和判题配置不变。测试模式下可以留空 Supabase、邀请邮箱和管理员邮箱，通过维护命令创建账号并授予管理员角色。
+
 在服务器上克隆仓库，后续命令均从仓库根目录执行：
 
 ```sh
@@ -35,6 +37,7 @@ openssl rand -hex 32
 | 配置 | 内容 |
 | --- | --- |
 | `PAPERLEET_DOMAIN` | 实际域名，如 `paperleet.yourdomain.com`，不带协议或路径 |
+| `PAPERLEET_AUTH_MODE` | 默认为 `institutional`；设为 `test` 时使用管理员创建的测试账号，无需邮箱 |
 | `SUPABASE_URL` | Supabase 项目 URL |
 | `SUPABASE_PUBLISHABLE_KEY` | 项目的 publishable key，或旧版 anon key；不要使用 service-role key |
 | `PAPERLEET_INVITE_EMAILS` | 允许参加内测的**完整机构邮箱地址**，以逗号分隔 |
@@ -56,6 +59,8 @@ openssl rand -hex 32
 ```
 
 构建命令生成 CPU 判题 worker、API、判题管理服务和网页镜像。启动会等待 API 健康检查通过，其中包括判题服务就绪。DNS 生效后，Caddy 申请证书仍可能需要一些时间。
+
+测试账号模式下，执行 `./deploy/manage.sh test-users create tester1 --name "测试用户 1"` 创建账号，再使用返回的访问码验证登录和答题。下面的真实邮箱检查仅适用于机构邮箱模式。
 
 检查真实域名：
 

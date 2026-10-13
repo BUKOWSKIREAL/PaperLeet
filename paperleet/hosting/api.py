@@ -3,6 +3,7 @@ import threading
 from urllib.parse import parse_qs, urlsplit
 
 from paperleet.catalog import problem
+from paperleet.config import auth_mode
 from paperleet.judge.runner import normalize_layers
 from paperleet import social_api
 from paperleet.submissions import store
@@ -35,7 +36,7 @@ def dispatch(handler, method, payload=None):
                 "generation": {"ready": False, "reason": PAPER_WORKFLOW_REASON},
                 "sandbox": {"ready": False, "reason": PAPER_WORKFLOW_REASON}})
         if not user:
-            return handler.respond(401, {"error": "Sign in with your invited institutional email to continue."})
+            return handler.respond(401, {"error": "Sign in with your test account to continue." if auth_mode() == "test" else "Sign in with your invited institutional email to continue."})
         accounts, _ = social_api.services()
         practice = PracticeService(accounts.db_path)
         if path == "/api/practice/workspace" and method == "GET":

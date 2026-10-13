@@ -16,6 +16,7 @@ DEPLOY = root() / "deploy"
 FAKE_SETTINGS = {
     "PAPERLEET_DOMAIN": "paperleet.example.test",
     "PAPERLEET_MODE": "hosted",
+    "PAPERLEET_AUTH_MODE": "institutional",
     "PAPERLEET_PUBLIC_URL": "https://paperleet.example.test",
     "PAPERLEET_DATA_DIR": "/var/lib/paperleet",
     "PAPERLEET_INVITE_EMAILS": "tester@mit.edu",
@@ -101,6 +102,30 @@ def test_valid_hosted_settings_and_local_mode_are_distinct(monkeypatch):
     validate_hosted_settings()
 
 
+def test_test_auth_needs_no_email_but_preserves_hosted_boundaries(monkeypatch):
+    for key, value in FAKE_SETTINGS.items():
+        monkeypatch.setenv(key, value)
+    monkeypatch.setenv("PAPERLEET_AUTH_MODE", "test")
+    for key in ("SUPABASE_URL", "SUPABASE_PUBLISHABLE_KEY", "SUPABASE_ANON_KEY", "PAPERLEET_INVITE_EMAILS"):
+        monkeypatch.delenv(key, raising=False)
+    validate_hosted_settings()
+    monkeypatch.setenv("PAPERLEET_PUBLIC_URL", "http://paperleet.example.test")
+    with pytest.raises(ValueError, match="HTTPS"):
+        validate_hosted_settings()
+    monkeypatch.setenv("PAPERLEET_PUBLIC_URL", FAKE_SETTINGS["PAPERLEET_PUBLIC_URL"])
+    monkeypatch.delenv("PAPERLEET_JUDGE_TOKEN")
+    with pytest.raises(ValueError, match="PAPERLEET_JUDGE_TOKEN"):
+        validate_hosted_settings()
+
+
+@pytest.mark.parametrize("mode", ["local", "hosted"])
+def test_unknown_auth_mode_fails_closed(monkeypatch, mode):
+    monkeypatch.setenv("PAPERLEET_MODE", mode)
+    monkeypatch.setenv("PAPERLEET_AUTH_MODE", "demo")
+    with pytest.raises(ValueError, match="PAPERLEET_AUTH_MODE"):
+        validate_hosted_settings()
+
+
 def test_manage_script_parses_and_refuses_unconfigured_start(tmp_path):
     script = DEPLOY / "manage.sh"
     result = subprocess.run(["sh", "-n", str(script)], capture_output=True, text=True)
@@ -148,3 +173,23 @@ def test_actual_caddy_configuration_validates_offline():
         pytest.skip("Build paperleet-web:local to validate Caddy")
     result = subprocess.run(["docker", "run", "--rm", "--network=none", "--entrypoint", "caddy", "-e", "PAPERLEET_DOMAIN=paperleet.example.test", "paperleet-web:local", "validate", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"], capture_output=True, text=True, timeout=20)
     assert result.returncode == 0, result.stderr
+
+
+def test_test_account_compose_configuration_does_not_require_supabase(tmp_path):
+    if not shutil.which("docker"):
+        pytest.skip("Docker CLI is unavailable")
+    settings = {key: FAKE_SETTINGS[key] for key in ("PAPERLEET_DOMAIN", "PAPERLEET_JUDGE_TOKEN")}
+    settings["PAPERLEET_AUTH_MODE"] = "test"
+    env_file = tmp_path / "test.env"
+    env_file.write_text("".join(f"{key}={value}\n" for key, value in settings.items()))
+    env = {key: value for key, value in os.environ.items() if not key.startswith(("PAPERLEET_", "SUPABASE_", "COMPOSE_"))}
+    if subprocess.run(["docker", "compose", "version"], capture_output=True, timeout=10, env=env).returncode:
+        pytest.skip("Docker Compose is unavailable")
+    result = subprocess.run(["docker", "compose", "--env-file", str(env_file), "-f", str(DEPLOY / "compose.yaml"),
+                             "config", "--format", "json"], capture_output=True, text=True, timeout=15, env=env)
+    assert result.returncode == 0, result.stderr
+    services = json.loads(result.stdout)["services"]
+    configured = services["api"]["environment"]
+    assert configured["PAPERLEET_AUTH_MODE"] == "test"
+    assert configured["SUPABASE_URL"] == configured["SUPABASE_PUBLISHABLE_KEY"] == configured["PAPERLEET_INVITE_EMAILS"] == ""
+    assert "PAPERLEET_AUTH_MODE" not in services["judge"]["environment"]

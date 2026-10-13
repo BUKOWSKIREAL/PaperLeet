@@ -16,6 +16,10 @@ case "${1:-help}" in
     down) compose down ;;
     status) compose ps ;;
     logs) compose logs --tail 100 ;;
+    test-users)
+        shift
+        compose run --rm --no-deps -T api python -m paperleet.test_accounts "$@"
+        ;;
     backup)
         umask 077
         mkdir -p deploy/backups
@@ -34,5 +38,5 @@ case "${1:-help}" in
         compose run --rm --no-deps -T api python -m paperleet.backup restore --stdin < "$2"
         echo 'Restored. Run deploy/manage.sh up to start the API.'
         ;;
-    *) echo 'Usage: deploy/manage.sh {build|up|down|status|logs|backup|restore ARCHIVE}' >&2; exit 1 ;;
+    *) echo 'Usage: deploy/manage.sh {build|up|down|status|logs|backup|restore ARCHIVE|test-users COMMAND}' >&2; exit 1 ;;
 esac

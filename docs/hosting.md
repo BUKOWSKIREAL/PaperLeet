@@ -2,7 +2,7 @@
 
 [English](hosting.md) | [简体中文](hosting.zh-CN.md)
 
-This deployment serves the paper library, institutional accounts, community, and the ten maintained practice modules. Hosting files and local container tests do not create a public website: you still need a server, domain, and real email configuration.
+This deployment serves the paper library, accounts, community, and the ten maintained practice modules. You still need a server and domain. For a beta without real registration, use [test accounts](test-accounts.md): set `PAPERLEET_AUTH_MODE=test` and create a login name and access code for each tester. Supabase and email configuration are only required for institutional sign-in.
 
 ## Server and architecture
 
@@ -20,6 +20,8 @@ Only Caddy publishes ports. The API holds accounts and application data; it has 
 
 ## Configure access and email
 
+Choose `test` authentication for administrator-created beta accounts, or `institutional` (the default) for verified email sign-in. The [test-account guide](test-accounts.md) replaces the email setup below; server, domain, storage and judging configuration remain the same. In test mode, leave Supabase and invited/admin email settings empty; create accounts and assign administrator roles through the maintenance command instead.
+
 Clone the repository on the server, then work from its root:
 
 ```sh
@@ -35,6 +37,7 @@ Edit `deploy/.env`. Put the generated token in `PAPERLEET_JUDGE_TOKEN`; do not l
 | Setting | Value |
 | --- | --- |
 | `PAPERLEET_DOMAIN` | Your DNS name, such as `paperleet.yourdomain.com`; no scheme or path |
+| `PAPERLEET_AUTH_MODE` | `institutional` by default; `test` enables administrator-created accounts without email |
 | `SUPABASE_URL` | Your Supabase project URL |
 | `SUPABASE_PUBLISHABLE_KEY` | The project's publishable key, or its legacy anon key; never a service-role key |
 | `PAPERLEET_INVITE_EMAILS` | Comma-separated **exact institutional email addresses** admitted to the beta |
@@ -56,6 +59,8 @@ Mailbox verification establishes control of an institutional email address; it d
 ```
 
 The build creates the CPU worker image and the API, judge-manager, and web images. Startup waits for API health, including judge readiness. Caddy may still need time to obtain the certificate after DNS becomes reachable.
+
+In test-account mode, create accounts with `./deploy/manage.sh test-users create tester1 --name "Tester 1"`, then verify login and judging using the issued access code. The mailbox checks below apply to institutional mode only.
 
 Check the real domain:
 

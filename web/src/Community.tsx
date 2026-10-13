@@ -33,6 +33,7 @@ import {
   InstitutionBadge,
   PersonLink,
   SocialNotice,
+  TestAccountBadge,
   errorMessage,
   profileHref,
   socialApi,
@@ -176,16 +177,25 @@ function Pagination({
 }
 function JoinPrompt() {
   const { t } = useI18n();
+  const { capabilities } = useAccount();
+  const testAuth = capabilities?.auth_mode === "test";
   return (
     <div className="join-prompt">
       <p>
-        {t(
-          "使用已验证的机构邮箱加入讨论。",
-          "Join the conversation with a verified institutional email.",
-        )}
+        {testAuth
+          ? t(
+              "使用管理员提供的内测账号加入讨论。",
+              "Join the discussion with your administrator-issued test account.",
+            )
+          : t(
+              "使用已验证的机构邮箱加入讨论。",
+              "Join the conversation with a verified institutional email.",
+            )}
       </p>
       <a className="button" href="#/account">
-        {t("登录 / 注册", "Sign in / Join")}
+        {testAuth
+          ? t("内测账号登录", "Test account sign-in")
+          : t("登录 / 注册", "Sign in / Join")}
         <ArrowRight size={14} />
       </a>
     </div>
@@ -207,6 +217,7 @@ function PostCard({ post, activity }: { post: Post; activity?: ReactNode }) {
             <a className="post-author-name" href={profileHref(post.author)}>
               {post.author.display_name}
             </a>
+            <TestAccountBadge isTestUser={post.author.is_test_user} />
             <span>·</span>
             <DateLabel value={post.created_at} />
             <Category value={post.category} />
@@ -1043,6 +1054,7 @@ export function UserProfile({ username }: { username: string }) {
                 <h1>{profile.display_name}</h1>
                 <span className="profile-handle">@{profile.username}</span>
                 <div className="profile-facts">
+                  <TestAccountBadge isTestUser={profile.is_test_user} />
                   <InstitutionBadge institution={profile.institution} />
                   {profile.country && (
                     <span>
@@ -1142,6 +1154,7 @@ export function UserProfile({ username }: { username: string }) {
                         <b>{member.display_name}</b>
                         <span>@{member.username}</span>
                       </a>
+                      <TestAccountBadge isTestUser={member.is_test_user} />
                       <InstitutionBadge institution={member.institution} />
                       {member.bio && <p>{member.bio}</p>}
                     </div>

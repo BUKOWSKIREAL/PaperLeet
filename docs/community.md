@@ -1,8 +1,8 @@
 # Community and institutional accounts
 
-The community adds persistent posts, replies, likes, reposts, and follow relationships. Users have a public profile with activity tabs and lists of followers and followed accounts. Visitors can read public content; writing and following require a verified, approved institutional mailbox.
+The community adds persistent posts, replies, likes, reposts, and follow relationships. Users have a public profile with activity tabs and lists of followers and followed accounts. Visitors can read public content; writing and following require sign-in. The default mode verifies approved institutional mailboxes. For a beta without real registration, explicitly enable [administrator-created test accounts](test-accounts.md).
 
-This implementation runs with the existing **local development service**. It has not been deployed online. The practice judge still executes Python on the host and shares a local workspace; institutional accounts do not turn it into a public, isolated, multi-user judge. Keep the server's loopback restriction until the separate deployment and judge-isolation work is complete.
+The default **local development service** runs practice code on your machine and keeps drafts in the browser. The separate [hosted deployment](hosting.md) provides an isolated judge and private per-user cloud drafts. A deployment package is available; no public server has been provisioned by these implementation steps.
 
 ## Public profiles and privacy
 
@@ -14,11 +14,12 @@ This implementation runs with the existing **local development service**. It has
 | Verified institution | Hidden by default; user controls its switch |
 | Country or region | Optional and hidden by default; user controls its switch |
 | Full email, provider identity, session data | Private; excluded from public API projections |
-| Learning progress | Currently browser-local; not synchronized or displayed on public profiles |
+| Learning progress | Browser-local in development; private per-user storage when hosted; not displayed on public profiles |
+| Test-account label | Always public for administrator-created test identities; no verified institution is claimed |
 
 Avatars currently use generated initials and a configurable color. Uploading profile photos is not implemented. The country field is a user-entered ISO country or region code; the application does not look up, infer, or publish an IP-derived location. The backend uses the same public-user projection on profiles, posts, replies, and follow lists, so turning off institution visibility also removes it from those author cards.
 
-The learning-progress preference is saved for later progress synchronization. It does not upload existing local drafts, judge reports, or practice history. Community content and follow relationships remain public regardless of this preference.
+The learning-progress preference is saved for future public progress statistics. It does not publish private hosted practice data or upload old local drafts and reports. Community content and follow relationships remain public regardless of this preference.
 
 ## Configure real email verification
 
@@ -41,6 +42,7 @@ make dev
 
 | Variable | Purpose |
 | --- | --- |
+| `PAPERLEET_AUTH_MODE` | `institutional` by default; `test` uses operator-issued login names and access codes, with no email provider |
 | `SUPABASE_URL` | Supabase project URL, normally `https://PROJECT.supabase.co` |
 | `SUPABASE_PUBLISHABLE_KEY` | Project publishable API key; the legacy `SUPABASE_ANON_KEY` is also accepted |
 | `PAPERLEET_ADMIN_EMAILS` | Optional comma-separated institutional mailboxes granted local administrator role after successful verification |
@@ -48,7 +50,7 @@ make dev
 
 No Supabase service-role key is needed. Do not place secrets in `VITE_*` variables. The frontend talks to PaperLeet's `/api/account/` endpoints; it does not receive provider tokens. PaperLeet uses an opaque, HttpOnly session cookie with a seven-day lifetime and stores only the token's hash. Logging out revokes the current local session. Users cannot edit their verified institution or administrator role through profile settings.
 
-If configuration is missing, the sign-in screen explains that verification is unavailable. Public community browsing and local practice remain available. There is no development login bypass or pre-verified demo account. Email sending and verification use bounded provider timeouts and per-email request limits; the HTTP adapter also limits writes.
+If institutional configuration is missing, the sign-in screen explains that verification is unavailable. Public community browsing and local practice remain available. Test accounts require explicit `PAPERLEET_AUTH_MODE=test` and individual operator-issued access codes; they do not claim email verification and cannot authenticate in institutional mode. Email sending and verification use bounded provider timeouts and per-email request limits; the HTTP adapter also limits writes.
 
 ## Review institution requests
 
@@ -66,8 +68,8 @@ For an approved request, a maintainer verifies that an official institution sour
 
 ## Data and maintenance
 
-Accounts, private email identities, session hashes, institution requests, posts, replies, reactions, and follow relationships are stored in `.paperleet/community.sqlite3`. This directory is ignored by Git. Use a SQLite-aware backup or stop the development service before copying the database and its associated journal files. The accounts and community services share the users table; no separate Supabase application tables are required for this local version.
+Accounts, private email identities, test credential hashes, sessions, institution requests, posts, replies, reactions, and follow relationships are stored in `community.sqlite3` under `PAPERLEET_DATA_DIR` (default `.paperleet/`). Local runtime data is ignored by Git; hosted data lives in a persistent Docker volume. Use the [backup commands](hosting.md#backup-and-restore) for online SQLite snapshots. The accounts and community services share the users table; Supabase Auth does not host these application tables.
 
 The community supports author deletion of posts and replies, with administrator moderation enforced on the backend. Removing content also removes it from public activity results. Likes, reposts, and follows are idempotent operations; repeated requests do not inflate counts. Profile edits cannot change another user's profile or expose email through community responses.
 
-Tests cover provider-response validation, domain gating, identity binding, session expiry and revocation, privacy projections, profile validation, and community ownership rules using mocked provider responses. **No live verification email was sent as part of implementation validation.** A configured Supabase project and an approved mailbox are still needed to verify actual delivery end to end. Public hosting, isolated multi-user judging, cloud progress synchronization, and production abuse operations remain separate work.
+Tests cover provider-response validation, domain gating, identity binding, session expiry and revocation, privacy projections, profile validation, and community ownership. Test-account checks exercise real local credentials, mode boundaries, reset and disable operations without an email provider. **No live verification email was sent as part of implementation validation.** Institutional mode still requires a configured Supabase project and an approved mailbox to verify actual email delivery; test mode does not send mail.

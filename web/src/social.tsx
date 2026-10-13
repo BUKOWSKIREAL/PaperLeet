@@ -11,9 +11,10 @@ export type PublicUser = {
   avatar_color: string;
   bio: string;
   created_at: string;
-  institution?: Institution;
+  institution?: Institution | null;
   country?: string;
   show_progress?: boolean;
+  is_test_user?: boolean;
 };
 export type AccountUser = PublicUser & {
   email: string;
@@ -21,11 +22,15 @@ export type AccountUser = PublicUser & {
   show_institution: boolean;
   show_country: boolean;
   show_progress: boolean;
-  institution: Institution;
+  institution: Institution | null;
+  institution_verified?: boolean;
+  login_username?: string;
   country: string;
 };
 export type AccountCapabilities = {
   auth_available: boolean;
+  auth_mode?: "institutional" | "test";
+  test_login_available?: boolean;
   invite_only?: boolean;
   institution_verification_required: boolean;
   institutions: (Institution & { domains: string[] })[];
@@ -242,13 +247,20 @@ export function PersonLink({
     <a className="person-link" href={profileHref(user)}>
       <Avatar user={user} size={compact ? 24 : 34} />
       <span>{user.display_name}</span>
+      <TestAccountBadge isTestUser={user.is_test_user} />
     </a>
   );
+}
+export function TestAccountBadge({ isTestUser }: { isTestUser?: boolean }) {
+  const { t } = useI18n();
+  return isTestUser ? (
+    <span className="test-account-badge">{t("内测账号", "Test account")}</span>
+  ) : null;
 }
 export function InstitutionBadge({
   institution,
 }: {
-  institution?: Institution;
+  institution?: Institution | null;
 }) {
   const { t, locale } = useI18n();
   return institution ? (

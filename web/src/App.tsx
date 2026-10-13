@@ -323,11 +323,13 @@ export default function App() {
 }
 function Workspace() {
   const { locale, setLocale, t } = useI18n();
-  const { user, health, healthError, refreshHealth } = useAccount();
+  const { user, health, healthError, refreshHealth, capabilities } =
+    useAccount();
   const practice = usePracticeWorkspace();
   const { saved, update } = practice;
   const online = !!health?.judge.ready && !healthError;
   const hosted = health?.mode === "hosted";
+  const testAuth = capabilities?.auth_mode === "test";
   const runController = useRef<AbortController | undefined>(undefined);
   const [problems, setProblems] = useState<Problem[]>([]),
     [papers, setPapers] = useState<Paper[]>([]),
@@ -491,7 +493,7 @@ function Workspace() {
   ];
   const webReadme = problem?.readme.replace(
     /##\s*6[.、．]?\s*(?:怎么运行|编写与运行|Write and run|Running)[^\n]*\n[\s\S]*?(?=\n##\s*7|$)/,
-    `## 6. ${t("编写与运行", "Write and run")}\n\n${hosted ? t("受邀用户登录后，可在右侧完成实现并运行测试。草稿与判题结果会私密同步到账号；全部通过后解锁坑点。", "Invited members can sign in, implement the module, and run tests. Drafts and judging results sync privately to your account; passing all tests unlocks Notes.") : t("在右侧编辑器中完成实现，点击「运行全部测试」。测试结果会在「测试」标签页显示；全部通过后解锁坑点。草稿会自动保存在当前浏览器。", "Complete the implementation in the editor and select Run all tests. Results appear in the Tests tab; passing all tests unlocks Notes. Drafts are saved automatically in this browser.")}\n`,
+    `## 6. ${t("编写与运行", "Write and run")}\n\n${hosted ? (testAuth ? t("使用内测账号登录后，可在右侧完成实现并运行测试。草稿与判题结果会私密同步到账号；全部通过后解锁坑点。", "Sign in with your test account, implement the module, and run tests. Drafts and judging results sync privately to your account; passing all tests unlocks Notes.") : t("受邀用户登录后，可在右侧完成实现并运行测试。草稿与判题结果会私密同步到账号；全部通过后解锁坑点。", "Invited members can sign in, implement the module, and run tests. Drafts and judging results sync privately to your account; passing all tests unlocks Notes.")) : t("在右侧编辑器中完成实现，点击「运行全部测试」。测试结果会在「测试」标签页显示；全部通过后解锁坑点。草稿会自动保存在当前浏览器。", "Complete the implementation in the editor and select Run all tests. Results appear in the Tests tab; passing all tests unlocks Notes. Drafts are saved automatically in this browser.")}\n`,
   );
   return (
     <div className={`app ${problem ? "workspace-view" : ""}`}>
@@ -1072,10 +1074,15 @@ function Workspace() {
                       ) : !user ? (
                         <>
                           <span>
-                            {t(
-                              "在线内测仅向受邀且已验证机构邮箱的用户开放判题。",
-                              "Online judging is available to invited members with a verified institutional email.",
-                            )}
+                            {testAuth
+                              ? t(
+                                  "使用管理员提供的内测账号和访问码登录后，即可运行测试。",
+                                  "Sign in with your administrator-issued test account and access code to run tests.",
+                                )
+                              : t(
+                                  "在线内测仅向受邀且已验证机构邮箱的用户开放判题。",
+                                  "Online judging is available to invited members with a verified institutional email.",
+                                )}
                           </span>
                           <a href="#/account">
                             {t("登录以运行", "Sign in to run")}

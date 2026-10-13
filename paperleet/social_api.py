@@ -7,7 +7,7 @@ import threading
 import time
 from urllib.parse import parse_qs, unquote, urlsplit
 
-from paperleet.config import data_directory, hosted
+from paperleet.config import auth_mode, data_directory, hosted
 
 
 COOKIE = "paperleet_session"
@@ -98,6 +98,11 @@ def dispatch(handler, method, data=None):
             return handler.respond(429, {"error": "Too many requests. Please try again shortly."})
         if method == "GET" and path == "/api/account/me":
             return handler.respond(200, {"user": user, "capabilities": accounts.capabilities()})
+        if method == "POST" and path == "/api/account/test-login":
+            new_token, account = accounts.test_login(payload.get("username", ""), payload.get("access_code", ""))
+            if token:
+                accounts.logout(token)
+            return handler.respond(200, {"user": account}, {"Set-Cookie": session_cookie(new_token)})
         if method == "POST" and path == "/api/account/send-code":
             return handler.respond(200, accounts.request_code(payload.get("email", "")))
         if method == "POST" and path == "/api/account/verify":
@@ -112,7 +117,7 @@ def dispatch(handler, method, data=None):
         if method == "POST" and path == "/api/account/institution-requests":
             return handler.respond(201, accounts.request_institution(payload))
         if method == "POST" and not user:
-            return handler.respond(401, {"error": "Sign in with a verified institutional email to continue."})
+            return handler.respond(401, {"error": "Sign in with your test account to continue." if auth_mode() == "test" else "Sign in with a verified institutional email to continue."})
         if method == "POST" and path == "/api/account/profile":
             return handler.respond(200, {"user": accounts.update_profile(viewer, payload)})
 

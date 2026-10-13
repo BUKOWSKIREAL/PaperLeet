@@ -10,6 +10,13 @@ def hosted():
     return os.environ.get("PAPERLEET_MODE", "local") == "hosted"
 
 
+def auth_mode():
+    mode = os.environ.get("PAPERLEET_AUTH_MODE", "institutional")
+    if mode not in ("institutional", "test"):
+        raise ValueError("PAPERLEET_AUTH_MODE must be institutional or test")
+    return mode
+
+
 def data_directory():
     return Path(os.environ.get("PAPERLEET_DATA_DIR", root() / ".paperleet")).expanduser().resolve()
 
@@ -36,15 +43,17 @@ def public_origin():
 
 
 def validate_hosted_settings():
+    authentication = auth_mode()
     mode = os.environ.get("PAPERLEET_MODE", "local")
     if mode not in ("local", "hosted"):
         raise ValueError("PAPERLEET_MODE must be local or hosted")
     if not hosted():
         return
-    required = ["PAPERLEET_PUBLIC_URL", "PAPERLEET_DATA_DIR", "PAPERLEET_INVITE_EMAILS",
-                "SUPABASE_URL", "PAPERLEET_JUDGE_URL", "PAPERLEET_JUDGE_TOKEN"]
+    required = ["PAPERLEET_PUBLIC_URL", "PAPERLEET_DATA_DIR", "PAPERLEET_JUDGE_URL", "PAPERLEET_JUDGE_TOKEN"]
+    if authentication == "institutional":
+        required += ["PAPERLEET_INVITE_EMAILS", "SUPABASE_URL"]
     missing = [key for key in required if not os.environ.get(key, "").strip()]
-    if not (os.environ.get("SUPABASE_PUBLISHABLE_KEY") or os.environ.get("SUPABASE_ANON_KEY")):
+    if authentication == "institutional" and not (os.environ.get("SUPABASE_PUBLISHABLE_KEY") or os.environ.get("SUPABASE_ANON_KEY")):
         missing.append("SUPABASE_PUBLISHABLE_KEY")
     if missing:
         raise ValueError("Hosted mode requires: " + ", ".join(missing))
@@ -56,6 +65,7 @@ def validate_hosted_settings():
     if len(token) < 32 or not token.isascii() or any(c.isspace() or ord(c) < 33 or ord(c) > 126 for c in token):
         raise ValueError("PAPERLEET_JUDGE_TOKEN must contain at least 32 printable ASCII characters without whitespace")
     origin(os.environ["PAPERLEET_JUDGE_URL"])
-    from paperleet.accounts import SupabaseEmailProvider
-    if not SupabaseEmailProvider().available:
-        raise ValueError("Configure a valid Supabase URL and publishable key")
+    if authentication == "institutional":
+        from paperleet.accounts import SupabaseEmailProvider
+        if not SupabaseEmailProvider().available:
+            raise ValueError("Configure a valid Supabase URL and publishable key")

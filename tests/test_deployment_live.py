@@ -1,10 +1,12 @@
 """Opt-in real Compose smoke: PAPERLEET_TEST_DEPLOYMENT=1 pytest this file.
 
 Build all four deployment images first. The test uses its own loopback HTTPS
-port, temporary project/volumes, fake mail identity and no external credentials.
-It deletes only the resources it created. No test-login route is added to the app.
+port and temporary project/volumes. Institutional mode stubs mail identity;
+test mode provisions real test accounts and uses their HTTP login endpoint.
+No external credentials or outgoing email are used. Only test resources are deleted.
 """
 import io
+from http.cookies import SimpleCookie
 import json
 import os
 from pathlib import Path
@@ -25,7 +27,8 @@ pytestmark = pytest.mark.skipif(os.environ.get("PAPERLEET_TEST_DEPLOYMENT") != "
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_https_judging_persistence_and_backup_restore(tmp_path):
+@pytest.mark.parametrize("auth_mode", ["institutional", "test"])
+def test_https_judging_persistence_and_backup_restore(tmp_path, auth_mode):
     clean_env = {key: value for key, value in os.environ.items()
                  if not key.startswith(("PAPERLEET_", "SUPABASE_", "COMPOSE_"))}
     project = "paperleet-smoke-" + uuid.uuid4().hex[:10]
@@ -35,10 +38,12 @@ def test_https_judging_persistence_and_backup_restore(tmp_path):
         port = listener.getsockname()[1]
     origin = f"https://localhost:{port}"
     env = tmp_path / "settings.env"
-    env.write_text("PAPERLEET_DOMAIN=localhost\nSUPABASE_URL=https://test.supabase.co\n"
-                   "SUPABASE_PUBLISHABLE_KEY=not-a-real-key\n"
-                   "PAPERLEET_INVITE_EMAILS=alice@mit.edu,bob@mit.edu\n"
-                   "PAPERLEET_ADMIN_EMAILS=alice@mit.edu\n"
+    auth_settings = ("SUPABASE_URL=https://test.supabase.co\n"
+                     "SUPABASE_PUBLISHABLE_KEY=not-a-real-key\n"
+                     "PAPERLEET_INVITE_EMAILS=alice@mit.edu,bob@mit.edu\n"
+                     "PAPERLEET_ADMIN_EMAILS=alice@mit.edu\n") if auth_mode == "institutional" else (
+                     "SUPABASE_URL=\nSUPABASE_PUBLISHABLE_KEY=\nPAPERLEET_INVITE_EMAILS=\nPAPERLEET_ADMIN_EMAILS=\n")
+    env.write_text("PAPERLEET_DOMAIN=localhost\nPAPERLEET_AUTH_MODE=" + auth_mode + "\n" + auth_settings +
                    "PAPERLEET_JUDGE_TOKEN=" + secrets.token_hex(32) + "\n")
     env.chmod(0o600)
     override = tmp_path / "compose.override.yaml"
@@ -57,7 +62,7 @@ def test_https_judging_persistence_and_backup_restore(tmp_path):
         ca = compose("exec", "-T", "web", "cat", "/data/caddy/pki/authorities/local/root.crt").decode()
         context = ssl.create_default_context(cadata=ca)
 
-        def api(path, data=None, person=None):
+        def api(path, data=None, person=None, include_headers=False):
             headers = {"Origin": origin, "Content-Type": "application/json"}
             if person:
                 headers["Cookie"] = "paperleet_session=" + person["cookie"]
@@ -65,15 +70,18 @@ def test_https_judging_persistence_and_backup_restore(tmp_path):
                                              data=json.dumps(data).encode() if data is not None else None)
             try:
                 with urllib.request.urlopen(request, context=context, timeout=160) as response:
-                    return response.status, json.load(response)
+                    result = response.status, json.load(response)
+                    return (*result, dict(response.headers)) if include_headers else result
             except urllib.error.HTTPError as exc:
-                return exc.code, json.load(exc)
+                result = exc.code, json.load(exc)
+                return (*result, dict(exc.headers)) if include_headers else result
 
         assert api("health")[1]["judge"]["ready"]
         with urllib.request.urlopen(origin, context=context) as response:
             assert b'<div id="root">' in response.read()
         assert api("test", {"problem": "1", "code": "pass"})[0] == 401
-        seed = """import json
+        if auth_mode == "institutional":
+            seed = """import json
 from paperleet.social_api import services
 class TestMail:
  available=True
@@ -84,7 +92,24 @@ for email in ('alice@mit.edu','bob@mit.edu'):
  token,user=a.verify_code(email,'123456'); people.append({'cookie':token,'id':user['id']})
 print(json.dumps(people))
 """
-        alice, bob = json.loads(compose("exec", "-T", "api", "python", "-c", seed))
+            alice, bob = json.loads(compose("exec", "-T", "api", "python", "-c", seed))
+        else:
+            assert api("account/me")[1]["capabilities"]["auth_mode"] == "test"
+            assert api("account/send-code", {"email": "alice@mit.edu"})[0] != 200
+            people = []
+            for login_name in ("tester_alice", "tester_bob"):
+                credentials = json.loads(compose("exec", "-T", "api", "python", "-m", "paperleet.test_accounts",
+                                                "create", login_name, "--name", login_name.title()))
+                status, payload, headers = api("account/test-login", credentials, include_headers=True)
+                assert status == 200, payload
+                user = payload["user"]
+                assert user["is_test_user"] is True and user["institution"] is None and user["email"] == ""
+                cookie = SimpleCookie(headers["Set-Cookie"])["paperleet_session"]
+                assert cookie["secure"] and cookie["httponly"]
+                people.append({"cookie": cookie.value, "id": user["id"]})
+                public = api("community/profiles/" + user["username"])[1]
+                assert public["is_test_user"] is True and "institution" not in public
+            alice, bob = people
         code = (ROOT / "problems/rl/gae/solution.py").read_text()
         status, draft = api("practice/draft", {"problem": "1", "code": code,
                             "expected_user_id": alice["id"], "expected_updated": ""}, alice)

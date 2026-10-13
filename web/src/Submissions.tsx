@@ -130,7 +130,7 @@ export default function Submissions({
   onPublished: () => void;
 }) {
   const { t, locale } = useI18n();
-  const { user, health } = useAccount();
+  const { user, health, capabilities: accountCapabilities } = useAccount();
   const [caps, setCaps] = useState<Capabilities>(),
     [items, setItems] = useState<Submission[]>([]),
     [selected, setSelected] = useState<Submission>(),
@@ -469,10 +469,15 @@ export default function Submissions({
                     t("正在检查提交权限…", "Checking submission access…")
                   ) : (
                     <a className="button subtle" href="#/account">
-                      {t(
-                        "受邀用户登录后可提交提案",
-                        "Sign in with an invited account to submit",
-                      )}
+                      {accountCapabilities?.auth_mode === "test"
+                        ? t(
+                            "内测账号登录后可提交提案",
+                            "Sign in with your test account to submit",
+                          )
+                        : t(
+                            "受邀用户登录后可提交提案",
+                            "Sign in with an invited account to submit",
+                          )}
                     </a>
                   )}
                 </p>

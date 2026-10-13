@@ -7,12 +7,15 @@ import {
   LogOut,
   Mail,
   ShieldCheck,
+  KeyRound,
+  UserRound,
 } from "lucide-react";
 import { useI18n } from "./i18n";
 import {
   Avatar,
   InstitutionBadge,
   SocialNotice,
+  TestAccountBadge,
   errorMessage,
   profileHref,
   socialApi,
@@ -58,13 +61,136 @@ export default function Account() {
         </>
       ) : user ? (
         <ProfileSettings key={user.id} user={user} />
+      ) : capabilities?.auth_mode === "test" ? (
+        <TestSignIn enabled={capabilities.auth_available === true} />
       ) : (
         <SignIn enabled={capabilities?.auth_available === true} />
       )}
     </main>
   );
 }
-function SignIn({ enabled }: { enabled: boolean }) {
+export function TestSignIn({ enabled }: { enabled: boolean }) {
+  const { t } = useI18n();
+  const { setUser, health } = useAccount();
+  const [username, setUsername] = useState(""),
+    [accessCode, setAccessCode] = useState("");
+  const [busy, setBusy] = useState(false),
+    [error, setError] = useState("");
+  async function signIn() {
+    if (!enabled) return;
+    setBusy(true);
+    setError("");
+    try {
+      const data = await socialApi<{ user: AccountUser }>(
+        "account/test-login",
+        { username: username.trim(), access_code: accessCode },
+      );
+      setAccessCode("");
+      setUser(data.user);
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="account-grid">
+      <section className="social-panel login-card">
+        <span className="social-eyebrow">PAPERLEET BETA</span>
+        <h1>{t("内测账号登录", "Test account sign-in")}</h1>
+        <p className="social-description">
+          {t(
+            "使用管理员提供的账号和访问码，开始答题并参与社区。",
+            "Use the account and access code provided by an administrator to practice and join the community.",
+          )}
+        </p>
+        {!enabled && (
+          <SocialNotice>
+            {t(
+              "此部署的内测登录尚未就绪，请联系管理员。",
+              "Test account sign-in is not ready on this deployment. Please contact an administrator.",
+            )}
+          </SocialNotice>
+        )}
+        {error && <SocialNotice error={error} />}
+        <form
+          className="social-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void signIn();
+          }}
+        >
+          <label>
+            {t("内测账号", "Test username")}
+            <input
+              autoComplete="username"
+              required
+              maxLength={80}
+              value={username}
+              disabled={busy || !enabled}
+              placeholder={t(
+                "管理员提供的登录账号",
+                "Username from your administrator",
+              )}
+              onChange={(event) => setUsername(event.target.value)}
+            />
+          </label>
+          <label>
+            {t("访问码", "Access code")}
+            <input
+              type="password"
+              autoComplete="current-password"
+              required
+              maxLength={256}
+              value={accessCode}
+              disabled={busy || !enabled}
+              placeholder={t("输入你的访问码", "Enter your access code")}
+              onChange={(event) => setAccessCode(event.target.value)}
+            />
+          </label>
+          <button className="button" type="submit" disabled={busy || !enabled}>
+            {busy ? <span className="spinner" /> : <KeyRound size={15} />}
+            {t("登录内测", "Sign in to the beta")}
+          </button>
+        </form>
+        <p className="account-fineprint">
+          {health?.mode === "hosted"
+            ? t(
+                "内测账号由管理员创建。昵称和头像始终公开；每个账号的代码草稿和判题结果独立保存。",
+                "Test accounts are created by an administrator. Display names and avatars are always public; code drafts and judging results are kept separate for each account.",
+              )
+            : t(
+                "内测账号由管理员创建，昵称和头像始终公开。本地模式的练习记录保存在当前浏览器中。",
+                "Test accounts are created by an administrator. Display names and avatars are always public. Local-mode practice stays in this browser.",
+              )}
+        </p>
+      </section>
+      <aside className="account-aside">
+        <section className="social-panel">
+          <UserRound size={27} className="accent-icon" />
+          <h3>{t("还没有内测账号？", "Need a test account?")}</h3>
+          <p>
+            {t(
+              "请向管理员申请账号和访问码，收到后即可登录，无需填写邮箱。",
+              "Ask an administrator for a username and access code. You can sign in as soon as you receive them, without providing an email address.",
+            )}
+          </p>
+        </section>
+        <section className="social-panel">
+          <TestAccountBadge isTestUser />
+          <h3>{t("内测身份", "Beta identity")}</h3>
+          <p>
+            {t(
+              "主页会标注内测账号，不显示机构邮箱认证。国家／地区仍由你选择是否公开。",
+              "Your profile is labeled as a test account, with no institutional email verification claim. You still choose whether to display your country or region.",
+            )}
+          </p>
+        </section>
+      </aside>
+    </div>
+  );
+}
+export function SignIn({ enabled }: { enabled: boolean }) {
   const { t, locale } = useI18n();
   const { setUser, capabilities } = useAccount();
   const [email, setEmail] = useState(""),
@@ -74,7 +200,7 @@ function SignIn({ enabled }: { enabled: boolean }) {
     [error, setError] = useState(""),
     [message, setMessage] = useState("");
   const domain = email.trim().toLowerCase().split("@")[1];
-  const institution = capabilities?.institutions.find((i) =>
+  const institution = capabilities?.institutions?.find((i) =>
     i.domains.includes(domain),
   );
   async function sendCode() {
@@ -336,7 +462,7 @@ function InstitutionRequest() {
     </details>
   );
 }
-function ProfileSettings({ user }: { user: AccountUser }) {
+export function ProfileSettings({ user }: { user: AccountUser }) {
   const { t } = useI18n();
   const { setUser, health } = useAccount();
   const [name, setName] = useState(user.display_name),
@@ -486,17 +612,19 @@ function ProfileSettings({ user }: { user: AccountUser }) {
               )}
             </p>
           </div>
-          <label className="social-checkbox">
-            <input
-              type="checkbox"
-              checked={showInstitution}
-              onChange={(e) => setShowInstitution(e.target.checked)}
-            />
-            <span>
-              {t("显示已验证机构", "Show my verified institution")}
-              <small>{user.institution?.name}</small>
-            </span>
-          </label>
+          {!user.is_test_user && user.institution && (
+            <label className="social-checkbox">
+              <input
+                type="checkbox"
+                checked={showInstitution}
+                onChange={(e) => setShowInstitution(e.target.checked)}
+              />
+              <span>
+                {t("显示已验证机构", "Show my verified institution")}
+                <small>{user.institution?.name}</small>
+              </span>
+            </label>
+          )}
           <label>
             {t("国家／地区代码（选填）", "Country / region code (optional)")}
             <input
@@ -551,15 +679,33 @@ function ProfileSettings({ user }: { user: AccountUser }) {
         </form>
         <aside className="account-aside">
           <section className="social-panel">
-            <h3>{t("已验证的账户", "Verified account")}</h3>
-            <p className="private-email">{user.email}</p>
-            <InstitutionBadge institution={user.institution} />
-            <p>
-              {t(
-                "此处的完整邮箱仅本人可见。机构名称是否公开由左侧开关控制。",
-                "Only you can see your full email here. Use the visibility setting to control whether your institution appears publicly.",
-              )}
-            </p>
+            {user.is_test_user ? (
+              <>
+                <h3>{t("内测账号", "Test account")}</h3>
+                <TestAccountBadge isTestUser />
+                <p className="private-email">
+                  {user.login_username || user.username}
+                </p>
+                <p>
+                  {t(
+                    "这是管理员分配的登录账号，修改公开昵称或用户名不会改变它。访问码遗失时请联系管理员。",
+                    "This is your administrator-issued login username. Changing your public name or profile handle does not change it. Contact an administrator if you lose your access code.",
+                  )}
+                </p>
+              </>
+            ) : (
+              <>
+                <h3>{t("已验证的账户", "Verified account")}</h3>
+                <p className="private-email">{user.email}</p>
+                <InstitutionBadge institution={user.institution} />
+                <p>
+                  {t(
+                    "此处的完整邮箱仅本人可见。机构名称是否公开由左侧开关控制。",
+                    "Only you can see your full email here. Use the visibility setting to control whether your institution appears publicly.",
+                  )}
+                </p>
+              </>
+            )}
             <button
               className="button subtle logout-button"
               type="button"
@@ -579,7 +725,8 @@ function ProfileSettings({ user }: { user: AccountUser }) {
               />
               <b>{name || t("你的昵称", "Your display name")}</b>
               <span>@{username}</span>
-              {showInstitution && (
+              <TestAccountBadge isTestUser={user.is_test_user} />
+              {!user.is_test_user && showInstitution && (
                 <InstitutionBadge institution={user.institution} />
               )}
               {showCountry && country && <span>{country}</span>}

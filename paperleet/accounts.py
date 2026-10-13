@@ -19,6 +19,7 @@ from urllib.request import Request, urlopen
 import uuid
 
 import yaml
+from paperleet.config import auth_mode
 
 
 class AccountError(ValueError):
@@ -48,6 +49,7 @@ RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD
 TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS
 YE YT ZA ZM ZW""".split())
 SESSION_TTL = 7 * 24 * 60 * 60
+TEST_CODE_ITERATIONS = 600000
 DEFAULT_INSTITUTIONS = Path(__file__).resolve().parents[1] / "institutions.yaml"
 
 
@@ -107,8 +109,10 @@ def public_user(conn, row, institutions=None):
     institutions = load_institutions() if institutions is None else institutions
     result = {key: row[key] for key in ("id", "username", "display_name", "avatar_color", "bio", "created_at")}
     result["show_progress"] = bool(row["show_progress"])
+    is_test_user = bool(row["is_test_user"]) if "is_test_user" in row.keys() else False
+    result["is_test_user"] = is_test_user
     institution = institutions.get(row["institution_id"])
-    if row["show_institution"] and institution:
+    if not is_test_user and row["show_institution"] and institution:
         result["institution"] = _institution_public(institution)
     if row["show_country"] and row["country"]:
         result["country"] = row["country"]
@@ -168,6 +172,7 @@ class AccountService:
                     show_country INTEGER NOT NULL DEFAULT 0,
                     show_progress INTEGER NOT NULL DEFAULT 1,
                     role TEXT NOT NULL DEFAULT 'member', status TEXT NOT NULL DEFAULT 'active',
+                    is_test_user INTEGER NOT NULL DEFAULT 0,
                     created_at TEXT NOT NULL
                 );
                 CREATE TABLE IF NOT EXISTS accounts_private (
@@ -189,7 +194,17 @@ class AccountService:
                     email_domain TEXT NOT NULL UNIQUE, status TEXT NOT NULL DEFAULT 'pending',
                     created_at TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS test_accounts (
+                    user_id TEXT PRIMARY KEY REFERENCES users(id),
+                    login_username TEXT NOT NULL UNIQUE COLLATE NOCASE,
+                    code_salt TEXT NOT NULL, code_hash TEXT NOT NULL,
+                    code_iterations INTEGER NOT NULL, created_at TEXT NOT NULL,
+                    code_updated_at TEXT NOT NULL
+                );
             """)
+            conn.execute("BEGIN IMMEDIATE")
+            if "is_test_user" not in {row["name"] for row in conn.execute("PRAGMA table_info(users)")}:
+                conn.execute("ALTER TABLE users ADD COLUMN is_test_user INTEGER NOT NULL DEFAULT 0")
 
     @contextmanager
     def _connect(self):
@@ -204,8 +219,12 @@ class AccountService:
             conn.close()
 
     def capabilities(self):
+        if auth_mode() == "test":
+            return {"auth_mode": "test", "auth_available": True, "test_login_available": True,
+                    "institution_verification_required": False, "invite_only": False, "institutions": []}
         available = bool(self.provider.available)
-        result = {"auth_available": available, "institution_verification_required": True,
+        result = {"auth_mode": "institutional", "test_login_available": False,
+                  "auth_available": available, "institution_verification_required": True,
                   "invite_only": os.environ.get("PAPERLEET_MODE", "local") == "hosted",
                   "institutions": [{**_institution_public(item), "domains": item["domains"]}
                                    for item in self.institutions.values()]}
@@ -238,6 +257,8 @@ class AccountService:
             raise AuthenticationError("This hosted beta is invite-only. Ask the owner to invite your institutional email.")
 
     def _ready(self):
+        if auth_mode() != "institutional":
+            raise AuthUnavailable("Institutional email sign-in is disabled in test-account mode")
         if not self.provider.available:
             raise AuthUnavailable("Institutional email sign-in is not configured")
 
@@ -316,12 +337,17 @@ class AccountService:
 
     def get_user(self, user_id):
         with self._connect() as conn:
-            row = conn.execute("SELECT u.*, a.email FROM users u JOIN accounts_private a ON a.user_id=u.id WHERE u.id=?", (user_id,)).fetchone()
-            if row is None:
+            row = conn.execute("""SELECT u.*, a.email, t.login_username FROM users u
+                LEFT JOIN accounts_private a ON a.user_id=u.id
+                LEFT JOIN test_accounts t ON t.user_id=u.id WHERE u.id=?""", (user_id,)).fetchone()
+            if row is None or (row["email"] is None and row["login_username"] is None):
                 raise KeyError("Unknown user")
             result = public_user(conn, row, self.institutions)
             result.update({key: row[key] for key in ("email", "role", "country")})
             result.update({key: bool(row[key]) for key in ("show_institution", "show_country", "show_progress")})
+            if row["is_test_user"]:
+                result.update(email="", institution=None, institution_verified=False, login_username=row["login_username"])
+                return result
             institution = self.institutions.get(row["institution_id"])
             result["institution"] = _institution_public(institution) if institution else None
             result["institution_verified"] = bool(institution and row["email"].rsplit("@", 1)[1] in institution["domains"])
@@ -340,7 +366,14 @@ class AccountService:
             row = conn.execute("SELECT u.id FROM account_sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>? AND u.status='active'", (digest, time.time())).fetchone()
         if row is None:
             return None
-        user = self.get_user(row["id"])
+        try:
+            user = self.get_user(row["id"])
+        except KeyError:
+            return None
+        if auth_mode() == "test":
+            return user if user["is_test_user"] else None
+        if user["is_test_user"]:
+            return None
         try:
             self._check_invitation(user["email"])
         except AccountError:
@@ -392,6 +425,8 @@ class AccountService:
         return self.get_user(user_id)
 
     def request_institution(self, payload):
+        if auth_mode() != "institutional":
+            raise AuthUnavailable("Institution requests are disabled in test-account mode")
         if not isinstance(payload, dict):
             raise AccountError("Expected institution name, website, and email domain")
         name, website = payload.get("name"), payload.get("website")
@@ -414,6 +449,108 @@ class AccountService:
             identifier = uuid.uuid4().hex
             conn.execute("INSERT INTO institution_requests (id,name,website,email_domain,created_at) VALUES (?,?,?,?,?)", (identifier, name.strip(), website, domain, _now()))
         return {"id": identifier, "status": "pending", "email_domain": domain}
+
+    def _test_mode(self):
+        if auth_mode() != "test":
+            raise AuthUnavailable("Test accounts require explicit PAPERLEET_AUTH_MODE=test")
+
+    @staticmethod
+    def _test_username(value):
+        if not isinstance(value, str) or not re.fullmatch(r"[a-z0-9_]{3,24}", value.strip().lower()):
+            raise AccountError("Test login must contain 3–24 letters, numbers, or underscores")
+        return value.strip().lower()
+
+    @staticmethod
+    def _test_hash(code, salt, iterations=TEST_CODE_ITERATIONS):
+        return hashlib.pbkdf2_hmac("sha256", code.encode("utf-8"), bytes.fromhex(salt), iterations).hex()
+
+    def create_test_account(self, login_username, display_name=None, admin=False):
+        """Operator-only provisioning; credentials are returned once, never stored."""
+        self._test_mode()
+        login = self._test_username(login_username)
+        name = login if display_name is None else display_name
+        if not isinstance(name, str) or not 1 <= len(name.strip()) <= 40 or type(admin) is not bool:
+            raise AccountError("A 1–40 character display name and boolean administrator flag are required")
+        identifier = uuid.uuid4().hex
+        code, salt = secrets.token_urlsafe(24), secrets.token_hex(16)
+        digest = self._test_hash(code, salt)
+        with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            if conn.execute("SELECT user_id FROM test_accounts WHERE login_username=?", (login,)).fetchone():
+                raise AccountError("This test login already exists; use reset-code to rotate its access code")
+            username = login
+            if conn.execute("SELECT id FROM users WHERE username=?", (username,)).fetchone():
+                username = "member_" + identifier[:12]
+            now = _now()
+            conn.execute("""INSERT INTO users (id,username,display_name,avatar_color,role,is_test_user,created_at)
+                            VALUES (?,?,?,?,?,1,?)""",
+                         (identifier, username, name.strip(), "#" + identifier[:6], "admin" if admin else "member", now))
+            conn.execute("INSERT INTO test_accounts VALUES (?,?,?,?,?,?,?)",
+                         (identifier, login, salt, digest, TEST_CODE_ITERATIONS, now, now))
+        return {"username": login, "access_code": code}
+
+    def test_login(self, username, access_code):
+        self._test_mode()
+        login = self._test_username(username)
+        self._limit("test_login", login, maximum=10, seconds=900, global_maximum=100)
+        if not isinstance(access_code, str) or not 1 <= len(access_code) <= 256:
+            raise AuthenticationError("Invalid test login or access code")
+        with self._connect() as conn:
+            account = conn.execute("SELECT t.*,u.status,u.is_test_user FROM test_accounts t JOIN users u ON u.id=t.user_id WHERE t.login_username=?", (login,)).fetchone()
+        salt = account["code_salt"] if account else "0" * 32
+        iterations = account["code_iterations"] if account else TEST_CODE_ITERATIONS
+        digest = self._test_hash(access_code.strip(), salt, iterations)
+        expected = account["code_hash"] if account else "0" * 64
+        if not secrets.compare_digest(digest, expected) or not account or account["status"] != "active" or not account["is_test_user"]:
+            raise AuthenticationError("Invalid test login or access code")
+        token = secrets.token_urlsafe(32)
+        with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            # Recheck under the write lock so a concurrent reset or disable
+            # cannot mint a fresh session for the old credential.
+            current = conn.execute("""SELECT t.code_hash,u.status,u.is_test_user FROM test_accounts t
+                JOIN users u ON u.id=t.user_id WHERE t.user_id=?""", (account["user_id"],)).fetchone()
+            if not current or current["code_hash"] != digest or current["status"] != "active" or not current["is_test_user"]:
+                raise AuthenticationError("Invalid test login or access code")
+            conn.execute("DELETE FROM account_sessions WHERE expires_at<=?", (time.time(),))
+            conn.execute("INSERT INTO account_sessions VALUES (?,?,?,?)",
+                         (hashlib.sha256(token.encode()).hexdigest(), account["user_id"], time.time() + SESSION_TTL, _now()))
+        return token, self.get_user(account["user_id"])
+
+    def reset_test_access_code(self, login_username):
+        self._test_mode()
+        login = self._test_username(login_username)
+        code, salt = secrets.token_urlsafe(24), secrets.token_hex(16)
+        digest = self._test_hash(code, salt)
+        with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            account = conn.execute("SELECT user_id FROM test_accounts WHERE login_username=?", (login,)).fetchone()
+            if account is None:
+                raise AccountError("Unknown test login")
+            conn.execute("UPDATE test_accounts SET code_salt=?,code_hash=?,code_iterations=?,code_updated_at=? WHERE user_id=?",
+                         (salt, digest, TEST_CODE_ITERATIONS, _now(), account["user_id"]))
+            conn.execute("DELETE FROM account_sessions WHERE user_id=?", (account["user_id"],))
+        return {"username": login, "access_code": code}
+
+    def disable_test_account(self, login_username):
+        self._test_mode()
+        login = self._test_username(login_username)
+        with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            account = conn.execute("SELECT user_id FROM test_accounts WHERE login_username=?", (login,)).fetchone()
+            if account is None:
+                raise AccountError("Unknown test login")
+            conn.execute("UPDATE users SET status='disabled' WHERE id=?", (account["user_id"],))
+            conn.execute("DELETE FROM account_sessions WHERE user_id=?", (account["user_id"],))
+        return {"username": login, "status": "disabled"}
+
+    def list_test_accounts(self):
+        self._test_mode()
+        with self._connect() as conn:
+            rows = conn.execute("""SELECT t.login_username AS username,u.username AS public_username,
+                u.display_name,u.status,u.role,u.id AS user_id FROM test_accounts t
+                JOIN users u ON u.id=t.user_id ORDER BY t.login_username""").fetchall()
+            return [dict(row) for row in rows]
 
 
 def main(argv=None):
