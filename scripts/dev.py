@@ -20,25 +20,42 @@ def main():
                 raise SystemExit(f"Port {port} is already in use. Stop the existing dev process first.")
     export_catalog()
     processes = []
+
+    def stop(*_):
+        raise KeyboardInterrupt
+
+    shutdown_signals = [signal.SIGTERM]
+    if hasattr(signal, "SIGHUP"):
+        shutdown_signals.append(signal.SIGHUP)
+    for shutdown_signal in shutdown_signals:
+        signal.signal(shutdown_signal, stop)
+
     try:
         processes.append(subprocess.Popen([sys.executable, "-m", "paperleet.cli", "serve"], cwd=repository, start_new_session=True))
         processes.append(subprocess.Popen(["npm", "run", "dev", "--", "--port", "5173", "--strictPort"], cwd=repository / "web", start_new_session=True))
-        def stop(*_):
-            raise KeyboardInterrupt
-        signal.signal(signal.SIGTERM, stop)
         while all(process.poll() is None for process in processes):
             time.sleep(.25)
     except KeyboardInterrupt:
         pass
     finally:
+        # A second terminal signal must not interrupt child cleanup.
+        for shutdown_signal in [signal.SIGINT, *shutdown_signals]:
+            signal.signal(shutdown_signal, signal.SIG_IGN)
         for process in processes:
-            if process.poll() is None:
+            try:
+                # npm may have exited while its Vite child still owns the port.
                 os.killpg(process.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
         for process in processes:
             try:
                 process.wait(timeout=5)
             except subprocess.TimeoutExpired:
-                os.killpg(process.pid, signal.SIGKILL)
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                process.wait()
 
 
 if __name__ == "__main__":
