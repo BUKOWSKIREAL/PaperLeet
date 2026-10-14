@@ -1,4 +1,4 @@
-"""PaperLeet teaching adaptation of GKD lambda=1 on a three-token Markov LM."""
+"""LeetPaper teaching adaptation of GKD lambda=1 on a three-token Markov LM."""
 import torch
 
 
@@ -21,7 +21,7 @@ def run(sample_fn, loss_fn, seed=42, steps=120):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-    out = dict(provenance='PaperLeet teaching adaptation of Algorithm 1, lambda=1',
+    out = dict(provenance='LeetPaper teaching adaptation of Algorithm 1, lambda=1',
                 final_kl=curve[-1]['kl'], training=curve, prefix_visits=visits.tolist(),
                 student=student.softmax(-1).detach().tolist(), teacher=teacher.exp().tolist(),
                 charts=[dict(kind='line', title='Teacher match at student prefixes',
@@ -30,5 +30,5 @@ def run(sample_fn, loss_fn, seed=42, steps=120):
 
     out['loss_curve'] = [[row['step'], row['kl']] for row in out['training']]
     out['metrics'] = {key: value for key, value in out.items() if key in ('final_kl', 'final_mse', 'merge_error', 'quantization_rmse', 'adapter_parameters', 'base_parameters', 'code_count', 'scale_count')}
-    out.update(kind='toy_experiment', title='Student-prefix distillation', provenance={'kind': 'teaching_adaptation', 'source': 'https://arxiv.org/html/2306.13649v3#S3', 'adaptation': 'PaperLeet fixed-length categorical Markov model, not the original T5 or Gaussian-mixture experiment.'})
+    out.update(kind='toy_experiment', title='Student-prefix distillation', provenance={'kind': 'teaching_adaptation', 'source': 'https://arxiv.org/html/2306.13649v3#S3', 'adaptation': 'LeetPaper fixed-length categorical Markov model, not the original T5 or Gaussian-mixture experiment.'})
     return out

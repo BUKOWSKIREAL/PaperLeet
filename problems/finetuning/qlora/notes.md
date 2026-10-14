@@ -15,4 +15,4 @@ Toy 在冻结量化映射上训练 adapter。这里每个索引占一字节，�
 
 每个 mutant 都是相对于参考实现的小幅故意错误。T2 包含独立公式或梯度期望，接受结果不只依赖参考值相等。T3 使用传入的学员实现产生结果。
 
-依据：[2305.14314v1](https://arxiv.org/html/2305.14314v1#S3)；[官方量化库，固定 0.43.3 的 NF4 码本](https://github.com/bitsandbytes-foundation/bitsandbytes/blob/0.43.3/bitsandbytes/functional.py)。实验来源：PaperLeet 未打包 NF4 索引合成回归；不衡量完整 QLoRA 显存节省。
+依据：[2305.14314v1](https://arxiv.org/html/2305.14314v1#S3)；[官方量化库，固定 0.43.3 的 NF4 码本](https://github.com/bitsandbytes-foundation/bitsandbytes/blob/0.43.3/bitsandbytes/functional.py)。实验来源：LeetPaper 未打包 NF4 索引合成回归；不衡量完整 QLoRA 显存节省。

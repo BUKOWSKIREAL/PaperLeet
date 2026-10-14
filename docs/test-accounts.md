@@ -2,7 +2,7 @@
 
 **English** | [简体中文](test-accounts.zh-CN.md)
 
-Use administrator-created test accounts when you want people to try PaperLeet without registering an institutional email. Each tester receives a login name and a random access code. No Supabase project, email delivery, or institution approval is needed in this mode. There is no public signup or shared default password.
+Use administrator-created test accounts when you want people to try LeetPaper without registering an institutional email. Each tester receives a login name and a random access code. No Supabase project, email delivery, or institution approval is needed in this mode. There is no public signup or shared default password.
 
 ## Hosted beta
 

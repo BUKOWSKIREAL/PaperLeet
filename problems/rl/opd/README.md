@@ -25,10 +25,10 @@ $$
 
 ## Toy 来源
 
-**PaperLeet 教学改编。** PaperLeet 定长分类 Markov 模型，不是原作 T5 或混合高斯实验。 判题 harness 调用本次提交的函数，保存由其产生的指标与曲线。Lab 静态预览来自参考实现，Run/Submit 的产物来自你的代码。`experiment.py` 与 `tests/` 已提供实验和判题脚手架。
+**LeetPaper 教学改编。** LeetPaper 定长分类 Markov 模型，不是原作 T5 或混合高斯实验。 判题 harness 调用本次提交的函数，保存由其产生的指标与曲线。Lab 静态预览来自参考实现，Run/Submit 的产物来自你的代码。`experiment.py` 与 `tests/` 已提供实验和判题脚手架。
 
 ## 来源与验证
 
-[TRL 实现（独立于论文作者；不是本题参考答案来源）](https://github.com/huggingface/trl/blob/main/trl/experimental/gkd/gkd_trainer.py)。题目实现与合成数据由 PaperLeet 编写；论文链接固定公式依据的版本。
+[TRL 实现（独立于论文作者；不是本题参考答案来源）](https://github.com/huggingface/trl/blob/main/trl/experimental/gkd/gkd_trainer.py)。题目实现与合成数据由 LeetPaper 编写；论文链接固定公式依据的版本。
 
 T0 验证接口，T1 对照参考值，T2 检查数学性质与梯度，T3 用你的实现运行 toy。在在线编辑器补全 starter 后 Run 或 Submit，无需部署完整大模型训练系统。

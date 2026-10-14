@@ -5,11 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "paperleet"
 version = "0.1.0"
-description = "Read the paper. Implement the idea. Test the behavior."
+description = "LeetPaper: coding practice for AI researchers."
 requires-python = ">=3.10"
 dependencies = ["torch>=2.2", "numpy>=1.26", "pytest>=8", "pytest-timeout>=2.3", "PyYAML>=6"]
 
 [project.scripts]
+leetpaper = "paperleet.cli:main"
 paperleet = "paperleet.cli:main"
 
 [tool.setuptools.packages.find]

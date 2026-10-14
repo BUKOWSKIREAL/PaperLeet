@@ -73,7 +73,7 @@ module:
   - teacher_euler
   optional: false
 toy:
-  provenance: PaperLeet teaching adaptation
+  provenance: LeetPaper teaching adaptation
   description: 单点数据教师使概率流 Euler 步精确。小型 MLP 蒸馏验证边界和目标梯度路径，无需预训练模型。一半训练对使用 EMA 网络的正相邻
     sigma/2 目标；另一半连接严格 sigma_min 边界。
   description_en: A point-data teacher makes its probability-flow Euler step exact.

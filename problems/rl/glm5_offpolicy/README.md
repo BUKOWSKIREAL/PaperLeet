@@ -24,6 +24,6 @@ $$L=-\frac{\sum_{it}m_{it}w_{it}\operatorname{sg}(A_i)\log\pi_{it}}{\max(1,\sum_
 
 ## Toy 与验证
 
-`experiment.py` 已提供比率扫描和确定性的双动作 bandit。扫描展示你的权重、截断权重对照和真实梯度；bandit 每五次更新才刷新 rollout 策略，用滞后的数据训练。这是 **PaperLeet 教学改编**，不是作者提供的 toy，也不是代码智能体成绩的复现。T3 的曲线来自本次提交，实验页的静态参考预览来自参考实现。
+`experiment.py` 已提供比率扫描和确定性的双动作 bandit。扫描展示你的权重、截断权重对照和真实梯度；bandit 每五次更新才刷新 rollout 策略，用滞后的数据训练。这是 **LeetPaper 教学改编**，不是作者提供的 toy，也不是代码智能体成绩的复现。T3 的曲线来自本次提交，实验页的静态参考预览来自参考实现。
 
 T0 检查空 mask 和接口；T1 使用独立标量循环 oracle；T2 检查严格端点、梯度冻结、padding、数值极端与 token 平均；T3 运行已提供的 toy。无需模型下载、付费 API、异步集群、tokenizer gateway 或代码沙箱系统。

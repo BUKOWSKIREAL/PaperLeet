@@ -21,7 +21,7 @@ The mask contribution is zero for visible positions and minus infinity elsewhere
 | Causal alignment | Upper-left: key position `j` is allowed when `j <= i` |
 | Scope | Finite inputs, no dropout; `D` and `Dv` need not match |
 
-An all-masked row needs an explicit convention: applying softmax directly to a row of minus infinity gives NaNs. Set that row's logits to a finite placeholder before softmax, then zero the forbidden weights. This padding behavior is a PaperLeet extension to the paper's formula.
+An all-masked row needs an explicit convention: applying softmax directly to a row of minus infinity gives NaNs. Set that row's logits to a finite placeholder before softmax, then zero the forbidden weights. This padding behavior is a LeetPaper extension to the paper's formula.
 
 ## Example
 
@@ -31,7 +31,7 @@ With query `[2,0,0,0]` and keys `[1,0,0,0]`, `[0,0,0,0]`, the scaled scores are 
 
 The supplied **prefix averaging** experiment sets all query/key vectors to zero. A causal mask then makes each query average exactly the values seen so far. Changing future values by 1000 must leave earlier outputs unchanged. Results include the attention matrix, actual/expected prefix means, and future leakage.
 
-**Provenance:** PaperLeet teaching adaptation of the paper's attention and masking equations, not an original paper experiment. It uses six scalar values and no training or external data. T3 calls the submitted implementation; the reference lab preview is labeled separately.
+**Provenance:** LeetPaper teaching adaptation of the paper's attention and masking equations, not an original paper experiment. It uses six scalar values and no training or external data. T3 calls the submitted implementation; the reference lab preview is labeled separately.
 
 ## Validation
 

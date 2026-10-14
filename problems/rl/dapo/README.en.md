@@ -25,10 +25,10 @@ The toy keeps only the mixed group among all-fail, mixed and all-success example
 
 ## Toy provenance
 
-**PaperLeet teaching adaptation.** PaperLeet synthetic binary-reward groups and ratio sweep; no AIME reproduction. The test harness calls your submitted functions and records the resulting metrics and curves. The Lab's static preview comes from the reference; your Run/Submit artifacts come from your code. The experiment and test scaffolding are supplied in `experiment.py` and `tests/`.
+**LeetPaper teaching adaptation.** LeetPaper synthetic binary-reward groups and ratio sweep; no AIME reproduction. The test harness calls your submitted functions and records the resulting metrics and curves. The Lab's static preview comes from the reference; your Run/Submit artifacts come from your code. The experiment and test scaffolding are supplied in `experiment.py` and `tests/`.
 
 ## Sources and verification
 
-[Official framework linked by the paper (redirects to verl-project/verl)](https://github.com/volcengine/verl). All exercise implementations and synthetic data are written for PaperLeet. The paper link pins the version used for the formulas.
+[Official framework linked by the paper (redirects to verl-project/verl)](https://github.com/volcengine/verl). All exercise implementations and synthetic data are written for LeetPaper. The paper link pins the version used for the formulas.
 
 T0 checks contracts, T1 compares with the reference, T2 checks mathematical and gradient properties, and T3 runs the toy through your implementation. Implement the starter functions in the online editor, then Run or Submit. The official large-model training system is not required.

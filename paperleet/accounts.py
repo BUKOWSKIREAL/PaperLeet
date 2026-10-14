@@ -557,7 +557,7 @@ def main(argv=None):
     """Read-only maintenance entry point; approvals are reviewed config edits."""
     import argparse
     from paperleet.config import data_directory
-    parser = argparse.ArgumentParser(description="Inspect PaperLeet institutional account requests")
+    parser = argparse.ArgumentParser(description="Inspect LeetPaper institutional account requests")
     parser.add_argument("command", choices=["institution-requests"])
     parser.add_argument("--database", type=Path, default=data_directory() / "community.sqlite3")
     args = parser.parse_args(argv)

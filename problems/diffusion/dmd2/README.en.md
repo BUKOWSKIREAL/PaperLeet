@@ -12,7 +12,7 @@ The critic/fake diffusion model updates more often than the generator (5:1 here)
 
 ## Runnable experiment
 
-**Provenance: PaperLeet teaching adaptation.** An unpaired shifted-Gaussian toy jointly trains a fake score and discriminator for five updates per student update. It demonstrates scheduling, GAN gradient direction, and removal of paired regression. Uses scalar Gaussian score parameters rather than pretrained diffusion features.
+**Provenance: LeetPaper teaching adaptation.** An unpaired shifted-Gaussian toy jointly trains a fake score and discriminator for five updates per student update. It demonstrates scheduling, GAN gradient direction, and removal of paired regression. Uses scalar Gaussian score parameters rather than pretrained diffusion features.
 
 The T3 test runs your submitted implementation, saves points/curves/metrics, and uses fixed seed 42. `toy.py` contains the provided experiment. It does not download models or datasets. These exercises reproduce selected mechanisms, not full image benchmark results.
 

@@ -13,7 +13,7 @@ Inputs alpha and sigma are amplitudes, with alpha²+sigma²=1; they are not cumu
 
 ## Runnable experiment
 
-**Provenance: PaperLeet teaching adaptation.** A fixed affine denoiser teacher takes two cosine-schedule DDIM steps; a tiny linear student learns the solved target and matches the endpoint in one evaluation. Demonstrates the exact distillation algebra, not image quality or repeated multi-stage halving.
+**Provenance: LeetPaper teaching adaptation.** A fixed affine denoiser teacher takes two cosine-schedule DDIM steps; a tiny linear student learns the solved target and matches the endpoint in one evaluation. Demonstrates the exact distillation algebra, not image quality or repeated multi-stage halving.
 
 The T3 test runs your submitted implementation, saves points/curves/metrics, and uses fixed seed 42. `toy.py` contains the provided experiment. It does not download models or datasets. These exercises reproduce selected mechanisms, not full image benchmark results.
 

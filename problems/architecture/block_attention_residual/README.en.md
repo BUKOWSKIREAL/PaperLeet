@@ -31,7 +31,7 @@ At the first layer of a new block there is no current partial sum. Appending a z
 
 Three synthetic sources are supplied: an embedding `[1,0]`, a completed block `[-2,0]`, and a current partial block `[0,3]`. Sweep a pseudo-query from `[0,0]` to `[6,0]`. The first chart shows the depth weights; the second shows the distance to the useful embedding. Scalar probabilities calculated independently from these explicit sources serve as the oracle.
 
-**Provenance:** PaperLeet teaching adaptation of the paper's operator and official pseudocode. This is a deterministic query sweep, not model training or an experiment reported by the authors. T3 runs your assembly and attention functions, and the results page displays your actual curves separately from the reference preview.
+**Provenance:** LeetPaper teaching adaptation of the paper's operator and official pseudocode. This is a deterministic query sweep, not model training or an experiment reported by the authors. T3 runs your assembly and attention functions, and the results page displays your actual curves separately from the reference preview.
 
 ## Validation
 

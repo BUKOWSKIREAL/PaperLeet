@@ -1,4 +1,4 @@
-"""PaperLeet ratio diagnostic and stale-rollout two-action bandit teaching toy."""
+"""LeetPaper ratio diagnostic and stale-rollout two-action bandit teaching toy."""
 import torch
 
 

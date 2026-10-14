@@ -1,4 +1,4 @@
-"""PaperLeet adaptation of FlashAttention Algorithm 1; CPU numerical experiment."""
+"""LeetPaper adaptation of FlashAttention Algorithm 1; CPU numerical experiment."""
 import math
 import torch
 
@@ -17,6 +17,6 @@ def run(attention):
                      "output_error": (output - expected).abs().max().item(),
                      "lse_error": (lse - expected_lse).abs().max().item(),
                      "score_tile_elements": min(size, 37) ** 2})
-    return {"provenance": "PaperLeet teaching adaptation of FlashAttention Algorithm 1",
+    return {"provenance": "LeetPaper teaching adaptation of FlashAttention Algorithm 1",
             "rows": rows, "dense_score_elements": 37 ** 2,
             "measurement": "Score tile elements are theoretical counts, not measured peak memory or GPU speed."}

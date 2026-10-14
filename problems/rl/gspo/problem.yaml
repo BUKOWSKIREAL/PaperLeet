@@ -63,9 +63,9 @@ module:
 toy:
   provenance: teaching_adaptation
   source: https://arxiv.org/html/2507.18071v1#S4.SS1
-  adaptation: Analytic three-response diagnostic written for PaperLeet; not Qwen training
+  adaptation: Analytic three-response diagnostic written for LeetPaper; not Qwen training
     results.
-  adaptation_zh: PaperLeet 自编的三回答解析实验，不是 Qwen 训练结果。
+  adaptation_zh: LeetPaper 自编的三回答解析实验，不是 Qwen 训练结果。
   seed: 42
   device: cpu
 calibration:

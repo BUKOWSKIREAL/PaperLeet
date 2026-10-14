@@ -56,7 +56,7 @@ toy:
   kind: teaching_adaptation
   source: https://arxiv.org/abs/1706.03762
   anchor: 'Section 3.5: sinusoidal positional encoding and relative-offset linearity'
-  adaptation: PaperLeet relative-offset rotation and position-separation demonstration;
+  adaptation: LeetPaper relative-offset rotation and position-separation demonstration;
     not a paper benchmark.
 mutants:
 - id: m1_wrong_frequency

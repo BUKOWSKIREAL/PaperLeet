@@ -56,7 +56,7 @@ toy:
   kind: teaching_adaptation
   source: https://arxiv.org/abs/1711.05101
   anchor: 'Algorithm 2: AdamW with decoupled weight decay'
-  adaptation: PaperLeet synthetic CPU experiment; no claim of reproducing the paper training benchmarks.
+  adaptation: LeetPaper synthetic CPU experiment; no claim of reproducing the paper training benchmarks.
 mutants:
 - id: m1_coupled_decay
   bug: 把权重衰减送入一阶动量

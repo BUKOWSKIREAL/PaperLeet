@@ -58,7 +58,7 @@ toy:
   kind: teaching_adaptation
   source: https://arxiv.org/abs/1706.03762
   anchor: 'Section 3.2.1, Eq. (1): scaled dot-product attention'
-  adaptation: PaperLeet synthetic CPU experiment; no claim of reproducing the paper training benchmarks.
+  adaptation: LeetPaper synthetic CPU experiment; no claim of reproducing the paper training benchmarks.
 mutants:
 - id: m1_missing_scale
   bug: 遗漏 sqrt(d) 缩放

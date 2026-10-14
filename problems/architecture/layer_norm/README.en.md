@@ -38,7 +38,7 @@ Adding a scalar to every feature of one token leaves its normalized output uncha
 
 Eight six-feature tokens have different offsets and scales. A supplied deterministic sublayer output is added, then your `post_norm_residual` runs. Plots show token means and population standard deviations before and after normalization; a scalar Python oracle supplies the expected result. With unit affine parameters, the resulting variance is `variance / (variance + eps)`, so it need not be exactly one. Perturbing all other tokens demonstrates independence.
 
-**Provenance:** this is a PaperLeet teaching adaptation of §3.1, not an experiment reported in the paper. Dropout is disabled and no model is trained. T3 collects measurements from the submitted code; the reference preview is separate.
+**Provenance:** this is a LeetPaper teaching adaptation of §3.1, not an experiment reported in the paper. Dropout is disabled and no model is trained. T3 collects measurements from the submitted code; the reference preview is separate.
 
 ## Validation and scope
 

@@ -67,9 +67,9 @@ module:
 toy:
   provenance: teaching_adaptation
   source: https://arxiv.org/html/2306.13649v3#S3
-  adaptation: PaperLeet fixed-length categorical Markov model, not the original T5
+  adaptation: LeetPaper fixed-length categorical Markov model, not the original T5
     or Gaussian-mixture experiment.
-  adaptation_zh: PaperLeet 定长分类 Markov 模型，不是原作 T5 或混合高斯实验。
+  adaptation_zh: LeetPaper 定长分类 Markov 模型，不是原作 T5 或混合高斯实验。
   seed: 42
   device: cpu
 calibration:

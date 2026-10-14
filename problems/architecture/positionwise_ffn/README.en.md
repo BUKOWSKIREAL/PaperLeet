@@ -35,7 +35,7 @@ $$
 
 Labels come directly from these equations. The training loop calls your function and updates both matrices and both biases. Evaluation uses 96 independently drawn held-out tokens. The lab displays the training curve, held-out MSE and the learned absolute-value slice at `x₂=0`. A composition of two linear layers without ReLU cannot represent this target.
 
-**Provenance:** a PaperLeet teaching adaptation of §3.3, not a toy reported in the paper or a reproduction of translation results. The data, training loop and visualization are supplied. T3 uses your implementation; the reference preview is separate.
+**Provenance:** a LeetPaper teaching adaptation of §3.3, not a toy reported in the paper or a reproduction of translation results. The data, training loop and visualization are supplied. T3 uses your implementation; the reference preview is separate.
 
 ## Validation
 

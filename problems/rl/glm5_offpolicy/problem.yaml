@@ -68,7 +68,7 @@ toy:
   kind: teaching_adaptation
   source: https://arxiv.org/abs/2602.15763v2
   anchor: Section 4.1.2, Optimizing Asynchronous Training Stability, Eqs. (3-5)
-  adaptation: PaperLeet deterministic CPU synthetic experiment; not an author-provided toy or large-model
+  adaptation: LeetPaper deterministic CPU synthetic experiment; not an author-provided toy or large-model
     benchmark.
 mutants:
 - id: m1_clamp_outliers

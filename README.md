@@ -1,4 +1,9 @@
-# PaperLeet
+# LeetPaper
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="web/public/brand/leetpaper-logo-dark.svg">
+  <img src="web/public/brand/leetpaper-logo-light.svg" alt="LeetPaper" width="320">
+</picture>
 
 **English** | [简体中文](README.zh-CN.md)
 
@@ -8,13 +13,15 @@ The pilot includes **46 papers and 60 focused core modules**. Start with a paper
 
 ## Run locally
 
+The product is named **LeetPaper**. The CLI is available as `leetpaper`; existing `paperleet` commands, `PAPERLEET_*` environment variables, and `.paperleet/` data paths remain compatible. Reinstall with `python -m pip install -e .` to add the new command.
+
 Requires Python 3.10+ and Node.js 20.19+. Run these commands from the repository root:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e .
-paperleet export
+leetpaper export
 npm --prefix web ci
 make dev
 ```
@@ -146,7 +153,7 @@ The repository includes pre-generated data, so you can start it directly. Re-exp
 
 ```bash
 paperleet vizdata all
-paperleet export
+leetpaper export
 cd web
 npm run check
 npm run build

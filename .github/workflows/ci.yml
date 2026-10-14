@@ -1,4 +1,4 @@
-name: PaperLeet quality gate
+name: LeetPaper quality gate
 on:
   push:
   pull_request:

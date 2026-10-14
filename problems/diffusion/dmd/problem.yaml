@@ -71,11 +71,11 @@ module:
   provided_functions: []
   optional: false
 toy:
-  provenance: PaperLeet teaching adaptation
+  provenance: LeetPaper teaching adaptation
   description: 平移二维高斯生成器和可训练高斯 fake score 展示分数符号、梯度隔离与配对回归。这不是论文 Figure 3 双峰原代码，而是用解析分数隔离相同分布匹配机制。第二个
     T3 与参考预览增加 **Figure 3 启发的双峰改编实验**：解析双高斯学生的两个中心都从右侧附近出发，比较仅真实分数、分数差匹配、匹配加配对 MSE
     回归。这里教师和 fake score 都使用解析混合分数以隔离生成器梯度；第一个高斯 T3 单独验证 fake score 训练。CPU 运行600步，噪声
-    sigma 从1.5降至0.6，目标中心为 (-1.8,0)/(1.8,0)，分量标准差 .25，报告每个模式占比和覆盖数。这些配置与曲线是 PaperLeet
+    sigma 从1.5降至0.6，目标中心为 (-1.8,0)/(1.8,0)，分量标准差 .25，报告每个模式占比和覆盖数。这些配置与曲线是 LeetPaper
     重实现，不是原 Figure 3 数据或源码。
   description_en: A shifted 2D Gaussian generator and trainable Gaussian fake score
     expose score signs, gradient isolation, and paired regression. This is not the
@@ -88,7 +88,7 @@ toy:
     the first Gaussian T3 separately trains the fake score. Use noise sigma 1.5→0.6
     over 600 CPU updates, target centers (-1.8,0)/(1.8,0), and component std .25.
     Report both mode proportions and covered-mode count. These settings and curves
-    are PaperLeet’s reimplementation, not original Figure 3 data or source code.
+    are LeetPaper’s reimplementation, not original Figure 3 data or source code.
   source: https://arxiv.org/abs/2311.18828v1
   seed: 42
   entrypoint: toy.py:run_bimodal

@@ -9,7 +9,7 @@ from paperleet.config import auth_mode, data_directory
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="Provision individual PaperLeet beta test accounts")
+    parser = argparse.ArgumentParser(description="Provision individual LeetPaper beta test accounts")
     commands = parser.add_subparsers(dest="command", required=True)
     create = commands.add_parser("create")
     create.add_argument("username")

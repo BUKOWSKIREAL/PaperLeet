@@ -96,8 +96,8 @@ def test_ctrl_c_is_clean_at_every_startup_phase(dev, monkeypatch, capsys, phase)
 
     assert dev.module.main() == 0
     output = capsys.readouterr()
-    assert output.out.startswith("Starting PaperLeet...")
-    assert "Stopping PaperLeet" in output.out
+    assert output.out.startswith("Starting LeetPaper...")
+    assert "Stopping LeetPaper" in output.out
     assert not output.err
     assert "do-not-print-this-password" not in output.out
     assert dev.groups == [(process.pid, signal.SIGTERM) for process in dev.processes]
@@ -126,7 +126,7 @@ def test_startup_status_is_flushed_before_application_import(dev, monkeypatch):
 
     def check_import(name, *args, **kwargs):
         if name == "paperleet.export":
-            assert prints[0][0][0].startswith("Starting PaperLeet")
+            assert prints[0][0][0].startswith("Starting LeetPaper")
             assert prints[-1][0] == ("Preparing the problem catalog...",)
             assert all(kwargs.get("flush") for _, kwargs in prints)
         return original_import(name, *args, **kwargs)

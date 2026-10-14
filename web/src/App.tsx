@@ -42,6 +42,7 @@ import Community, { UserProfile } from "./Community";
 import Account from "./Account";
 import { AccountNav, AccountProvider, useAccount } from "./social";
 import { usePracticeWorkspace } from "./PracticeWorkspace";
+import Brand from "./Brand";
 import "./community.css";
 
 const difficulty = (d: string) =>
@@ -189,23 +190,6 @@ export function Prose({
         {processed}
       </Markdown>
     </div>
-  );
-}
-function Brand() {
-  const { t } = useI18n();
-  return (
-    <a
-      href="#"
-      className="brand"
-      aria-label={t("PaperLeet 首页", "PaperLeet home")}
-    >
-      <span className="brand-mark">
-        <Code2 size={25} />
-      </span>
-      <span>
-        Paper<span>Leet</span>
-      </span>
-    </a>
   );
 }
 function ReportView({

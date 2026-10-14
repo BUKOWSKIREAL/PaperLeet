@@ -34,7 +34,7 @@ The scan performs no query scaling or key normalization. Its inputs are already 
 
 The first chart redraws the log-decay comparison in Figure 3(a), with $A=0$, $g_{\min}=-5$, and logits from −10 to 10. It compares K3's bounded gate against Kimi Linear's negative-softplus gate. This is a **paper-derived figure**, not a GPU throughput reproduction.
 
-The second chart is a separate **PaperLeet teaching adaptation**: write value 2 at key 0, write 7 at key 1, overwrite key 0 with 5, then retain one quarter of key 0 without writing. The exact outputs are `[2, 7, 5, 1.25]`. No training or downloads are needed. T3 calls the submitted functions; the preview and your actual run are displayed separately.
+The second chart is a separate **LeetPaper teaching adaptation**: write value 2 at key 0, write 7 at key 1, overwrite key 0 with 5, then retain one quarter of key 0 without writing. The exact outputs are `[2, 7, 5, 1.25]`. No training or downloads are needed. T3 calls the submitted functions; the preview and your actual run are displayed separately.
 
 ## Validation
 

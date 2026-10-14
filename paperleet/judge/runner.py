@@ -29,7 +29,7 @@ def normalize_layers(layers=None):
 def run_batch(plan, layers=None, timeout=600):
     layers = normalize_layers(layers)
     if any(problem(identifier)["id"].startswith("community/") for identifier in plan):
-        raise ValueError("Generated community packages must run in the submission sandbox. Use the web editor or paperleet test for a single implementation; batch CI/mutate currently supports maintained packages only.")
+        raise ValueError("Generated community packages must run in the submission sandbox. Use the web editor or leetpaper test for a single implementation; batch CI/mutate currently supports maintained packages only.")
     # Freeze every source before pytest begins. Saving a file during a run must
     # not make different tests judge different versions of the implementation.
     sources = {}
@@ -103,7 +103,7 @@ def run_problem(identifier, implementation, layers=None, report_path=None):
     entry = problem(identifier)
     implementation = Path(implementation).resolve()
     if not implementation.is_file():
-        raise ValueError(f"Missing implementation {implementation}. Run paperleet init {entry['id']} first.")
+        raise ValueError(f"Missing implementation {implementation}. Run leetpaper init {entry['id']} first.")
     if entry["id"].startswith("community/"):
         from paperleet.submissions.sandbox import run_published
         report = run_published(entry, implementation, layers)

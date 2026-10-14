@@ -168,7 +168,7 @@ def _empty_target(destination):
 
 def _manifest(archive, member):
     if member is None or member.name != MANIFEST_NAME or not member.isreg() or member.linkname or not 0 < member.size <= MAX_MANIFEST_BYTES:
-        raise ValueError("A valid PaperLeet backup manifest must be the first archive entry")
+        raise ValueError("A valid LeetPaper backup manifest must be the first archive entry")
     stream = archive.extractfile(member)
     if stream is None:
         raise ValueError("Backup manifest is missing")
@@ -177,7 +177,7 @@ def _manifest(archive, member):
     except (ValueError, UnicodeDecodeError):
         raise ValueError("Backup manifest is not valid JSON") from None
     if not isinstance(document, dict) or document.get("format") != "paperleet-backup" or document.get("version") != 1:
-        raise ValueError("Unsupported PaperLeet backup format")
+        raise ValueError("Unsupported LeetPaper backup format")
     files = document.get("files")
     if not isinstance(files, dict) or len(files) > MAX_FILES:
         raise ValueError("Backup manifest contains too many files")
@@ -261,7 +261,7 @@ def restore(input_stream, destination=None):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description="Back up or restore private PaperLeet application data")
+    parser = argparse.ArgumentParser(description="Back up or restore private LeetPaper application data")
     commands = parser.add_subparsers(dest="command", required=True)
     backup_parser = commands.add_parser("backup")
     backup_parser.add_argument("--stdout", action="store_true", required=True, help="Write a tar.gz archive to stdout")
@@ -271,7 +271,7 @@ def main(argv=None):
     try:
         result = backup(sys.stdout.buffer) if args.command == "backup" else restore(sys.stdin.buffer)
     except (OSError, EOFError, ValueError, sqlite3.Error, tarfile.TarError) as exc:
-        print("PaperLeet backup error: " + str(exc), file=sys.stderr)
+        print("LeetPaper backup error: " + str(exc), file=sys.stderr)
         return 1
     print(f"{args.command.capitalize()} complete: {result['files']} files, {result['bytes']} bytes", file=sys.stderr)
     return 0

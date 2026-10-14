@@ -36,7 +36,7 @@ Two single-key blocks have scores `0` and `log(3)`, with scalar values `2` and `
 
 The supplied 37-token experiment compares block sizes 1, 3, 8, 16, 37 and 64 against independently computed dense attention. It reports maximum output/LSE error and the theoretical size of the largest score tile. Partial edge tiles must work correctly.
 
-**Provenance:** PaperLeet CPU teaching adaptation of Algorithm 1, with synthetic tensors. It is not a paper benchmark or a reproduction of GPU speedups. Autograd may retain intermediate blocks; theoretical score-tile counts do not claim measured training-memory savings. Fused kernels, GPU IO scheduling and recomputed backward are outside the exercise.
+**Provenance:** LeetPaper CPU teaching adaptation of Algorithm 1, with synthetic tensors. It is not a paper benchmark or a reproduction of GPU speedups. Autograd may retain intermediate blocks; theoretical score-tile counts do not claim measured training-memory savings. Fused kernels, GPU IO scheduling and recomputed backward are outside the exercise.
 
 ## Validation
 

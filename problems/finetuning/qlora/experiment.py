@@ -1,4 +1,4 @@
-"""PaperLeet teaching adaptation: frozen NF4 base and trainable rank-two correction."""
+"""LeetPaper teaching adaptation: frozen NF4 base and trainable rank-two correction."""
 import torch
 
 
@@ -26,7 +26,7 @@ def run(quantize_fn, dequantize_fn, linear_fn, seed=42, steps=220):
         if step == steps:
             break
         optimizer.zero_grad(); loss.backward(); optimizer.step()
-    out = dict(provenance='PaperLeet NF4 adapter regression; unpacked indices, no paged optimizer',
+    out = dict(provenance='LeetPaper NF4 adapter regression; unpacked indices, no paged optimizer',
                 final_mse=curve[-1]['mse'], training=curve,
                 quantization_rmse=float((weight - base).square().mean().sqrt()),
                 code_count=codes.numel(), scale_count=scales.numel(),
@@ -35,5 +35,5 @@ def run(quantize_fn, dequantize_fn, linear_fn, seed=42, steps=220):
 
     out['loss_curve'] = [[row['step'], row['mse']] for row in out['training']]
     out['metrics'] = {key: value for key, value in out.items() if key in ('final_kl', 'final_mse', 'merge_error', 'quantization_rmse', 'adapter_parameters', 'base_parameters', 'code_count', 'scale_count')}
-    out.update(kind='toy_experiment', title='Adapt a frozen NF4 base', provenance={'kind': 'teaching_adaptation', 'source': 'https://arxiv.org/html/2305.14314v1#S3', 'adaptation': 'PaperLeet synthetic regression with unpacked NF4 indices; does not measure full QLoRA memory savings.'})
+    out.update(kind='toy_experiment', title='Adapt a frozen NF4 base', provenance={'kind': 'teaching_adaptation', 'source': 'https://arxiv.org/html/2305.14314v1#S3', 'adaptation': 'LeetPaper synthetic regression with unpacked NF4 indices; does not measure full QLoRA memory savings.'})
     return out

@@ -36,7 +36,7 @@ For two matched orthogonal unit vectors and `s=log(2)`, logits equal `2I`. Both 
 
 The provided experiment optimizes eight pairs of random 8-dimensional vectors and a learnable temperature for 80 steps. It records loss, cosine similarities and retrieval accuracy in both directions. The experiment calls the submitted loss, while retrieval is independently evaluated from the learned normalized features.
 
-**Provenance:** PaperLeet teaching adaptation of Figure 3, using trainable vectors instead of large image/text encoders. It does not reproduce CLIP pretraining or zero-shot benchmarks. No datasets or weights are downloaded. T3 requires both retrieval accuracies to reach 1 and final loss below .05.
+**Provenance:** LeetPaper teaching adaptation of Figure 3, using trainable vectors instead of large image/text encoders. It does not reproduce CLIP pretraining or zero-shot benchmarks. No datasets or weights are downloaded. T3 requires both retrieval accuracies to reach 1 and final loss below .05.
 
 ## Validation
 

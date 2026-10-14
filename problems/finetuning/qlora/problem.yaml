@@ -70,9 +70,9 @@ module:
 toy:
   provenance: teaching_adaptation
   source: https://arxiv.org/html/2305.14314v1#S3
-  adaptation: PaperLeet synthetic regression with unpacked NF4 indices; does not measure
+  adaptation: LeetPaper synthetic regression with unpacked NF4 indices; does not measure
     full QLoRA memory savings.
-  adaptation_zh: PaperLeet 未打包 NF4 索引合成回归；不衡量完整 QLoRA 显存节省。
+  adaptation_zh: LeetPaper 未打包 NF4 索引合成回归；不衡量完整 QLoRA 显存节省。
   seed: 42
   device: cpu
 calibration:

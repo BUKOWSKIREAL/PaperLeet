@@ -36,7 +36,7 @@ openssl rand -hex 32
 
 | 配置 | 内容 |
 | --- | --- |
-| `PAPERLEET_DOMAIN` | 实际域名，如 `paperleet.yourdomain.com`，不带协议或路径 |
+| `PAPERLEET_DOMAIN` | 实际域名，如 `leetpaper.yourdomain.com`，不带协议或路径 |
 | `PAPERLEET_AUTH_MODE` | 默认为 `institutional`；设为 `test` 时使用管理员创建的测试账号，无需邮箱 |
 | `SUPABASE_URL` | Supabase 项目 URL |
 | `SUPABASE_PUBLISHABLE_KEY` | 项目的 publishable key，或旧版 anon key；不要使用 service-role key |
@@ -46,7 +46,7 @@ openssl rand -hex 32
 
 受邀邮箱还必须匹配 [`institutions.yaml`](../institutions.yaml) 中审核通过的**精确邮箱域名**。邀请和机构审核是两个独立条件：填写邮箱不会自动批准学校；批准学校也不会邀请整个学校。初始批准的是 `mit.edu` 和 `berkeley.edu`。新增域名或学生邮箱子域名前，要核实机构官方资料。用户提交机构申请只会进入待审核队列。
 
-在 Supabase 中开启 Email 登录和注册，在 **Magic Link** 邮件模板中加入 `{{ .Token }}`，让用户收到可以在 PaperLeet 输入的验证码。给真实受邀用户发信前配置自定义 SMTP；Supabase 默认发信服务只允许向项目团队邮箱发送。参考 [邮箱 OTP](https://supabase.com/docs/guides/auth/auth-email-passwordless)、[邮件模板](https://supabase.com/docs/guides/auth/auth-email-templates)、[SMTP 配置](https://supabase.com/docs/guides/auth/auth-smtp)。
+在 Supabase 中开启 Email 登录和注册，在 **Magic Link** 邮件模板中加入 `{{ .Token }}`，让用户收到可以在 LeetPaper 输入的验证码。给真实受邀用户发信前配置自定义 SMTP；Supabase 默认发信服务只允许向项目团队邮箱发送。参考 [邮箱 OTP](https://supabase.com/docs/guides/auth/auth-email-passwordless)、[邮件模板](https://supabase.com/docs/guides/auth/auth-email-templates)、[SMTP 配置](https://supabase.com/docs/guides/auth/auth-smtp)。
 
 邮箱验证证明用户能控制机构邮箱，不直接证明当前在读或在职。邮箱和会话数据保持私有；昵称与头像始终公开，机构和国家分别由用户选择是否显示。国家由用户填写，不从 IP 推断。
 
@@ -65,7 +65,7 @@ openssl rand -hex 32
 检查真实域名：
 
 ```sh
-curl --fail https://paperleet.yourdomain.com/api/health
+curl --fail https://leetpaper.yourdomain.com/api/health
 ./deploy/manage.sh logs
 ```
 

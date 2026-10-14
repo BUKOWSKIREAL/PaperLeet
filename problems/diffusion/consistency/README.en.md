@@ -13,7 +13,7 @@ At sigma_min the function must be exactly the identity, regardless of network ou
 
 ## Runnable experiment
 
-**Provenance: PaperLeet teaching adaptation.** A point-data teacher makes its probability-flow Euler step exact. Small MLP distillation exercises the boundary and target routing without pretrained models. Half the training pairs use a positive adjacent noise level sigma/2, so the EMA network affects the target; the other half anchor the exact sigma_min boundary.
+**Provenance: LeetPaper teaching adaptation.** A point-data teacher makes its probability-flow Euler step exact. Small MLP distillation exercises the boundary and target routing without pretrained models. Half the training pairs use a positive adjacent noise level sigma/2, so the EMA network affects the target; the other half anchor the exact sigma_min boundary.
 
 The T3 test runs your submitted implementation, saves points/curves/metrics, and uses fixed seed 42. `toy.py` contains the provided experiment. It does not download models or datasets. These exercises reproduce selected mechanisms, not full image benchmark results.
 

@@ -71,7 +71,7 @@ module:
   provided_functions: []
   optional: false
 toy:
-  provenance: PaperLeet teaching adaptation
+  provenance: LeetPaper teaching adaptation
   description: 非配对平移高斯 toy 将 fake-score 和判别器训练5次再更新学生1次，展示调度、GAN梯度方向与移除配对回归。用高斯分数参数替代预训练扩散特征。
   description_en: An unpaired shifted-Gaussian toy jointly trains a fake score and
     discriminator for five updates per student update. It demonstrates scheduling,

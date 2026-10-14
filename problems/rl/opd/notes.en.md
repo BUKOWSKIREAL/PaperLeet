@@ -15,4 +15,4 @@ This is the lambda=1 GKD variant. It is not sampled-token OPD, a policy-gradient
 
 Each mutant differs from the reference in a small, intentional change. T2 includes independent formula or gradient expectations, so equality with the reference is not the only acceptance evidence. T3 produces artifacts from the supplied implementation.
 
-Source: [2306.13649v3](https://arxiv.org/html/2306.13649v3#S3); [TRL implementation (independent of the paper authors; not the reference for this exercise)](https://github.com/huggingface/trl/blob/main/trl/experimental/gkd/gkd_trainer.py). Toy provenance: PaperLeet fixed-length categorical Markov model, not the original T5 or Gaussian-mixture experiment.
+Source: [2306.13649v3](https://arxiv.org/html/2306.13649v3#S3); [TRL implementation (independent of the paper authors; not the reference for this exercise)](https://github.com/huggingface/trl/blob/main/trl/experimental/gkd/gkd_trainer.py). Toy provenance: LeetPaper fixed-length categorical Markov model, not the original T5 or Gaussian-mixture experiment.

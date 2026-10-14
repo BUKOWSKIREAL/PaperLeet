@@ -26,10 +26,10 @@ The toy trains adapters on a frozen quantized map. Storage here consumes one byt
 
 ## Toy provenance
 
-**PaperLeet teaching adaptation.** PaperLeet synthetic regression with unpacked NF4 indices; does not measure full QLoRA memory savings. The test harness calls your submitted functions and records the resulting metrics and curves. The Lab's static preview comes from the reference; your Run/Submit artifacts come from your code. The experiment and test scaffolding are supplied in `experiment.py` and `tests/`.
+**LeetPaper teaching adaptation.** LeetPaper synthetic regression with unpacked NF4 indices; does not measure full QLoRA memory savings. The test harness calls your submitted functions and records the resulting metrics and curves. The Lab's static preview comes from the reference; your Run/Submit artifacts come from your code. The experiment and test scaffolding are supplied in `experiment.py` and `tests/`.
 
 ## Sources and verification
 
-[Official quantization library, pinned 0.43.3 NF4 codebook](https://github.com/bitsandbytes-foundation/bitsandbytes/blob/0.43.3/bitsandbytes/functional.py). All exercise implementations and synthetic data are written for PaperLeet. The paper link pins the version used for the formulas.
+[Official quantization library, pinned 0.43.3 NF4 codebook](https://github.com/bitsandbytes-foundation/bitsandbytes/blob/0.43.3/bitsandbytes/functional.py). All exercise implementations and synthetic data are written for LeetPaper. The paper link pins the version used for the formulas.
 
 T0 checks contracts, T1 compares with the reference, T2 checks mathematical and gradient properties, and T3 runs the toy through your implementation. Implement the starter functions in the online editor, then Run or Submit. The official large-model training system is not required.

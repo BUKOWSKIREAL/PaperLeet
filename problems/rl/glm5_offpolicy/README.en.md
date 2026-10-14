@@ -24,6 +24,6 @@ Official Slime is pinned to commit `05e3b017fed9e02de418c2fbac9d75602a534be5`: [
 
 ## Toy and verification
 
-`experiment.py` supplies a ratio sweep and a deterministic two-action bandit. The sweep plots your weights, a clamped comparison, and actual gradients. The bandit freezes a rollout snapshot for five updates before refreshing it, making the correction operate on stale data. This is a **PaperLeet teaching adaptation**, not a toy from the authors or a reproduction of coding-agent results. T3 artifacts come from your submitted functions; static Lab previews come from the reference.
+`experiment.py` supplies a ratio sweep and a deterministic two-action bandit. The sweep plots your weights, a clamped comparison, and actual gradients. The bandit freezes a rollout snapshot for five updates before refreshing it, making the correction operate on stale data. This is a **LeetPaper teaching adaptation**, not a toy from the authors or a reproduction of coding-agent results. T3 artifacts come from your submitted functions; static Lab previews come from the reference.
 
 T0 checks empty masks/contracts; T1 uses a scalar-loop oracle; T2 checks strict endpoints, gradient detachment, padding, numerical extremes and token averaging; T3 executes the supplied toy. No model download, paid API, async infrastructure, tokenizer gateway or coding sandbox is required.

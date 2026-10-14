@@ -67,7 +67,7 @@ module:
   provided_functions: []
   optional: false
 toy:
-  provenance: PaperLeet teaching adaptation
+  provenance: LeetPaper teaching adaptation
   description: 使用解析单点数据族与学员 JVP 目标学习中心；这是机制演示，不声称是原论文低维实验。
   description_en: An analytic point-data family learns its center using the learner
     JVP target. This is a mechanism demonstration, not a low-dimensional experiment

@@ -55,7 +55,7 @@ class Sandbox:
 
     def capability(self):
         if not shutil.which("docker"):
-            return {"ready": False, "image": self.image, "reason": "Install Docker and build the PaperLeet harness image to validate generated code."}
+            return {"ready": False, "image": self.image, "reason": "Install Docker and build the LeetPaper harness image to validate generated code."}
         try:
             result = subprocess.run(["docker", "image", "inspect", self.image, "--format", "{{.Id}}"], capture_output=True, text=True, timeout=4)
             if result.returncode:

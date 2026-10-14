@@ -15,4 +15,4 @@
 
 每个 mutant 都是相对于参考实现的小幅故意错误。T2 包含独立公式或梯度期望，接受结果不只依赖参考值相等。T3 使用传入的学员实现产生结果。
 
-依据：[2507.18071v1](https://arxiv.org/html/2507.18071v1#S4.SS1)；[作者说明（尚未验证作者训练代码发布）](https://qwenlm.github.io/blog/gspo/)。实验来源：PaperLeet 自编的三回答解析实验，不是 Qwen 训练结果。
+依据：[2507.18071v1](https://arxiv.org/html/2507.18071v1#S4.SS1)；[作者说明（尚未验证作者训练代码发布）](https://qwenlm.github.io/blog/gspo/)。实验来源：LeetPaper 自编的三回答解析实验，不是 Qwen 训练结果。

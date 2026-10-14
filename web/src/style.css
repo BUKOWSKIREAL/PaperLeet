@@ -12,6 +12,8 @@
   --text: #efeff1;
   --muted: var(--text-secondary);
   --accent: #e9af54;
+  --brand-primary: #959bff;
+  --brand-core: #57ddbf;
   --primary-bg: #ffa116;
   --primary-text: #262626;
   --chart-1: #e9af54;
@@ -126,20 +128,21 @@ h3 {
 .brand {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   font-size: 22px;
   font-weight: 700;
-  letter-spacing: -0.6px;
+  letter-spacing: -0.8px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .brand > span > span {
-  color: var(--accent);
+  color: var(--brand-primary);
 }
-.brand-mark {
-  color: var(--accent);
-  display: flex;
-  align-items: center;
-  transform: rotate(-9deg);
-}
+.brand-symbol { width: 34px; height: 34px; flex-shrink: 0; overflow: visible; }
+.brand-sheet, .brand-fold { fill: none; stroke: var(--brand-primary); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.brand-graph { fill: none; stroke: var(--brand-primary); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.brand-node { fill: var(--brand-primary); }
+.brand-core { fill: var(--brand-core); }
 .brand > b {
   font-family: var(--font-sans);
   letter-spacing: .5px;
@@ -2131,6 +2134,8 @@ h3 {
   }
 }
 [data-theme="light"] {
+  --brand-primary: #5158d6;
+  --brand-core: #078a76;
   --bg: #f7f8fa;
   --surface: #fff;
   --surface2: #f2f3f5;
@@ -2440,8 +2445,9 @@ h3 {
     letter-spacing:
     .5px;
   }
-  .brand-mark svg {
-    width: 22px;
+  .brand-symbol {
+    width: 30px;
+    height: 30px;
   }
   .topbar nav {
     gap: 22px;

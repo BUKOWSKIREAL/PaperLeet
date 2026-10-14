@@ -168,7 +168,7 @@ def serve(port=8765):
     validate_hosted_settings()
     address = "0.0.0.0" if hosted() else "127.0.0.1"
     server = BoundedHTTPServer((address, port), JudgeHandler)
-    print(f"PaperLeet {'hosted API' if hosted() else 'local judge'}: http://{address}:{port}", flush=True)
+    print(f"LeetPaper {'hosted API' if hosted() else 'local judge'}: http://{address}:{port}", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
