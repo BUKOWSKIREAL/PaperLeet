@@ -8,6 +8,8 @@ on:
     branches: [main]
     paths:
       - scripts/readme_metrics.py
+      - scripts/metrics_lettering.py
+      - scripts/assets/metrics-lettering/**
       - .github/workflows/readme-metrics.yml
 
 permissions:

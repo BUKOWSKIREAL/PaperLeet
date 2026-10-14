@@ -20,12 +20,17 @@ import subprocess
 import sys
 from urllib.request import Request, urlopen
 
+try:  # Module imports in checks; direct execution in the daily workflow.
+    from scripts.metrics_lettering import lettering_defs, text, text_width
+except ModuleNotFoundError:
+    from metrics_lettering import lettering_defs, text, text_width
+
 
 UTC = timezone.utc
 METRICS = {
-    "stars": ("current_stargazers", "GitHub stars", "Current stargazers by star date", "#c68a13", "#f3b840"),
-    "users": ("created_accounts", "Created accounts", "Cumulative accounts · includes beta invitations", "#07856f", "#40cbb1"),
-    "commits": ("weekly_commits", "Commits", "Non-merge commits per UTC week · current week partial", "#7560d7", "#ac9afa"),
+    "stars": ("current_stargazers", "GitHub stars", "Current stargazers by star date", "#ee4934", "#ff745f"),
+    "users": ("created_accounts", "Created accounts", "Cumulative accounts · includes beta invitations", "#218d66", "#62d6a0"),
+    "commits": ("weekly_commits", "Commits", "Non-merge commits per UTC week · current week partial", "#7356d8", "#b29aff"),
 }
 
 
@@ -148,49 +153,78 @@ def fetch_users(url: str) -> dict:
     return validate_snapshot(fetch_json(url), "users")
 
 
-def text(x: float, y: float, value: object, fill: str, size: int = 12, extra: str = "") -> str:
-    return f'<text x="{x:g}" y="{y:g}" fill="{fill}" font-size="{size}" {extra}>{escape(str(value))}</text>'
+def ink_line(points: list[tuple[float, float]], color: str, width: float = 2.5, *, rough: bool = True) -> str:
+    """Draw a pen stroke; measured series coordinates use the exact polyline."""
+    commands = [f"M{points[0][0]:.2f},{points[0][1]:.2f}"]
+    for index, ((x0, y0), (x1, y1)) in enumerate(zip(points, points[1:])):
+        if rough:
+            # Deterministic subpixel wobble is reserved for decorative strokes.
+            length = math.hypot(x1 - x0, y1 - y0)
+            nx, ny = (-(y1 - y0) / length, (x1 - x0) / length) if length else (0, 0)
+            for step in range(1, max(2, math.ceil(length / 35))):
+                fraction = step / max(2, math.ceil(length / 35))
+                wobble = math.sin(step * 2.1 + index) * .85
+                x, y = x0 + (x1 - x0) * fraction + nx * wobble, y0 + (y1 - y0) * fraction + ny * wobble
+                commands.append(f"L{x:.2f},{y:.2f}")
+        commands.append(f"L{x1:.2f},{y1:.2f}")
+    return f'<path d="{" ".join(commands)}" fill="none" stroke="{color}" stroke-width="{width:g}" stroke-linecap="round" stroke-linejoin="round"/>'
+
+
+def cat_doodle(x: float, y: float, ink: str, paper: str) -> str:
+    """A small smiling cat signature, drawn in the same pen style."""
+    return (f'<g transform="translate({x:g} {y:g})" aria-hidden="true">'
+            f'<path d="M2 13 L1 1 Q3 -1 10 5 Q16 2 22 5 L30 0 L30 14 '
+            f'Q33 29 16 30 Q-1 28 2 13 Z" fill="{ink}" stroke="{ink}" stroke-width="1.4" stroke-linejoin="round"/>'
+            f'<path d="M7 15 Q10 11 13 15 M20 15 Q23 11 26 15 M13 21 Q17 25 21 21" '
+            f'fill="none" stroke="{paper}" stroke-width="1.8" stroke-linecap="round"/></g>')
 
 
 def render_chart(key: str, data: dict, *, dark: bool = False, cached: bool = False) -> str:
-    """Produce accessible static SVG, including honest one-point/empty states."""
-    _, title, subtitle, light_color, dark_color = METRICS[key]
+    """Hand-drawn SVG with outlined lettering, portable to GitHub image embeds."""
+    _, label, subtitle, light_color, dark_color = METRICS[key]
+    title = {"stars": "Star History", "users": "Account Growth", "commits": "Commit Activity"}[key]
+    axis_label = {"stars": "GitHub Stars", "users": "Created Accounts", "commits": "Commits / Week"}[key]
     color = dark_color if dark else light_color
-    bg, border, foreground, muted, grid = ("#11151f", "#2d3545", "#f1f4fa", "#a1adbf", "#252d3b") if dark else ("#ffffff", "#e4e9f0", "#172033", "#657186", "#edf0f5")
+    paper, ink, muted = ("#0d1117", "#f0eee9", "#9faaaf") if dark else ("#ffffff", "#202124", "#757575")
     points = data["points"]
     total = sum(point["value"] for point in points) if key == "commits" else points[-1]["value"] if points else None
     number = f"{total:,}" if total is not None else "—"
     unit = "total commits" if key == "commits" else "accounts" if key == "users" else "stars"
     updated = timestamp(data["updated_at"]).strftime("%Y-%m-%d %H:%M UTC") if data["updated_at"] else None
     update_label = f"{'Last verified' if cached else 'Updated'} {updated}" if updated else "Awaiting first verified snapshot"
-    state = "Cached snapshot" if cached and updated else "UTC" if updated else "Not yet available"
-    description = f"{title}: {number} {unit}. {subtitle}. {update_label}."
+    description = f"{label}: {number} {unit}. {subtitle}. {update_label}."
     parts = [
-        '<svg xmlns="http://www.w3.org/2000/svg" width="920" height="340" viewBox="0 0 920 340" role="img" aria-labelledby="title desc">',
+        '<svg xmlns="http://www.w3.org/2000/svg" width="920" height="520" viewBox="0 0 920 520" role="img" aria-labelledby="title desc">',
         f'<title id="title">{escape(title)}</title><desc id="desc">{escape(description)}</desc>',
-        f'<defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="{color}" stop-opacity=".18"/><stop offset="100%" stop-color="{color}" stop-opacity=".02"/></linearGradient></defs>',
-        f'<rect x=".5" y=".5" width="919" height="339" rx="16" fill="{bg}" stroke="{border}"/>',
-        '<g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif">',
-        text(30, 35, title, foreground, 17, 'font-weight="650"'),
-        text(30, 58, subtitle, muted, 12),
-        text(30, 104, number, foreground, 36, 'font-weight="700"'),
-        text(34 + len(number) * 23, 102, unit, muted, 13),
-        f'<circle cx="{870 - len(state) * 6}" cy="31" r="4" fill="{color}"/>',
-        text(890, 35, state, muted, 12, 'text-anchor="end"'),
+        lettering_defs(),
+        f'<rect width="920" height="520" fill="{paper}"/>',
+        cat_doodle(460 - text_width(title, 27) / 2 - 43, 10, ink, paper),
+        text(460, 34, title, ink, 27, 'text-anchor="middle"'),
     ]
-    left, right, top, bottom = 65.0, 880.0, 138.0, 265.0
+    left, right, top, bottom = 86.0, 866.0, 70.0, 420.0
+    # Open, slightly irregular axes and a sketched legend match a notebook plot.
+    parts.append(ink_line([(left + 1, top), (left, bottom), (right + 8, bottom + 1)], ink, 2.7))
+    parts.append(ink_line([(left - 3, top + 7), (left - 2, bottom - 1), (right + 5, bottom - 1)], ink, .8))
+    legend = "Hongyang-Du/PaperLeet"
+    legend_right = 132 + text_width(legend, 18)
+    parts.append(ink_line([(101, 76), (legend_right, 75), (legend_right + 2, 109), (100, 110), (101, 76)], ink, 1.7))
+    parts.append(f'<rect x="110" y="87" width="9" height="9" rx="2" fill="{color}"/>')
+    parts.append(text(127, 99, legend, ink, 18))
+    parts.append(text(25, (top + bottom) / 2, axis_label, ink, 20,
+                      f'text-anchor="middle" transform="rotate(-90 25 {(top + bottom) / 2:g})"'))
+    parts.append(text((left + right) / 2, 477, "Date (UTC)", ink, 20, 'text-anchor="middle"'))
+
     if points:
         maximum = max(point["value"] for point in points)
-        # Integer ticks, with headroom; zero is a measured value only, not history.
-        raw_step = max(maximum / 3, 1)
+        raw_step = max(maximum / 4, 1)
         magnitude = 10 ** math.floor(math.log10(raw_step))
         step = next(multiplier * magnitude for multiplier in (1, 2, 5, 10) if multiplier * magnitude >= raw_step)
-        y_max = max(step * 3, maximum)
-        for index in range(4):
-            value = y_max * index / 3
-            y = bottom - (bottom - top) * index / 3
-            parts.append(f'<path d="M{left:g},{y:g}H{right:g}" stroke="{grid}"/>')
-            parts.append(text(left - 12, y + 4, f"{int(value):,}", muted, 11, 'text-anchor="end"'))
+        y_max = max(step, math.ceil(maximum * 1.08 / step) * step)
+        for value in range(0, int(y_max) + 1, int(step)):
+            y = bottom - (bottom - top) * value / y_max
+            parts.append(ink_line([(left - 3, y), (left + 3, y + .3)], ink, 1.2))
+            tick = f"{value / 1_000_000:g}m" if value >= 1_000_000 else f"{value / 1_000:g}k" if value >= 1_000 else str(value)
+            parts.append(text(left - 14, y + 6, tick, ink, 18, 'text-anchor="end"'))
         days = [date.fromisoformat(point["date"]) for point in points]
         span = (days[-1] - days[0]).days
         coordinates = [
@@ -199,25 +233,36 @@ def render_chart(key: str, data: dict, *, dark: bool = False, cached: bool = Fal
             for day, point in zip(days, points)
         ]
         if len(coordinates) > 1:
-            line = "M" + " L".join(f"{x:.2f},{y:.2f}" for x, y in coordinates)
-            parts.append(f'<path d="{line} L{coordinates[-1][0]:.2f},{bottom:g} L{coordinates[0][0]:.2f},{bottom:g} Z" fill="url(#fill)"/>')
-            parts.append(f'<path d="{line}" fill="none" stroke="{color}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>')
+            # Keep every observed value exact: styling must not invent growth.
+            parts.append('<g aria-label="Observed data series">')
+            parts.append(ink_line(coordinates, color, 3, rough=False))
+            parts.append('</g>')
         x, y = coordinates[-1]
-        parts.append(f'<circle cx="{x:.2f}" cy="{y:.2f}" r="5" fill="{color}" stroke="{bg}" stroke-width="2"/>')
+        parts.append(f'<circle cx="{x:.2f}" cy="{y:.2f}" r="4" fill="{color}"/>')
         if len(coordinates) == 1:
-            parts.append(text(right, top + 4, "First recorded week" if key == "commits" else "First recorded day", muted, 11, 'text-anchor="end"'))
-        indices = sorted({0, len(days) // 2, len(days) - 1})
-        # Avoid nearly overlapping labels when dates are irregularly spaced.
+            parts.append(text(x, y - 16, f"{number} {unit}", color, 21, 'text-anchor="middle"'))
+            parts.append(text(right - 8, bottom - 28,
+                              "First recorded week" if key == "commits" else "First recorded day", muted, 17, 'text-anchor="end"'))
+        indices = sorted({0, len(days) // 4, len(days) // 2, 3 * len(days) // 4, len(days) - 1})
         selected = [indices[0]]
         for index in indices[1:]:
-            if coordinates[index][0] - coordinates[selected[-1]][0] > 115:
+            if coordinates[index][0] - coordinates[selected[-1]][0] > 125:
                 selected.append(index)
         for index in selected:
-            parts.append(text(coordinates[index][0], 287, days[index].strftime("%b %d, %Y"), muted, 11, 'text-anchor="middle"'))
+            # Short date ticks, with the year stated explicitly in the footer.
+            day_label = days[index].strftime("%b %d") if span < 365 else days[index].strftime("%b %Y")
+            parts.append(text(coordinates[index][0], 448, day_label, ink, 18, 'text-anchor="middle"'))
     else:
-        parts.append(text(460, 197, "Waiting for a verified data snapshot" if data["updated_at"] is None else "No recorded activity", muted, 15, 'text-anchor="middle"'))
-        parts.append(text(460, 223, "A curve will appear as data becomes available.", muted, 12, 'text-anchor="middle"'))
-    parts.extend([f'<path d="M30,305H890" stroke="{grid}"/>', text(30, 326, "PaperLeet", muted, 11), text(890, 326, update_label, muted, 11, 'text-anchor="end"'), '</g></svg>\n'])
+        parts.append(text(476, 239, "Waiting for a verified data snapshot" if data["updated_at"] is None else "No recorded activity", muted, 22, 'text-anchor="middle"'))
+        parts.append(text(476, 270, "A curve will appear as data becomes available.", muted, 17, 'text-anchor="middle"'))
+
+    if cached and updated:
+        parts.append(text(875, 33, "Cached snapshot", muted, 15, 'text-anchor="end"'))
+    parts.extend([
+        text(86, 509, "Includes unused beta accounts" if key == "users" else "Current week partial" if key == "commits" else "PaperLeet", muted, 14),
+        text(875, 509, update_label, muted, 14, 'text-anchor="end"'),
+        '</svg>\n',
+    ])
     return "\n".join(parts)
 
 

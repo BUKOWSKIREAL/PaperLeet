@@ -1,6 +1,6 @@
 # README metrics
 
-The English and Chinese READMEs display the same aggregate data with light and dark SVG charts. These files contain dates and counts, never account identities or credentials.
+The English and Chinese READMEs display the same aggregate data with light and dark, hand-drawn SVG charts. The lettering is bundled as vector outlines so it renders consistently on GitHub; see the [font source and license](../scripts/assets/metrics-lettering/README.md). Pen-style axes are decorative; plotted values retain their exact coordinates. These files contain dates and counts, never account identities or credentials.
 
 | Chart | Definition | Source |
 | --- | --- | --- |
