@@ -26,7 +26,9 @@ jobs:
       - name: Test judge infrastructure
         run: python -m pytest tests -q
       - name: Reference, mutation, determinism, and CPU budgets
-        run: paperleet ci
+        # The 60-module catalog takes ~330s on hosted runners. Keep the three
+        # repetitions and per-module T3 limits; allow headroom for runner variance.
+        run: paperleet ci --budget 600
       - name: Generate all visualization data and catalog
         run: paperleet vizdata all
       - uses: actions/setup-node@v4
