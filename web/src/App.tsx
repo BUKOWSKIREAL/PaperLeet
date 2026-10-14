@@ -34,7 +34,8 @@ import Visuals from "./Lab";
 import { isPassed, layers, status } from "./types";
 import type { Category, Paper, Problem, Report } from "./types";
 import { PaperDetail, PaperLibrary, paperModules } from "./PaperViews";
-import { collectionIdFromRoute } from "./paperCollections";
+import { collectionIdFromRoute, paperCollections, papersInCollection } from "./paperCollections";
+import CollectionDetail from "./CollectionDetail";
 import { decodeProblemHash, parseReport } from "./reports";
 import { LocaleProvider, useI18n } from "./i18n";
 import Submissions from "./Submissions";
@@ -367,6 +368,11 @@ function Workspace() {
   const communityPage = id === "community" || id.startsWith("community/");
   const accountPage = id === "account";
   const profileUsername = id.startsWith("u/") ? id.slice(2) : "";
+  const collectionId = collectionIdFromRoute(id);
+  const selectedCollection = paperCollections.find((collection) => collection.id === collectionId);
+  const collectionModules = selectedCollection
+    ? papersInCollection(papers, selectedCollection).flatMap((paper) => paperModules(paper, problems))
+    : [];
   const current = problem ? saved[problem.id] || {} : {};
   const selectedPaper = papers.find((paper) =>
     problem ? paper.id === problem.paper_id : id === `papers/${paper.id}`,
@@ -551,9 +557,12 @@ function Workspace() {
             </a>
             <button
               className={`continue-link ${problem ? "active" : ""}`}
+              disabled={!problem && (!practice.ready || practice.loading || !problems.length || (collectionId !== undefined && !selectedCollection))}
               onClick={() => {
-                if (!problem) {
-                  const next = selectedPaper
+                if (!problem && practice.ready && !practice.loading) {
+                  const next = collectionId !== undefined
+                    ? collectionModules.find((p) => status(p, saved[p.id]) !== "done") || collectionModules[0]
+                    : selectedPaper
                     ? siblingModules.find((p) => !p.module.optional && status(p, saved[p.id]) !== "done") || siblingModules[0]
                     : problems.filter((p) => status(p, saved[p.id]) === "started")
                         .sort((a, b) => (saved[b.id]?.updated || "").localeCompare(saved[a.id]?.updated || ""))[0]
@@ -670,10 +679,17 @@ function Workspace() {
             stats={problemStats}
             onGuide={() => setGuide(true)}
           />
+        ) : collectionId !== undefined ? (
+          <CollectionDetail
+            key={collectionId}
+            collectionId={collectionId}
+            progressReady={practice.ready && !practice.loading}
+            papers={papers}
+            problems={problems}
+            saved={saved}
+          />
         ) : (
           <PaperLibrary
-            key={collectionIdFromRoute(id) || "all-papers"}
-            collectionId={collectionIdFromRoute(id)}
             progressReady={practice.ready && !practice.loading}
             categories={categories}
             papers={papers}

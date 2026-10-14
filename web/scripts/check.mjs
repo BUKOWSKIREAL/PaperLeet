@@ -89,6 +89,7 @@ try {
   assert(!diffusionList.paperIds.includes("drifting"),
     "Drifting Models should not be mislabeled as diffusion");
   const { PaperLibrary, matchingPaperModules } = await server.ssrLoadModule("/src/PaperViews.tsx");
+  const { default: CollectionDetail, collectionModuleGroups } = await server.ssrLoadModule("/src/CollectionDetail.tsx");
   const transformer = catalog.papers.find((paper) => paper.id === "transformer");
   const matchingIds = (query, difficulty = "all") =>
     matchingPaperModules(transformer, catalog.problems, query, difficulty).map((problem) => problem.id);
@@ -129,40 +130,56 @@ try {
   const libraryProps = {
     papers: catalog.papers, problems: catalog.problems, categories: catalog.categories, onGuide: () => {},
   };
+  const unfiltered = {query: "", difficulty: "all", state: "all"};
   for (const list of paperCollections) {
     const members = catalog.papers.filter((paper) => list.paperIds.includes(paper.id));
     const moduleIds = new Set(members.flatMap((paper) => paper.module_ids));
     const inside = catalog.problems.find((module) => moduleIds.has(module.id));
     const outside = catalog.problems.find((module) => !moduleIds.has(module.id));
     const saved = {[inside.id]: acceptedFixture(inside), [outside.id]: acceptedFixture(outside)};
-    const html = renderToString(React.createElement(PaperLibrary, {...libraryProps, saved, collectionId: list.id}));
-    assert(html.includes(`href="#/collections/${list.id}" aria-current="page"`),
-      `${list.id}: selected card must expose its canonical collection route`);
-    assert(html.includes(`从当前范围内 ${moduleIds.size - 1} 道未开始的题目中随机选择`),
+    const props = {...libraryProps, saved, collectionId: list.id, progressReady: true};
+    const html = renderToString(React.createElement(CollectionDetail, props));
+    assert(html.includes('class="home collection-detail"') && !html.includes('class="collection-rail"'),
+      `${list.id}: collection links must open a distinct detail page without the homepage carousel`);
+    assert(html.includes(`从筛选后的 ${moduleIds.size - 1} 道未开始的题目中随机选择`),
       `${list.id}: random candidates must exclude accepted modules and stay inside the collection`);
     const completed = Object.fromEntries(catalog.problems.filter((module) => moduleIds.has(module.id))
       .map((module) => [module.id, acceptedFixture(module)]));
-    const completedHtml = renderToString(React.createElement(PaperLibrary,
-      {...libraryProps, saved: completed, collectionId: list.id}));
+    const completedHtml = renderToString(React.createElement(CollectionDetail, {...props, saved: completed}));
     assert(/class="random-problem"[^>]*disabled/.test(completedHtml),
-      `${list.id}: do not fall back to unsolved modules outside a fully completed collection`);
-    assert.deepEqual(rowIds(html), list.paperIds,
-      `${list.id}: the library must show exactly the selected papers in curated order`);
-    assert(headingText(html).includes(`${list.name} ${members.length}`),
-      `${list.id}: the heading must count papers within the selected collection`);
-    assert(headingText(html).includes(`已通过模块 1 / ${moduleIds.size}`),
-      `${list.id}: an accepted module outside this collection must not affect its progress`);
+      `${list.id}: a completed collection must not draw an outside module`);
+    assert.deepEqual(rowIds(html), list.paperIds, `${list.id}: paper groups must use curated order`);
+    const groups = collectionModuleGroups([...catalog.papers].reverse(), [...catalog.problems].reverse(), list, unfiltered, saved, true);
+    assert.deepEqual(groups.map(({paper}) => paper.id), list.paperIds);
+    for (const group of groups) assert.deepEqual(group.modules.map((module) => module.id), group.paper.module_ids);
+    const moduleLinks = [...html.matchAll(/class="collection-module-row" href="#\/(\d+)"/g)].map((match) => Number(match[1]));
+    assert.deepEqual(moduleLinks, groups.flatMap(({modules}) => modules.map((module) => module.number)),
+      "Every module row must link directly to its numeric problem URL");
+    assert(html.includes(`aria-valuemax="${moduleIds.size}" aria-valuenow="1"`),
+      `${list.id}: an accepted module outside the collection must not change progress`);
+    const solvedGroups = collectionModuleGroups(catalog.papers, catalog.problems, list, {...unfiltered, state: "done"}, saved, true);
+    assert.deepEqual(solvedGroups.flatMap(({modules}) => modules.map((module) => module.id)), [inside.id]);
+    const pending = renderToString(React.createElement(CollectionDetail, {...props, progressReady: false}));
+    assert(!pending.includes('aria-valuenow='), "Pending account progress must not appear as zero or stale solved progress");
+    assert(/class="random-problem"[^>]*disabled/.test(pending));
+    assert(/class="button collection-start" disabled/.test(pending));
     const allHtml = renderToString(React.createElement(PaperLibrary, {...libraryProps, saved}));
     assert.deepEqual(rowIds(allHtml), catalog.papers.map((paper) => paper.id),
-      "All papers must retain the complete catalog order");
-    assert(headingText(allHtml).includes(`已通过模块 2 / ${catalog.problems.length}`),
-      "All papers must include progress from both modules");
+      "The homepage must preserve the full shuffled catalog order");
+    assert(headingText(allHtml).includes(`已通过模块 2 / ${catalog.problems.length}`));
   }
-  const unknownListHtml = renderToString(React.createElement(PaperLibrary, {
-    ...libraryProps, saved: {}, collectionId: "not-a-maintained-list",
+  const basicCollection = paperCollections.find((collection) => collection.id === "llm-basics");
+  const groupIds = (query, difficulty = "all") => collectionModuleGroups(catalog.papers, catalog.problems,
+    basicCollection, {...unfiltered, query, difficulty}, {}, true).flatMap(({modules}) => modules.map((module) => module.id));
+  for (const query of ["正弦位置编码", "Sinusoidal Positional Encoding", String(cachedStarter.number)])
+    assert.deepEqual(groupIds(query), [cachedStarter.id], "Collection search must support both languages and numeric problem IDs");
+  assert.deepEqual(groupIds("Sinusoidal Positional Encoding", "M"), [], "Search and difficulty must match the same module");
+  assert.deepEqual(groupIds("Transformer"), transformer.module_ids, "A paper search includes its modules");
+  const unknownListHtml = renderToString(React.createElement(CollectionDetail, {
+    ...libraryProps, saved: {}, progressReady: true, collectionId: "not-a-maintained-list",
   }));
-  assert.deepEqual(rowIds(unknownListHtml), catalog.papers.map((paper) => paper.id),
-    "An unknown collection URL should still expose the paper library");
+  assert(unknownListHtml.includes("未找到这个合集") && rowIds(unknownListHtml).length === 0,
+    "An unknown collection must show an explicit not-found page instead of unrelated papers");
   const loadingHtml = renderToString(React.createElement(PaperLibrary,
     {...libraryProps, saved: {}, progressReady: false}));
   assert(/class="random-problem"[^>]*disabled/.test(loadingHtml), "Wait for account progress before drawing");
@@ -170,7 +187,7 @@ try {
   assert(!/class="random-problem"[^>]*disabled/.test(readyHtml), "Untouched modules should enable random selection");
   assert.equal([...readyHtml.matchAll(/class="collection-card /g)].length, paperCollections.length);
   assert(!readyHtml.includes("Study lists") && !readyHtml.includes("library-sidebar"));
-  console.log("PASS featured collection membership, ordering, selection, routing, random availability, and scoped progress");
+  console.log("PASS standalone collection pages, curated groups, module links, filters, not-found routes, random availability and scoped progress");
   const maintained = catalog.problems.filter((p) => !p.id.startsWith("community/"));
   for (const problem of maintained) {
     const file = problem.id.replaceAll("/", "-") + ".json";

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ChevronDown,
-  ChevronLeft, ChevronRight, Circle, ExternalLink, Search, Library, Shuffle, X,
+  ChevronLeft, ChevronRight, Circle, ExternalLink, Search, Library, Shuffle,
 } from "lucide-react";
 import { useI18n } from "./i18n";
 import { status } from "./types";
@@ -62,7 +62,7 @@ const categoryLabels: Record<string, [string, string]> = {
   "world-models": ["世界模型", "World Models"],
 };
 
-export function PaperLibrary({ papers, categories, problems, saved, collectionId, progressReady = true }: Practice & { papers: Paper[]; categories: Category[]; onGuide: () => void; collectionId?: string; progressReady?: boolean }) {
+export function PaperLibrary({ papers, categories, problems, saved, progressReady = true }: Practice & { papers: Paper[]; categories: Category[]; onGuide: () => void; progressReady?: boolean }) {
   const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [diff, setDiff] = useState("all");
@@ -70,24 +70,21 @@ export function PaperLibrary({ papers, categories, problems, saved, collectionId
   const [tag, setTag] = useState("all");
   const [category, setCategory] = useState("all");
   const practice = { problems, saved };
-  const selectedCollection = paperCollections.find((collection) => collection.id === collectionId);
   const collectionRail = useRef<HTMLElement>(null);
   const [railEdges, setRailEdges] = useState({ previous: false, next: false });
   useEffect(() => {
     const rail = collectionRail.current;
     if (!rail) return;
-    rail.querySelector('[aria-current="page"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
     const measure = () => setRailEdges({ previous: rail.scrollLeft > 2, next: rail.scrollLeft + rail.clientWidth < rail.scrollWidth - 2 });
     measure();
     rail.addEventListener("scroll", measure, { passive: true });
     const observer = new ResizeObserver(() => {
-      rail.querySelector('[aria-current="page"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
       measure();
     });
     observer.observe(rail);
     return () => { rail.removeEventListener("scroll", measure); observer.disconnect(); };
-  }, [selectedCollection?.id]);
-  const listedPapers = papersInCollection(papers, selectedCollection);
+  }, []);
+  const listedPapers = papers;
   const listedModuleIds = new Set(listedPapers.flatMap((paper) => paper.module_ids));
   const listedModules = problems.filter((problem) => listedModuleIds.has(problem.id));
   const visibleCategories = categories.filter((item) => listedPapers.some((paper) => paper.category === item.id));
@@ -126,22 +123,21 @@ export function PaperLibrary({ papers, categories, problems, saved, collectionId
           const members = papersInCollection(papers, collection);
           const count = new Set(members.flatMap((paper) => paper.module_ids)).size;
           const label = t(collection.name, collection.name_en);
-          const selected = selectedCollection?.id === collection.id;
-          return <a key={collection.id} className={`collection-card collection-${collection.id}`} href={`#/collections/${collection.id}`} onClick={clear} aria-current={selected ? "page" : undefined} aria-label={`${label} · ${members.length} ${t("篇论文", "papers")} · ${count} ${t("道题", "problems")}`}>
+          return <a key={collection.id} className={`collection-card collection-${collection.id}`} href={`#/collections/${collection.id}`} aria-label={`${label} · ${members.length} ${t("篇论文", "papers")} · ${count} ${t("道题", "problems")}`}>
             <div className="collection-copy">
               <span className="collection-count">{members.length} {t("篇论文", "papers")}<span> / </span>{count} {t("道题", "problems")}</span>
               <h3>{label}</h3>
               <p>{t(collection.description, collection.description_en)}</p>
             </div>
             <CollectionArtwork kind={collection.id} />
-            <span className="collection-open" aria-hidden="true">{selected ? <CheckCircle2 size={20} /> : <ArrowRight size={20} />}</span>
+            <span className="collection-open" aria-hidden="true"><ArrowRight size={20} /></span>
           </a>;
         })}
       </nav>
     </section>
     <div className="library-main">
     <header className="library-heading">
-      <div className="library-title"><h1>{selectedCollection ? t(selectedCollection.name, selectedCollection.name_en) : t("论文题库", "Papers")} <span>{listedPapers.length}</span></h1>{selectedCollection && <a className="clear-collection" href="#" onClick={clear} aria-label={t("返回全部论文", "Back to all papers")} title={t("返回全部论文", "Back to all papers")}><X size={17} /></a>}</div>
+      <div className="library-title"><h1>{t("论文题库", "Papers")} <span>{listedPapers.length}</span></h1></div>
       <div className="library-progress"><CheckCircle2 size={16} /><span>{t("已通过模块", "Modules solved")}</span><b>{solvedModules} / {listedModules.length}</b></div>
     </header>
     <div className="paper-categories" aria-label={t("论文分类", "Paper categories")}>

@@ -3904,3 +3904,82 @@ html { scrollbar-gutter: stable; }
   .collection-rail { scroll-behavior: auto; }
   .collection-card { transition: none; }
 }
+
+/* Dedicated curated collection pages. */
+.home.collection-detail { display: block; max-width: 1160px; padding: 26px 32px 60px; }
+.collection-detail > .back-link { margin-bottom: 20px; width: fit-content; }
+.collection-cover { position: relative; isolation: isolate; overflow: hidden; min-height: 225px; padding: 30px 36px; border-radius: 14px; color: #fff; }
+.collection-cover-copy { position: relative; z-index: 1; max-width: 72%; }
+.collection-cover-eyebrow { font-size: 12px; letter-spacing: .05em; color: #ffffffd9; }
+.collection-cover h1 { margin: 10px 0 9px; font-size: 36px; font-weight: 650; line-height: 1.2; letter-spacing: -.8px; }
+.collection-cover p { color: #ffffffe6; font-size: 15px; line-height: 1.6; }
+.collection-cover-counts { display: flex; align-items: center; gap: 10px; margin-top: 22px; color: #ffffffe6; font-size: 13px; }
+.collection-cover .collection-art { width: 275px; height: 275px; right: 25px; bottom: -28px; opacity: .8; }
+.collection-practice-summary { display: flex; align-items: center; gap: 32px; margin: 16px 0 30px; padding: 20px 24px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.collection-progress-copy { flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; }
+.collection-progress-copy > span { color: var(--muted); font-size: 12px; }
+.collection-progress-copy strong { font-size: 27px; line-height: 1.25; font-weight: 600; font-variant-numeric: tabular-nums; }
+.collection-progress-copy small { font-size: 15px; font-weight: 400; color: var(--muted); }
+.collection-progress-track { flex: 1; min-width: 0; max-width: 430px; }
+.collection-progress-caption { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; color: var(--muted); font-size: 12px; }
+.collection-progress-track .paper-progress-bar { height: 6px; margin: 0; }
+.collection-progress-pending { font-size: 13px; color: var(--muted); }
+.collection-start { margin-left: auto; min-height: 42px; white-space: nowrap; }
+.collection-start:disabled { cursor: not-allowed; }
+.collection-problems .library-toolbar { gap: 10px; }
+.collection-problems .library-toolbar .select-wrap select { width: 125px; }
+.collection-problems .library-results { min-height: 48px; }
+.collection-paper-groups { display: grid; gap: 18px; }
+.collection-paper-group { min-width: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.collection-paper-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 17px 20px; background: color-mix(in srgb, var(--surface2) 60%, var(--surface)); border-bottom: 1px solid var(--line); }
+.collection-paper-heading > div { min-width: 0; }
+.collection-paper-heading h2 { font-size: 16px; font-weight: 600; }
+.collection-paper-heading h2 a { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; }
+.collection-paper-heading h2 a:hover { color: var(--accent); }
+.collection-paper-heading h2 svg { color: var(--muted); }
+.collection-paper-heading p { margin-top: 3px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.collection-paper-heading > span { flex-shrink: 0; color: var(--muted); font-size: 12px; }
+.collection-module-list { margin: 0; padding: 0; list-style: none; }
+.collection-module-list > li + li { border-top: 1px solid var(--line); }
+.collection-module-row { display: grid; grid-template-columns: 22px minmax(0, 1fr) 65px 16px; align-items: center; gap: 12px; min-height: 62px; padding: 13px 20px; }
+.collection-module-row:hover { background: var(--surface2); }
+.collection-module-row:focus-visible { position: relative; outline-offset: -3px; }
+.collection-module-title { line-height: 1.6; font-size: 15px; overflow-wrap: anywhere; }
+.collection-module-number { margin-right: 8px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.collection-module-title small { margin-left: 10px; padding: 2px 6px; border-radius: 4px; font-size: 11px; color: var(--muted); background: var(--surface3); white-space: nowrap; }
+.collection-module-row > .difficulty { font-size: 12px; justify-self: end; }
+.collection-module-arrow, .collection-module-row .row-state.pending { color: var(--muted); }
+.collection-not-found > svg { display: block; margin-top: 50px; color: var(--muted); }
+.collection-not-found h1 { margin-top: 16px; font-size: 28px; }
+.collection-not-found p { margin: 12px 0 24px; max-width: 530px; color: var(--muted); }
+.collection-not-found > .button { width: fit-content; }
+@media (max-width: 900px) {
+  .collection-cover .collection-art { right: -20px; opacity: .6; }
+  .collection-practice-summary { gap: 24px; }
+  .collection-problems .library-toolbar .select-wrap select { width: 100%; }
+}
+@media (max-width: 600px) {
+  .home.collection-detail { padding: 20px 16px 36px; }
+  .collection-detail > .back-link { margin-bottom: 16px; }
+  .collection-cover { min-height: 210px; padding: 25px 22px; border-radius: 11px; }
+  .collection-cover-copy { max-width: 88%; }
+  .collection-cover h1 { font-size: 29px; }
+  .collection-cover p { font-size: 13px; }
+  .collection-cover-counts { margin-top: 19px; font-size: 12px; gap: 8px; }
+  .collection-cover .collection-art { width: 190px; height: 190px; right: -45px; bottom: -35px; opacity: .3; }
+  .collection-practice-summary { display: grid; grid-template-columns: auto 1fr; gap: 16px 22px; padding: 18px; margin-bottom: 24px; }
+  .collection-start { grid-column: 1 / -1; width: 100%; margin-left: 0; }
+  .collection-progress-copy strong { font-size: 25px; }
+  .collection-progress-track { width: 100%; }
+  .collection-problems .library-toolbar .search { flex-basis: 100%; }
+  .collection-problems .library-toolbar .filter-bar { order: 0; flex-basis: 100%; }
+  .collection-problems .random-problem { margin-left: 0; width: 100%; }
+  .collection-paper-groups { gap: 14px; }
+  .collection-paper-heading { gap: 12px; padding: 15px 14px; }
+  .collection-paper-heading p { font-size: 11px; }
+  .collection-paper-heading > span { font-size: 11px; }
+  .collection-module-row { grid-template-columns: 18px minmax(0, 1fr) 53px; gap: 9px; padding: 13px 14px; }
+  .collection-module-title { font-size: 14px; }
+  .collection-module-number { margin-right: 5px; }
+  .collection-module-arrow { display: none; }
+}
