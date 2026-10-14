@@ -391,7 +391,13 @@ function Workspace() {
       })
       .then((data) => {
         setProblems(Array.isArray(data) ? data : data.problems);
-        setPapers(Array.isArray(data.papers) ? data.papers : []);
+        const loadedPapers: Paper[] = Array.isArray(data.papers) ? [...data.papers] : [];
+        // Shuffle on catalog load, keeping the order stable during browsing and filtering.
+        for (let i = loadedPapers.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [loadedPapers[i], loadedPapers[j]] = [loadedPapers[j], loadedPapers[i]];
+        }
+        setPapers(loadedPapers);
         setCategories(Array.isArray(data.categories) ? data.categories : []);
         setLoadError("");
       })
