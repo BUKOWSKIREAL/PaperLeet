@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ChevronDown, ChevronRight, Circle, Search, Shuffle } from "lucide-react";
 import CollectionArtwork from "./CollectionArtwork";
 import { useI18n } from "./i18n";
+import { navigateToProblem } from "./navigation";
 import { paperCollections, papersInCollection } from "./paperCollections";
 import type { PaperCollection } from "./paperCollections";
 import { paperModules } from "./PaperViews";
@@ -46,13 +47,13 @@ export default function CollectionDetail({ collectionId, papers, problems, saved
   const [difficulty, setDifficulty] = useState("all");
   const [state, setState] = useState("all");
   const collection = paperCollections.find((item) => item.id === collectionId);
-  const back = <a className="back-link" href="#"><ArrowLeft size={16} />{t("全部论文", "All papers")}</a>;
+  const back = <a className="back-link" href="/"><ArrowLeft size={16} />{t("全部论文", "All papers")}</a>;
 
   if (!collection) return <main className="home collection-detail collection-not-found">
     {back}<BookOpen size={36} aria-hidden="true" />
     <h1>{t("未找到这个合集", "Collection not found")}</h1>
     <p>{t("这个合集不存在，请返回题库选择其他合集。", "This collection does not exist. Choose another collection from the paper library.")}</p>
-    <a className="button" href="#">{t("返回题库", "Back to papers")}<ArrowRight size={16} /></a>
+    <a className="button" href="/">{t("返回题库", "Back to papers")}<ArrowRight size={16} /></a>
   </main>;
 
   const members = papersInCollection(papers, collection);
@@ -70,7 +71,7 @@ export default function CollectionDetail({ collectionId, papers, problems, saved
   function randomProblem() {
     if (!progressReady) return;
     const problem = pickRandomUnattemptedProblem(filteredModules, saved);
-    if (problem) location.hash = `/${problem.number}`;
+    if (problem) navigateToProblem(problem.number);
   }
   const hasFilters = !!query || difficulty !== "all" || state !== "all";
   const statusLabel = (value: string) => value === "done" ? t("已通过", "Solved") : value === "started" ? t("进行中", "In progress") : t("未开始", "Not started");
@@ -97,7 +98,7 @@ export default function CollectionDetail({ collectionId, papers, problems, saved
           <div className="paper-progress-bar" role="progressbar" aria-label={progressLabel} aria-valuemin={0} aria-valuemax={modules.length || 1} aria-valuenow={solved}><span style={{ width: `${modules.length ? solved / modules.length * 100 : 0}%` }} /></div>
         </>}
       </div>
-      {next ? <a className="button collection-start" href={`#/${next.number}`}>{allSolved ? <CheckCircle2 size={17} /> : <ArrowRight size={17} />}{nextLabel}</a> : <button className="button collection-start" disabled>{nextLabel}<ArrowRight size={17} /></button>}
+      {next ? <a className="button collection-start" href={`/#/${next.number}`}>{allSolved ? <CheckCircle2 size={17} /> : <ArrowRight size={17} />}{nextLabel}</a> : <button className="button collection-start" disabled>{nextLabel}<ArrowRight size={17} /></button>}
     </section>
 
     <section className="collection-problems" aria-label={t("合集题目", "Collection problems")}>
@@ -116,12 +117,12 @@ export default function CollectionDetail({ collectionId, papers, problems, saved
       <div className="library-results" aria-live="polite"><span>{filteredModules.length} {t("道题", filteredModules.length === 1 ? "problem" : "problems")} · {groups.length} {t("篇论文", groups.length === 1 ? "paper" : "papers")}</span>{hasFilters && <button className="text-button" onClick={clear}>{t("重置筛选", "Reset filters")}</button>}</div>
       <div className="collection-paper-groups">
         {groups.map(({ paper, modules: visibleModules }) => <section className="collection-paper-group" key={paper.id} aria-labelledby={`collection-paper-${paper.id}`}>
-          <header className="collection-paper-heading"><div><h2 id={`collection-paper-${paper.id}`}><a href={`#/papers/${paper.id}`}>{paper.short_title}<ChevronRight size={16} aria-hidden="true" /></a></h2><p>{paper.title}</p></div><span>{visibleModules.length} {t("道题", visibleModules.length === 1 ? "problem" : "problems")}</span></header>
+          <header className="collection-paper-heading"><div><h2 id={`collection-paper-${paper.id}`}><a href={`/#/papers/${paper.id}`}>{paper.short_title}<ChevronRight size={16} aria-hidden="true" /></a></h2><p>{paper.title}</p></div><span>{visibleModules.length} {t("道题", visibleModules.length === 1 ? "problem" : "problems")}</span></header>
           <ul className="collection-module-list">
             {visibleModules.map((problem) => {
               const currentState = progressReady ? status(problem, saved[problem.id]) : "pending";
               const label = currentState === "pending" ? t("学习进度尚未就绪", "Practice progress is not ready") : statusLabel(currentState);
-              return <li key={problem.id}><a className="collection-module-row" href={`#/${problem.number}`}>
+              return <li key={problem.id}><a className="collection-module-row" href={`/#/${problem.number}`}>
                 <span className={`row-state ${currentState}`} role="img" aria-label={label} title={label}>{currentState === "pending" ? <span aria-hidden="true">—</span> : currentState === "done" ? <CheckCircle2 size={18} /> : currentState === "started" ? <span className="in-progress-dot" /> : <Circle size={17} />}</span>
                 <span className="collection-module-title"><span className="collection-module-number">{problem.number}.</span>{locale === "en" ? problem.translations?.en?.title || problem.title : problem.title}{problem.module.optional && <small>{t("拓展", "Optional")}</small>}</span>
                 <span className={`difficulty ${problem.difficulty}`}>{problem.difficulty === "E" ? t("简单", "Easy") : problem.difficulty === "M" ? t("中等", "Medium") : problem.difficulty === "H" ? t("困难", "Hard") : problem.difficulty}</span>

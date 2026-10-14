@@ -15,7 +15,7 @@ export function BrandMark() {
 
 export default function Brand() {
   const { t } = useI18n();
-  return <a href="#" className="brand" aria-label={t("PaperLeet 首页", "PaperLeet home")}>
+  return <a href="/" className="brand" aria-label={t("PaperLeet 首页", "PaperLeet home")}>
     <BrandMark />
     <span className="brand-wordmark">Paper<span>Leet</span></span>
   </a>;

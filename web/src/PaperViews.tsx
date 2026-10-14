@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { collectionHref } from "./navigation";
 import {
   ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ChevronDown,
   ChevronLeft, ChevronRight, Circle, ExternalLink, Search, Library, Shuffle,
@@ -123,7 +124,7 @@ export function PaperLibrary({ papers, categories, problems, saved, progressRead
           const members = papersInCollection(papers, collection);
           const count = new Set(members.flatMap((paper) => paper.module_ids)).size;
           const label = t(collection.name, collection.name_en);
-          return <a key={collection.id} className={`collection-card collection-${collection.id}`} href={`#/collections/${collection.id}`} aria-label={`${label} · ${members.length} ${t("篇论文", "papers")} · ${count} ${t("道题", "problems")}`}>
+          return <a key={collection.id} className={`collection-card collection-${collection.id}`} href={collectionHref(collection.id)} aria-label={`${label} · ${members.length} ${t("篇论文", "papers")} · ${count} ${t("道题", "problems")}`}>
             <div className="collection-copy">
               <span className="collection-count">{members.length} {t("篇论文", "papers")}<span> / </span>{count} {t("道题", "problems")}</span>
               <h3>{label}</h3>

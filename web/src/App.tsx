@@ -36,7 +36,8 @@ import type { Category, Paper, Problem, Report } from "./types";
 import { PaperDetail, PaperLibrary, paperModules } from "./PaperViews";
 import { collectionIdFromRoute, paperCollections, papersInCollection } from "./paperCollections";
 import CollectionDetail from "./CollectionDetail";
-import { decodeProblemHash, parseReport } from "./reports";
+import { parseReport } from "./reports";
+import { navigateToProblem, resolveAppLocation } from "./navigation";
 import { LocaleProvider, useI18n } from "./i18n";
 import Submissions from "./Submissions";
 import Community, { UserProfile } from "./Community";
@@ -77,7 +78,9 @@ function initialEditorFontSize() {
   return 15;
 }
 function getId() {
-  return decodeProblemHash(location.hash);
+  const { route, canonicalUrl } = resolveAppLocation(location);
+  if (canonicalUrl) history.replaceState(null, "", canonicalUrl);
+  return route;
 }
 function download(name: string, content: string) {
   const url = URL.createObjectURL(
@@ -370,6 +373,11 @@ function Workspace() {
   const profileUsername = id.startsWith("u/") ? id.slice(2) : "";
   const collectionId = collectionIdFromRoute(id);
   const selectedCollection = paperCollections.find((collection) => collection.id === collectionId);
+  useEffect(() => {
+    document.title = selectedCollection
+      ? `${t(selectedCollection.name, selectedCollection.name_en)} - PaperLeet`
+      : collectionId !== undefined ? `${t("合集未找到", "Collection not found")} - PaperLeet` : "PaperLeet";
+  }, [collectionId, selectedCollection, locale]);
   const collectionModules = selectedCollection
     ? papersInCollection(papers, selectedCollection).flatMap((paper) => paperModules(paper, problems))
     : [];
@@ -551,7 +559,7 @@ function Workspace() {
                   ? "active"
                   : ""
               }
-              href="#"
+              href="/"
             >
               {t("论文题库", "Papers")}
             </a>
@@ -567,18 +575,18 @@ function Workspace() {
                     : problems.filter((p) => status(p, saved[p.id]) === "started")
                         .sort((a, b) => (saved[b.id]?.updated || "").localeCompare(saved[a.id]?.updated || ""))[0]
                       || problems[0];
-                  if (next) location.hash = `/${next.number}`;
+                  if (next) navigateToProblem(next.number);
                 }
               }}
             >
               {problem ? t("工作区", "Workspace") : t("继续练习", "Continue")}
             </button>
-            <a className={submissionPage ? "active" : ""} href="#/submit">
+            <a className={submissionPage ? "active" : ""} href="/#/submit">
               {t("提交论文", "Submit paper")}
             </a>
             <a
               className={communityPage || profileUsername ? "active" : ""}
-              href="#/community"
+              href="/#/community"
             >
               {t("社区", "Community")}
             </a>

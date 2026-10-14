@@ -49,7 +49,7 @@ Use **Light / Dark** in the top bar to choose an appearance. The first visit fol
 
 Drag the workspace dividers to resize the description/code columns and the code/results rows. Sizes are remembered in this browser. Double-click a divider or press Enter while it is focused to restore its default; arrow keys fine-tune the split. Run controls stay visible, and narrow screens stack the description above the editor.
 
-The **Featured collections** carousel groups papers into LLM Basics, RL, Diffusion & Flow, Post-training, JEPA / World Models, and Visual Generation. Each colorful card opens a dedicated collection page with its cover, progress, and problems grouped by paper in curated order. Open a problem directly, continue practice, or filter by search, difficulty, and problem status. The homepage's compact category chips filter the full paper library. Collections can overlap and have shareable routes such as `#/collections/llm-basics` (existing `#/lists/...` links still work). Membership and bilingual card text live in `web/src/paperCollections.ts`.
+The **Featured collections** carousel groups papers into LLM Basics, RL, Diffusion & Flow, Post-training, JEPA / World Models, and Visual Generation. Each colorful card navigates to a separate page such as `/collections/llm-basics/`, with its own title, cover, progress, and problems grouped by paper in curated order. These URLs support direct visits, refreshes, bookmarks, and browser back navigation. Open a problem directly, continue practice, or filter within the collection. The homepage's compact category chips filter the full paper library. Collections can overlap; existing `#/collections/...` and `#/lists/...` links automatically resolve to the new page addresses. Membership and bilingual card text live in `web/src/paperCollections.ts`.
 
 **Random problem** opens an unattempted module within the current collection and filters. It excludes any saved run, accepted result, or edited draft; an unchanged starter is still eligible. The button waits for practice progress to load and is disabled when no eligible problems remain.
 
@@ -169,7 +169,7 @@ npm run build
 
 `vizdata` uses the reference implementations, a fixed seed, and two PyTorch CPU threads. Each problem's standalone data file is limited to 500 KB. Concept diagrams that can be computed in the browser update immediately as you move their sliders. `npm run check` verifies chart rendering for all maintained modules, trajectory decoding, report charts, completion status, private workspace isolation, draft conflicts, and accepted-result preservation.
 
-You can deploy `web/dist/` as a static preview for reading papers and viewing visualizations. Account workspaces, editing, synchronization, and judging require the configured `/api` service. Use the [hosting package](docs/hosting.md) for an interactive beta; no public service has been deployed by this repository automatically.
+You can deploy `web/dist/` at a domain's root as a static preview for reading papers and viewing visualizations. Configure a fallback to `/index.html` for `/collections/*` so direct visits and refreshes work; the included Caddy configurations already provide it. Account workspaces, editing, synchronization, and judging require the configured `/api` service. Use the [hosting package](docs/hosting.md) for an interactive beta; no public service has been deployed by this repository automatically.
 
 ## Repository layout and contributing
 

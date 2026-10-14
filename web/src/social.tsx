@@ -207,7 +207,7 @@ export const useAccount = () => useContext(AccountContext);
 export const errorMessage = (e: unknown) =>
   e instanceof Error ? e.message : "Something went wrong. Please try again.";
 export const profileHref = (user: Pick<PublicUser, "username">) =>
-  `#/u/${encodeURIComponent(user.username)}`;
+  `/#/u/${encodeURIComponent(user.username)}`;
 export function Avatar({
   user,
   size = 34,
@@ -304,7 +304,7 @@ export function AccountNav() {
       <Avatar user={user} size={29} />
     </a>
   ) : (
-    <a className="account-nav sign-in-nav" href="#/account">
+    <a className="account-nav sign-in-nav" href="/#/account">
       {loading ? "…" : t("登录", "Sign in")}
     </a>
   );

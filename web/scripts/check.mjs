@@ -116,7 +116,7 @@ try {
     report: { problem: cachedStarter.id, summary: { T0: [0, 1] }, tests: [{ id: "failed", layer: "T0", passed: false }] },
   }), "started", "Resetting a failed attempt to its starter does not make it untouched");
   console.log("PASS bilingual module searches, paper searches, difficulty conjunction, and pristine-starter status");
-  const rowIds = (html) => [...html.matchAll(/href="#\/papers\/([^"]+)"/g)].map((match) => match[1]);
+  const rowIds = (html) => [...html.matchAll(/href="\/?#\/papers\/([^"]+)"/g)].map((match) => match[1]);
   const headingText = (html) => html.match(/<header\b[^>]*>([\s\S]*?)<\/header>/)[1]
     .replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
   const acceptedFixture = (module) => ({
@@ -152,7 +152,7 @@ try {
     const groups = collectionModuleGroups([...catalog.papers].reverse(), [...catalog.problems].reverse(), list, unfiltered, saved, true);
     assert.deepEqual(groups.map(({paper}) => paper.id), list.paperIds);
     for (const group of groups) assert.deepEqual(group.modules.map((module) => module.id), group.paper.module_ids);
-    const moduleLinks = [...html.matchAll(/class="collection-module-row" href="#\/(\d+)"/g)].map((match) => Number(match[1]));
+    const moduleLinks = [...html.matchAll(/class="collection-module-row" href="\/#\/(\d+)"/g)].map((match) => Number(match[1]));
     assert.deepEqual(moduleLinks, groups.flatMap(({modules}) => modules.map((module) => module.number)),
       "Every module row must link directly to its numeric problem URL");
     assert(html.includes(`aria-valuemax="${moduleIds.size}" aria-valuenow="1"`),
