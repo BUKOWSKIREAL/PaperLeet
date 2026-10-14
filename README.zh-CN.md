@@ -2,105 +2,78 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="web/public/brand/paperleet-logo-dark.svg">
-  <img src="web/public/brand/paperleet-logo-light.svg" alt="PaperLeet" width="320">
+  <img src="web/public/brand/paperleet-logo-light.svg" alt="PaperLeet" width="280">
 </picture>
 
-[English](README.md) | **简体中文**
+[English](README.md) | **简体中文** · [访问内测](https://paperleet.com) · [快速开始](#快速开始) · [部署](#部署)
 
-读论文，写实现，用数学性质和真实行为验证理解。
+## 项目趋势
 
-当前试点包含 **46 篇论文、60 个核心模块**。先选择论文，了解核心贡献和本次练习范围，再进入模块的 LeetCode 风格分栏工作区。辅助代码直接提供，练习聚焦论文的关键机制。“论文完成”表示选定核心模块全部通过。论文组织保存在 `papers.yaml`，题面、实现、测试和可视化数据来自 `problems/`。
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/metrics/stars-dark.svg">
+  <img src="docs/metrics/stars.svg" alt="PaperLeet GitHub Star 增长曲线" width="840">
+</picture>
 
-## 本地启动
+<details>
+<summary>账号增长与每周 Commit 曲线</summary>
 
-产品名称为 **PaperLeet**，CLI 使用 `paperleet` 命令；此前的 `leetpaper` 别名继续兼容。
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/metrics/users-dark.svg">
+  <img src="docs/metrics/users.svg" alt="累计创建账号数，包含尚未使用的内测账号" width="840">
+</picture>
 
-需要 Python 3.10+、Node.js 20.19+。在仓库根目录执行：
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/metrics/commits-dark.svg">
+  <img src="docs/metrics/commits.svg" alt="每个 UTC 自然周的非合并提交数，排除自动图表更新" width="840">
+</picture>
+
+账号曲线统计累计创建账号数，包含尚未使用的内测账号，不代表活跃用户数。公开数据仅包含日期和数量汇总。
+
+</details>
+
+每日更新。[统计口径与更新方式](docs/metrics.md)。
+
+## 我们想做什么
+
+AI 的进展很快，刚入门时很容易被新论文、新模型和新名词淹没。PaperLeet 希望帮助**准备找工作、刚开始接触 research 的同学**，一次掌握一个核心想法：选一篇论文，亲手实现其中的重要模块，再用测试和小实验验证理解。
+
+我们想做一个**去中心化的开源 research 社区**。每个人都可以贡献论文、讨论想法、改进题目，也可以 fork 项目，为自己的小组独立部署。题库由社区共同建设，经过人工评审后持续扩充。
+
+目前内测包含 **46 篇论文、60 道核心练习**，支持中英文在线编程与自动判题、个人做题记录与每日活跃日历，以及社区发帖、回复和关注。在线答题目前使用管理员发放的内测账号和访问码。
+
+## 快速开始
+
+需要 Python 3.10+、Node.js 20.19+。
 
 ```bash
+git clone https://github.com/Hongyang-Du/PaperLeet.git
+cd PaperLeet
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e .
-paperleet export
 npm --prefix web ci
 make dev
 ```
 
-打开终端显示的地址（默认 **http://127.0.0.1:5173**）。以后在根目录运行 **`make dev`** 即可同时启动网页与判题服务；按 Ctrl-C 会关闭两个进程。
+打开 **http://127.0.0.1:5173**，选择论文，补全模块，点击**运行全部测试**。以后用 `make dev` 启动，Ctrl-C 停止两个服务。本地练习的 Python 代码在自己的电脑上运行。
 
-## 部署邀请制内测
+## 部署
 
-仓库提供小规模在线内测的部署包，用户可以在自己的电脑上打开网页，完成 **60 个精选模块**。默认机构模式需要邀请和机构邮箱验证。首批测试可以使用 `PAPERLEET_AUTH_MODE=test`：管理员为每位测试者创建登录账号和访问码，无需邮箱注册，也无需配置 Supabase 或 SMTP，具体见 [内测账号指南](docs/test-accounts.zh-CN.md)。线上判题在限制资源的独立沙箱中运行；草稿、判题结果与提交历史按账号私密保存。浏览器草稿缓存按用户隔离；其他设备更新了同一草稿时，需要明确选择保留哪个版本。
+多人邀请制内测使用 Docker 部署包：
 
-按照 [部署指南](docs/hosting.zh-CN.md) 配置服务器、沙箱、持久化存储和所选账号模式；只有机构模式需要邮件服务与邀请名单。仓库提供部署文件，不会自动发布到公网。本地 `make dev` 工作流保持不变，仍使用你自己的机器执行代码。
+| 部署位置 | 操作指南 |
+| --- | --- |
+| 服务器 + 域名 | [服务器部署](docs/hosting.zh-CN.md)：HTTPS、隔离判题、数据持久化与备份。 |
+| 自己的电脑 + 域名 | [Cloudflare Tunnel](docs/cloudflare-tunnel.zh-CN.md)：Docker 运行内测服务，电脑需保持开机、联网和不休眠。 |
 
-暂时没有服务器时，可以使用 [Cloudflare Tunnel + 本机 Docker](docs/cloudflare-tunnel.zh-CN.md)，把自己的域名接到电脑上的内测服务。电脑需要保持开机、联网和不休眠；账号和答题数据保存在本机的私有 Docker 数据卷中。
+初期可使用[内测账号](docs/test-accounts.zh-CN.md)，凭登录名和访问码登录，无需邮箱注册。账号、帖子和答题数据保存在部署环境的私有数据库卷中，备份也不要放到 GitHub。配置与启动步骤见对应指南。
 
-## 开始第一题
+## 论文题库
 
-1. 在题库中选择论文，例如 **6 · DDPM**，再打开“前向加噪”模块。
-2. 阅读模块目标，在右侧编辑器中补全标注为需要实现的函数；调度器等辅助函数已经提供。
-3. 点击“运行全部测试”，等待判题结果自动显示。
-4. 根据各层测试的失败原因、期望值与实际值修改代码，再次运行。
+涵盖 LLM 基础、RL、Post-training、Diffusion & Flow、JEPA / World Models 和视觉生成。每篇论文拆成聚焦核心机制的练习，提供辅助代码与测试；部分模块包含 CPU toy 实验。
 
-完整测试全部通过后，完成状态自动更新并解锁坑点。只跑部分测试不会解锁“全部通过”状态。本地模式的草稿和学习进度保存在当前浏览器中；托管模式中，用户登录后，草稿与判题结果会同步到账号。右上角可切换中文 / English，界面、题面和讲解随之切换。论文入口使用数字编号 1–46；模块编号 1–60 和内部目录名保持不变，兼容已有草稿和 CLI 命令。后续运行失败不会抹掉此前已通过的记录。旧草稿会保留；如需新版辅助代码，可先备份代码，再使用编辑器的重置功能。
-
-顶部 **浅色 / 深色** 按钮用于切换外观。首次访问跟随系统主题，手动选择后会在当前浏览器记住。题库集中展示分类、搜索、筛选和模块进度；技术简介与可展开的练习范围放在论文详情页。
-
-拖动工作区分隔条，可调整题面与代码区的左右宽度、代码与测试结果区的上下高度，比例会保存在当前浏览器。双击分隔条，或选中后按 Enter，可恢复默认比例；方向键可微调。运行按钮始终保留在底部，窄屏上题面和编辑器自动上下排列。
-
-顶部 **精选合集** 通过彩色卡片呈现 LLM 基础、强化学习、扩散与 Flow、后训练、JEPA / 世界模型和视觉生成。点击卡片跳转到 `/collections/llm-basics/` 这样的独立页面，拥有自己的标题、封面、完成进度，以及按精选顺序和论文分组的题目。独立网址支持直接打开、刷新、收藏和浏览器返回；可以直接打开题目、继续练习，也可在合集内筛选。首页的小分类标签用于筛选完整论文题库。合集可以交叉收录；原有 `#/collections/...` 和 `#/lists/...` 链接会自动转为新的页面地址。合集成员和双语卡片文案维护在 `web/src/paperCollections.ts`。
-
-**随机一题** 从当前合集及筛选范围内打开一道未开始的模块题，排除有运行记录、已通过记录或已编辑草稿的题目；未修改的初始代码仍可被抽中。按钮会等待学习进度加载，没有符合条件的题目时禁用并提示。
-
-托管模式的题目页展示公开汇总统计：做题人数、通过人数、提交总数、通过次数、未通过次数和通过率（通过次数 / 提交总数）。同一账号在每道题的人数统计中只计一次，多次完整提交则分别计数；局部测试和判题服务故障不计入。已有的服务器判题记录会自动纳入统计，数据随数据库持久保存，本地开发运行不参与统计。尚无提交时，通过率显示为“—”。
-
-网页通过判题服务执行代码并自动显示结果，无需手动处理报告文件。本地服务监听 `127.0.0.1:8765`，Vite 代理 `/api` 请求；代码保存到 `workspace/`，由本机 Python/PyTorch 执行。这一启动方式面向个人本地使用。多人在线判题请使用独立的托管配置，不要直接公开开发服务。
-
-## 社区与用户账号
-
-在顶部 **社区 / Community** 浏览讨论、发帖与回复、点赞或转发，并关注其他研究者。个人公开主页展示帖子、回复、点赞、转发，以及关注与粉丝列表。机构模式的写入操作需要先验证 `institutions.yaml` 中已批准机构的邮箱；线上还需要管理员邀请。测试模式使用管理员分配的账号和访问码登录，个人主页标注“内测账号”，不宣称已通过机构邮箱认证。
-
-个人主页展示去重后的累计通过和尝试题数、难度分布、年度活跃热力图、活跃天数和连续天数，以及最近通过的题目。日历使用查看者浏览器的时区，区分提交次数、每天尝试／通过的不同题数，以及首次通过题数。仅统计服务器判定的完整提交，局部测试和判题服务故障不计入；重复通过不会增加累计通过题数。社区统计包括帖子、回复、收到的点赞和转发，以及关注关系。
-
-昵称和生成的头像始终公开。已验证机构、国家／地区分别提供展示开关，默认均隐藏；内测账号没有机构字段，完整邮箱始终私有。国家由用户选填，不查询 IP。在账号设置中关闭 **允许展示学习进度** 后，个人学习统计仅自己可见。代码、草稿和详细判题报告始终私有。本地练习仍保存在浏览器，不会自动上传至主页。题目总体统计仍只公开匿名汇总数字。
-
-机构邮箱登录使用 Supabase Auth，需配置服务端环境；内测账号单独创建，登录不经过邮件服务。复制 `.env.example` 为 `.env` 并填写后，必须在启动服务的终端显式导出环境变量。OTP 邮件模板、SMTP、机构审核与隐私规则见 [社区配置指南（英文）](docs/community.md)。在线内测请使用 [部署指南](docs/hosting.zh-CN.md) 中的独立判题沙箱和邀请控制。
-
-## Submit paper
-
-**在线内测模式** 下，已登录用户可以提交论文提案并查看自己的提交，管理员可以查看全部提案。生成、验证和发布由维护者通过离线流程完成。线上判题范围固定为部署镜像中的 60 个精选模块。
-
-**本地维护模式** 下，点击顶部 **Submit paper / 提交论文**，填写论文链接、可选的官方代码链接和希望练习的内容。模型读取来源，生成中英文题面、starter、参考实现、分层测试和错误变体；通过隔离验证后，进入人工评审。只有人工批准的当前版本才会分配数字模块编号并进入论文题库。导出时会根据 arXiv 标识或来源 URL，将同篇论文的模块合并到一个入口。目前生成器每次提交生成一个候选模块。生成时会寻找作者 toy 和论文图示，明确标注教学改编，并让 T3 通过有大小限制的 `artifact` fixture 输出实际测量的曲线和指标，供人工审核。
-
-生成需要在启动服务的终端配置 `OPENAI_API_KEY` 和 `PAPERLEET_MODEL`。验证需要启动 Docker，并在仓库根目录构建镜像：
-
-```bash
-docker build -t paperleet-harness:local paperleet/submissions
-```
-
-未配置模型或 Docker 时仍可保存提交，网页会说明生成或验证尚缺的条件。候选材料与评审记录保存到 `.paperleet/submissions/`。本地评审由工作区所有者完成；托管模式不会向普通用户开放生成、验证或发布操作。完整流程、隔离边界与人工评审标准见 [harness 设计](docs/paper-submission-harness.md)。
-
-## 维护者：CLI 与质量门
-
-维护题目、调试判题或检查参考解时，可以使用 CLI：
-
-```bash
-paperleet list
-paperleet init diffusion/param_conversion
-# 编辑 workspace/diffusion/param_conversion.py
-paperleet test diffusion/param_conversion
-paperleet test diffusion/param_conversion --layers T0,T2 --report reports/my-result.json
-paperleet test rl/gae --impl problems/rl/gae/solution.py
-paperleet mutate diffusion/param_conversion
-paperleet ci
-```
-
-`init` 默认不覆盖已有代码；确实要重置时使用 `--force`。
-
-`paperleet ci` 检查参考解全部通过、每个 mutant 至少被一个真实失败抓到、每个 mutant 差异不超过 10 行、重复三次一致、T3 CPU 预算与总运行时间。扩展后的 60 模块目录总预算为 300 秒（可通过 `--budget` 设置），单个 T3 的时限仍由各题包声明。结果写入 `reports/ci.json`，每题完整参考报告也保存在 `reports/`。导入/语法错误不会被当作有效 mutant 检出。
-
-## 论文与核心模块
+<details>
+<summary>展开全部 46 篇论文与 60 个核心模块</summary>
 
 | 论文编号 | 论文 | 核心范围 | 模块编号 |
 | --- | --- | --- | --- |
@@ -151,65 +124,12 @@ paperleet ci
 | 45 | LeWorldModel | 联合预测目标与潜空间 rollout；终点代价与 CEM 精英重拟合。 | 58–59 |
 | 46 | Causal-JEPA | 保留身份锚点的对象遮挡及历史、未来预测。 | 60 |
 
-首页按七个领域分类。新增模块包含 CPU toy 实验、出处与改编说明，以及 T0–T3 验证；实验页区分参考曲线和用户代码生成的 T3 结果。练习覆盖精选核心算法，不要求完整模型训练或 GPU kernel 性能复现。
+</details>
 
-每个模块通过 `module.required_functions` 和 `module.provided_functions` 声明需要实现及已经提供的函数，starter 仅将必做函数留空。判题仍会使用辅助代码调用用户实现。每个模块均包含中英文题面和坑点、参考解、分层测试与错误变体。模块 6、7 无需 T3；模块 5 的长度趋势只作展示，不据此判分。
+## 一起建设
 
-## 可视化与静态构建
+欢迎贡献论文、讲解和测试，也欢迎改进 UI、账号管理、社区与部署。直接提 Issue 或 PR 即可，新题经过人工评审后进入题库。
 
-仓库提供预生成数据，可直接启动。修改题目或实验后重新导出：
+[贡献指南](CONTRIBUTING.md) · [使用与维护手册](docs/guide.zh-CN.md) · [论文提交 Harness](docs/paper-submission-harness.md)
 
-```bash
-paperleet vizdata all
-paperleet export
-cd web
-npm run check
-npm run build
-```
-
-`vizdata` 使用参考实现、固定种子和两条 PyTorch CPU 线程。每题独立数据文件限制为 500 KB。前端能直接计算的概念图随滑块实时更新。`npm run check` 验证全部维护模块的图表渲染、轨迹解码、报告图、完成状态，以及私有工作区隔离、草稿冲突和通过记录保留。
-
-`web/dist/` 可部署在域名根目录，作为阅读论文和查看可视化的静态预览。服务器需将 `/collections/*` 回退到 `/index.html`，以支持直接打开和刷新合集网址；附带的 Caddy 配置已提供此规则。账号工作区、代码编辑、同步和判题需要配置 `/api` 服务。交互式内测请使用 [托管部署包](docs/hosting.zh-CN.md)；仓库不会自动部署公开服务。
-
-## 项目趋势
-
-展示 GitHub Stars、累计创建账号数和每周提交数。账号数包含尚未使用的内测账号，不代表活跃用户数。曲线每天更新，并标注数据时间；内测服务器离线时，账号图保留上次成功获取的数据。只发布日期和数量的匿名汇总。统计口径与更新方法见 [指标说明](docs/metrics.md)。
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/metrics/stars-dark.svg">
-  <img src="docs/metrics/stars.svg" alt="PaperLeet 的 GitHub Star 历史曲线" width="840">
-</picture>
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/metrics/users-dark.svg">
-  <img src="docs/metrics/users.svg" alt="累计创建的 PaperLeet 账号数，包含未使用的内测账号" width="840">
-</picture>
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/metrics/commits-dark.svg">
-  <img src="docs/metrics/commits.svg" alt="每个 UTC 自然周的提交数，不含合并提交和自动图表更新" width="840">
-</picture>
-
-## 目录与贡献
-
-```text
-paperleet/         CLI、pytest runner、本地服务、公共数学工具
-papers.yaml        论文、核心贡献、练习范围与模块顺序
-institutions.yaml  经审核的机构邮箱域名
-problems/          独立核心模块包（强化学习、微调、生成模型、架构、优化、表示学习）
-web/               Vite + React + TypeScript
-tests/             判题框架的集成测试
-workspace/         个人代码，忽略于 Git
-reports/           判题和 CI 报告，忽略于 Git
-.paperleet/        本地社区数据库与论文提交材料，忽略于 Git
-```
-
-出题流程见 [CONTRIBUTING.md](CONTRIBUTING.md)，详细验收依据见 [10 题试点规格](PaperLeet_第一步_10题试点规格.md)。GitHub Actions 运行框架测试、三次质量门、数据生成和前端构建，上传报告与静态站构建产物。
-
-本次实现的实测结果与验证范围见 [试点验收记录](docs/validation/pilot.md)。
-
-26 篇论文扩展版的数值验证、toy 来源、网页检查及 harness 验证见[验证记录](docs/validation/core-curriculum.md)。
-
-本轮 Oral/Spotlight 扩展新增 12 篇论文、14 个模块。论文来源、toy 归属与验证见[候选证据](docs/research/paper-candidates-2026-10-13.md)和[验证记录](docs/validation/oral-spotlight-expansion.md)。
-
-VAR 与 FD-Loss 新增四个核心模块及 CPU 小实验，详见[来源与验证记录](docs/validation/var-and-fd-loss.md)。
+感谢 [TorchCode](https://github.com/duoan/TorchCode) 对动手学习 ML 的呈现方式带来的启发。
