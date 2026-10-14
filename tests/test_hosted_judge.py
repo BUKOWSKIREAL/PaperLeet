@@ -18,7 +18,7 @@ import pytest
 from paperleet.catalog import problem, root
 from paperleet.hosting.judge_client import (
     CURATED_PROBLEMS, InvalidReport, JudgeBusy, JudgeUnavailable, expected_tests,
-    judge_capabilities, run_hosted_problem, validate_job, validate_report,
+    job_timeout, judge_capabilities, run_hosted_problem, validate_job, validate_report,
 )
 from paperleet.hosting.judge_service import handler_for
 from paperleet.hosting.sandbox import JudgeSandbox, OutputLimitError, _run_bounded
@@ -97,13 +97,65 @@ def test_incomplete_error_report_cannot_be_accepted(job):
     assert result["passed"] is False and result["error"] == "Import failed"
 
 
+@pytest.mark.parametrize("configured,expected", [(None, 150), ("1", 1), ("90", 90), ("150", 150)])
+def test_judge_timeout_retains_default_and_allows_shorter_deadlines(monkeypatch, configured, expected):
+    monkeypatch.delenv("PAPERLEET_JUDGE_TIMEOUT_SECONDS", raising=False)
+    if configured is not None:
+        monkeypatch.setenv("PAPERLEET_JUDGE_TIMEOUT_SECONDS", configured)
+    assert job_timeout() == expected
+    assert JudgeSandbox().timeout == expected
+
+
+@pytest.mark.parametrize("configured", ["", "0", "-1", "151", "90.5", "inf", "not-a-number"])
+def test_judge_timeout_rejects_invalid_config_at_manager_startup(monkeypatch, configured):
+    monkeypatch.setenv("PAPERLEET_JUDGE_TIMEOUT_SECONDS", configured)
+    with pytest.raises(ValueError, match="PAPERLEET_JUDGE_TIMEOUT_SECONDS"):
+        job_timeout()
+    with pytest.raises(ValueError, match="PAPERLEET_JUDGE_TIMEOUT_SECONDS"):
+        JudgeSandbox()
+
+
+@pytest.mark.parametrize("configured,expected", [(None, 170), ("90", 110)])
+def test_client_timeout_includes_bounded_manager_cleanup_margin(job, monkeypatch, configured, expected):
+    import paperleet.hosting.judge_client as module
+    monkeypatch.delenv("PAPERLEET_JUDGE_TIMEOUT_SECONDS", raising=False)
+    if configured is not None:
+        monkeypatch.setenv("PAPERLEET_JUDGE_TIMEOUT_SECONDS", configured)
+    calls = []
+    def request(endpoint, payload, timeout):
+        calls.append((endpoint, payload, timeout))
+        return report_for(job)
+    monkeypatch.setattr(module, "_request", request)
+    assert run_hosted_problem(problem(job["problem"]), job["code"], job["layers"])["passed"]
+    assert calls == [("/run", job, expected)]
+
+
+def test_sandbox_uses_configured_deadline_and_reports_it_after_cleanup(job, monkeypatch):
+    import paperleet.hosting.sandbox as module
+    monkeypatch.setenv("PAPERLEET_JUDGE_TIMEOUT_SECONDS", "90")
+    sandbox = JudgeSandbox()
+    monkeypatch.setattr(sandbox, "capability", lambda: {"ready": True, "image_id": "sha256:" + "b" * 64})
+    calls, cleanup = [], []
+    def execute(args, payload, timeout):
+        calls.append((args, json.loads(payload), timeout))
+        raise subprocess.TimeoutExpired(args, timeout)
+    monkeypatch.setattr(module, "_run_bounded", execute)
+    monkeypatch.setattr(module.subprocess, "run", lambda args, **kwargs: cleanup.append(args))
+    with pytest.raises(JudgeUnavailable, match="90-second limit"):
+        sandbox.run(job)
+    args, payload, timeout = calls[0]
+    assert payload == job and timeout == 90
+    assert cleanup == [["docker", "rm", "-f", args[args.index("--name") + 1]]]
+
+
 def test_sandbox_pins_image_uses_stdin_and_never_mounts_host_or_forwards_env(job, monkeypatch):
     import paperleet.hosting.sandbox as module
     image_id = "sha256:" + "a" * 64
     sandbox = JudgeSandbox()
     monkeypatch.setattr(sandbox, "capability", lambda: {"ready": True, "image_id": image_id})
     calls, cleanup = [], []
-    def execute(args, payload):
+    def execute(args, payload, timeout):
+        assert timeout == sandbox.timeout
         calls.append((args, json.loads(payload)))
         return 0, json.dumps(report_for(job)).encode(), b""
     monkeypatch.setattr(module, "_run_bounded", execute)
@@ -295,7 +347,7 @@ assert int(capabilities.split()[1], 16) == 0
 def test_live_docker_timeout_removes_the_exact_container(monkeypatch):
     import paperleet.hosting.sandbox as module
     original, names = module._run_bounded, []
-    def short_deadline(args, payload):
+    def short_deadline(args, payload, timeout):
         names.append(args[args.index("--name") + 1])
         return original(args, payload, timeout=4)
     monkeypatch.setattr(module, "_run_bounded", short_deadline)

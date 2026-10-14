@@ -73,6 +73,17 @@ MAX_REPORT_BYTES = 2 * 1024 * 1024
 JOB_TIMEOUT = 150
 
 
+def job_timeout():
+    """Allow a shorter hosting deadline without raising the execution ceiling."""
+    try:
+        timeout = int(os.environ.get("PAPERLEET_JUDGE_TIMEOUT_SECONDS", str(JOB_TIMEOUT)))
+    except ValueError:
+        raise ValueError("PAPERLEET_JUDGE_TIMEOUT_SECONDS must be an integer from 1 to 150") from None
+    if not 1 <= timeout <= JOB_TIMEOUT:
+        raise ValueError("PAPERLEET_JUDGE_TIMEOUT_SECONDS must be an integer from 1 to 150")
+    return timeout
+
+
 class JudgeUnavailable(RuntimeError):
     pass
 
@@ -217,7 +228,7 @@ def _request(endpoint, payload=None, timeout=5):
 
 def run_hosted_problem(entry, code, layers=None):
     job = validate_job({"problem": entry["id"], "code": code, "layers": layers})
-    return validate_report(_request("/run", job, timeout=JOB_TIMEOUT + 20), job, entry)
+    return validate_report(_request("/run", job, timeout=job_timeout() + 20), job, entry)
 
 
 def judge_capabilities():

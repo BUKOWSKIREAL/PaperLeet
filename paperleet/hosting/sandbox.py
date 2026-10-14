@@ -8,7 +8,7 @@ import subprocess
 import time
 import uuid
 
-from .judge_client import JOB_TIMEOUT, MAX_REPORT_BYTES, JudgeUnavailable, strict_json, validate_job, validate_report
+from .judge_client import JOB_TIMEOUT, MAX_REPORT_BYTES, JudgeUnavailable, job_timeout, strict_json, validate_job, validate_report
 
 
 class OutputLimitError(RuntimeError):
@@ -69,6 +69,7 @@ def _run_bounded(args, payload, timeout=JOB_TIMEOUT, max_bytes=MAX_REPORT_BYTES)
 class JudgeSandbox:
     def __init__(self, image=None):
         self.image = image or os.environ.get("PAPERLEET_JUDGE_IMAGE", "paperleet-worker:local")
+        self.timeout = job_timeout()
 
     def capability(self):
         if not shutil.which("docker"):
@@ -96,12 +97,12 @@ class JudgeSandbox:
             "--tmpfs", "/tmp:rw,noexec,nosuid,nodev,size=256m,mode=1777", "--user", "65534:65534",
             capability["image_id"]]
         try:
-            returncode, raw, _stderr = _run_bounded(args, json.dumps(job, allow_nan=False).encode())
+            returncode, raw, _stderr = _run_bounded(args, json.dumps(job, allow_nan=False).encode(), timeout=self.timeout)
             if returncode != 0:
                 raise JudgeUnavailable("The isolated judge did not complete. Check your code or retry.")
             return validate_report(strict_json(raw), job)
         except subprocess.TimeoutExpired:
-            raise JudgeUnavailable("The isolated judge exceeded its 150-second limit. Check for an infinite loop and retry.") from None
+            raise JudgeUnavailable(f"The isolated judge exceeded its {self.timeout}-second limit. Check for an infinite loop and retry.") from None
         except OutputLimitError:
             raise JudgeUnavailable("The isolated judge exceeded its output limit. Remove excessive output and retry.") from None
         except (OSError, ValueError):

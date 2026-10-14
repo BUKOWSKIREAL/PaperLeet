@@ -4,6 +4,8 @@
 
 这套部署提供论文题库、账号、社区，以及当前 60 个正式维护模块的在线判题。上线需要服务器和域名。若内测暂不做真实注册，可以使用[测试账号](test-accounts.zh-CN.md)：设置 `PAPERLEET_AUTH_MODE=test`，为每位参与者创建登录名和访问码即可。只有机构邮箱登录模式才需要 Supabase 和邮件配置。
 
+租服务器之前，也可以按 [Cloudflare Tunnel 指南](cloudflare-tunnel.zh-CN.md)在自己的电脑上开放内测。该配置保留相同的 hosted 账号和隔离判题机制，使用隧道后的内部 HTTP 代理，无需开放公网入站端口。
+
 ## 服务器与架构
 
 建议从 **2 核 CPU、4 GB 内存**的 Linux 服务器开始，安装 rootful Docker Engine 和 Docker Compose 插件，并为镜像、应用数据和备份保留持久磁盘空间。默认一次运行一个判题任务，每个任务限制 2 GB 内存和两个 CPU 核，不需要 GPU。提高并发前先增加服务器资源。

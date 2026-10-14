@@ -1,9 +1,24 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")/.."
-compose() { docker compose --env-file deploy/.env -f deploy/compose.yaml "$@"; }
+case "${PAPERLEET_DEPLOYMENT:-direct}" in
+    direct) ;;
+    tunnel) ;;
+    *) echo 'PAPERLEET_DEPLOYMENT must be direct or tunnel.' >&2; exit 1 ;;
+esac
+compose() {
+    if [ "${PAPERLEET_DEPLOYMENT:-direct}" = tunnel ]; then
+        docker compose --env-file deploy/.env -f deploy/compose.yaml -f deploy/compose.tunnel.yaml "$@"
+    else
+        docker compose --env-file deploy/.env -f deploy/compose.yaml "$@"
+    fi
+}
 if [ ! -f deploy/.env ]; then
-    echo 'Copy deploy/.env.example to deploy/.env and configure it first.' >&2
+    if [ "${PAPERLEET_DEPLOYMENT:-direct}" = tunnel ]; then
+        echo 'Copy deploy/tunnel.env.example to deploy/.env and configure it first.' >&2
+    else
+        echo 'Copy deploy/.env.example to deploy/.env and configure it first.' >&2
+    fi
     exit 1
 fi
 case "${1:-help}" in

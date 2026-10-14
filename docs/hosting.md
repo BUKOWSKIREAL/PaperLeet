@@ -4,6 +4,8 @@
 
 This deployment serves the paper library, accounts, community, and the 60 maintained practice modules. You still need a server and domain. For a beta without real registration, use [test accounts](test-accounts.md): set `PAPERLEET_AUTH_MODE=test` and create a login name and access code for each tester. Supabase and email configuration are only required for institutional sign-in.
 
+To run the beta from your own computer before renting a server, follow the [Cloudflare Tunnel guide](cloudflare-tunnel.md). That profile keeps the same hosted account and judging boundaries, with a private HTTP proxy behind the tunnel instead of public server ports.
+
 ## Server and architecture
 
 Start with a Linux server with **2 vCPUs and 4 GB RAM**, rootful Docker Engine, the Docker Compose plugin, and persistent disk space for images, application data, and backups. The default judge runs one job at a time, with a 2 GB memory limit and two CPU cores. No GPU is needed. Increase resources before raising judge concurrency.

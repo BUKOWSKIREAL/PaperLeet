@@ -34,6 +34,8 @@ A deployment package is available for a small online beta. Members can open the 
 
 Follow the [hosting guide](docs/hosting.md) to configure the server, sandbox, persistent storage, and your chosen account mode. Only institutional mode needs an email provider and invitation list. This repository supplies deployment files; it does not deploy a public instance automatically. The local `make dev` workflow below continues to run code on your own machine.
 
+Without a rented server, use [Cloudflare Tunnel with local Docker](docs/cloudflare-tunnel.md) to connect your domain to the same hosted beta on your computer. The computer must stay awake and online; accounts and practice data remain in its private Docker volume.
+
 ## Solve your first problem
 
 1. Choose a paper, such as **6 · DDPM**, then open its **Forward Noising** module.

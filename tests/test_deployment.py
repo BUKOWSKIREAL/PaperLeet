@@ -84,7 +84,10 @@ def test_hosted_boot_fails_closed_without_required_settings(monkeypatch, missing
     ("PAPERLEET_PUBLIC_URL", "https://example.test/secret/path"),
     ("PAPERLEET_DATA_DIR", "relative/data"), ("PAPERLEET_JUDGE_TOKEN", "short"),
     ("PAPERLEET_JUDGE_TOKEN", "x" * 40 + "\n"),
-    ("PAPERLEET_JUDGE_URL", "http://user:password@judge:8766")])
+    ("PAPERLEET_JUDGE_URL", "http://user:password@judge:8766"),
+    ("PAPERLEET_JUDGE_TIMEOUT_SECONDS", "0"),
+    ("PAPERLEET_JUDGE_TIMEOUT_SECONDS", "151"),
+    ("PAPERLEET_JUDGE_TIMEOUT_SECONDS", "invalid")])
 def test_hosted_configuration_rejects_ambiguous_or_insecure_values(monkeypatch, key, value):
     for setting, fake in FAKE_SETTINGS.items():
         monkeypatch.setenv(setting, fake)

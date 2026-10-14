@@ -65,6 +65,8 @@ def validate_hosted_settings():
     if len(token) < 32 or not token.isascii() or any(c.isspace() or ord(c) < 33 or ord(c) > 126 for c in token):
         raise ValueError("PAPERLEET_JUDGE_TOKEN must contain at least 32 printable ASCII characters without whitespace")
     origin(os.environ["PAPERLEET_JUDGE_URL"])
+    from paperleet.hosting.judge_client import job_timeout
+    job_timeout()
     if authentication == "institutional":
         from paperleet.accounts import SupabaseEmailProvider
         if not SupabaseEmailProvider().available:
