@@ -299,6 +299,37 @@ def test_public_problem_stats_return_real_zeroes_and_no_user_data(hosted_api_ser
     assert api("practice/stats", {"accepted_submissions": 100})[0] == 404
 
 
+def test_public_account_metrics_are_anonymous_and_do_not_consult_sessions(hosted_api_server, monkeypatch):
+    from paperleet import accounts, public_metrics
+    from datetime import datetime, timezone
+
+    api = hosted_api_server
+    monkeypatch.setattr(accounts, "_now", lambda: "2026-01-01T12:00:00Z")
+    monkeypatch.setattr(public_metrics, "_now", lambda: datetime(2026, 1, 4, tzinfo=timezone.utc))
+    alice, _ = sign_in(api, "alice")
+    bob, _ = sign_in(api, "bob")
+
+    def forbidden_lookup(*args, **kwargs):
+        raise AssertionError("The anonymous metrics route must not consult account sessions or initialize services")
+
+    monkeypatch.setattr(hosted_api, "current_user", forbidden_lookup)
+    monkeypatch.setattr(social_api, "services", forbidden_lookup)
+    status, data, _ = api("public/metrics", cookie="paperleet_session=invalid", origin=None)
+    assert status == 200 and data["metric"] == "created_accounts"
+    assert data["points"][-1] == {"date": "2026-01-04", "value": 2}
+    for private in (alice["id"], bob["id"], alice["email"], bob["email"], alice["username"], bob["username"]):
+        assert private not in json.dumps(data)
+    assert api.remote_calls == [] and api.hosted_calls == []
+    assert api("public/metrics", origin="https://attacker.example")[0] == 403
+    assert api("public/metrics", {"value": 999})[0] == 404
+
+
+def test_public_account_metrics_do_not_publish_zero_when_database_is_unavailable(hosted_api_server):
+    api = hosted_api_server
+    status, data, _ = api("public/metrics", origin=None)
+    assert status == 503 and "points" not in data
+
+
 def test_public_problem_stats_refresh_after_full_runs_and_exclude_infrastructure_errors(hosted_api_server):
     api = hosted_api_server
     alice, alice_cookie = sign_in(api, "alice")

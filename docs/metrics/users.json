@@ -1,0 +1,11 @@
+{
+  "metric": "created_accounts",
+  "label": "Created accounts",
+  "updated_at": "2026-10-14T16:08:05Z",
+  "points": [
+    {
+      "date": "2026-10-14",
+      "value": 31
+    }
+  ]
+}

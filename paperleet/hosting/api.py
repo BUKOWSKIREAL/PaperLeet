@@ -3,7 +3,7 @@ import threading
 from urllib.parse import parse_qs, urlsplit
 
 from paperleet.catalog import problem
-from paperleet.config import auth_mode
+from paperleet.config import auth_mode, data_directory
 from paperleet.judge.runner import normalize_layers
 from paperleet import social_api
 from paperleet.submissions import store
@@ -28,6 +28,9 @@ def dispatch(handler, method, payload=None):
     parsed = urlsplit(handler.path)
     path = parsed.path
     try:
+        if path == "/api/public/metrics" and method == "GET":
+            from paperleet.public_metrics import created_account_metrics
+            return handler.respond(200, created_account_metrics(data_directory() / "community.sqlite3"))
         if path == "/api/practice/stats" and method == "GET":
             accounts, _ = social_api.services()
             return handler.respond(200, {"available": True, "stats": PracticeService(accounts.db_path).problem_stats()})

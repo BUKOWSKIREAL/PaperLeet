@@ -1,0 +1,11 @@
+{
+  "metric": "weekly_commits",
+  "label": "Commits",
+  "updated_at": "2026-10-14T16:08:04Z",
+  "points": [
+    {
+      "date": "2026-10-12",
+      "value": 31
+    }
+  ]
+}

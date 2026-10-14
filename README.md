@@ -171,6 +171,25 @@ npm run build
 
 You can deploy `web/dist/` at a domain's root as a static preview for reading papers and viewing visualizations. Configure a fallback to `/index.html` for `/collections/*` so direct visits and refreshes work; the included Caddy configurations already provide it. Account workspaces, editing, synchronization, and judging require the configured `/api` service. Use the [hosting package](docs/hosting.md) for an interactive beta; no public service has been deployed by this repository automatically.
 
+## Project activity
+
+GitHub stars, cumulative created accounts, and weekly commits. Account totals include unused beta accounts; they are not active-user counts. Charts refresh daily and display their data timestamps. If the beta server is offline, the account chart keeps its last successful snapshot. Only anonymous date/count totals are published. See [metric definitions and updates](docs/metrics.md).
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/metrics/stars-dark.svg">
+  <img src="docs/metrics/stars.svg" alt="GitHub star history for PaperLeet" width="840">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/metrics/users-dark.svg">
+  <img src="docs/metrics/users.svg" alt="Cumulative created PaperLeet accounts, including unused beta accounts" width="840">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/metrics/commits-dark.svg">
+  <img src="docs/metrics/commits.svg" alt="PaperLeet commits per UTC week, excluding merges and generated metrics updates" width="840">
+</picture>
+
 ## Repository layout and contributing
 
 ```text

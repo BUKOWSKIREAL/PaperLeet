@@ -171,6 +171,25 @@ npm run build
 
 `web/dist/` 可部署在域名根目录，作为阅读论文和查看可视化的静态预览。服务器需将 `/collections/*` 回退到 `/index.html`，以支持直接打开和刷新合集网址；附带的 Caddy 配置已提供此规则。账号工作区、代码编辑、同步和判题需要配置 `/api` 服务。交互式内测请使用 [托管部署包](docs/hosting.zh-CN.md)；仓库不会自动部署公开服务。
 
+## 项目趋势
+
+展示 GitHub Stars、累计创建账号数和每周提交数。账号数包含尚未使用的内测账号，不代表活跃用户数。曲线每天更新，并标注数据时间；内测服务器离线时，账号图保留上次成功获取的数据。只发布日期和数量的匿名汇总。统计口径与更新方法见 [指标说明](docs/metrics.md)。
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/metrics/stars-dark.svg">
+  <img src="docs/metrics/stars.svg" alt="PaperLeet 的 GitHub Star 历史曲线" width="840">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/metrics/users-dark.svg">
+  <img src="docs/metrics/users.svg" alt="累计创建的 PaperLeet 账号数，包含未使用的内测账号" width="840">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/metrics/commits-dark.svg">
+  <img src="docs/metrics/commits.svg" alt="每个 UTC 自然周的提交数，不含合并提交和自动图表更新" width="840">
+</picture>
+
 ## 目录与贡献
 
 ```text
