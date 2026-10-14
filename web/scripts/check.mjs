@@ -61,30 +61,60 @@ try {
         assert(schedule.bars.every(Number.isFinite));
       }
   const catalog = JSON.parse(fs.readFileSync("public/data/catalog.json", "utf8"));
-  const { paperLists, papersInList } = await server.ssrLoadModule("/src/paperLists.ts");
+  const { paperCollections, papersInCollection, collectionIdFromRoute } = await server.ssrLoadModule("/src/paperCollections.ts");
+  assert.equal(collectionIdFromRoute("collections/llm-basics"), "llm-basics");
+  assert.equal(collectionIdFromRoute("lists/llm-basics"), "llm-basics", "Keep shared legacy URLs usable");
+  assert.equal(collectionIdFromRoute("papers/transformer"), undefined);
+  assert.equal(collectionIdFromRoute("54"), undefined);
   const catalogPaperIds = new Set(catalog.papers.map((paper) => paper.id));
-  assert.equal(new Set(paperLists.map((list) => list.id)).size, paperLists.length,
-    "Learning lists need unique route IDs");
-  for (const list of paperLists) {
-    assert(list.name && list.name_en && list.paperIds.length,
-      `${list.id}: learning lists need bilingual names and papers`);
+  assert.equal(new Set(paperCollections.map((list) => list.id)).size, paperCollections.length,
+    "Collections need unique route IDs");
+  for (const list of paperCollections) {
+    assert(list.name && list.name_en && list.description && list.description_en && list.paperIds.length,
+      `${list.id}: collections need bilingual names and papers`);
     assert.equal(new Set(list.paperIds).size, list.paperIds.length,
-      `${list.id}: a paper must not be counted twice within one list`);
+      `${list.id}: a paper must not be counted twice within one collection`);
     for (const id of list.paperIds)
       assert(catalogPaperIds.has(id), `${list.id}: unknown catalog paper ${id}`);
-    const selected = papersInList([...catalog.papers].reverse(), list);
+    const selected = papersInCollection([...catalog.papers].reverse(), list);
     assert.deepEqual(selected.map((paper) => paper.id), list.paperIds,
-      `${list.id}: learning order must survive a different catalog order`);
+      `${list.id}: curated order must survive a different catalog order`);
   }
-  assert.equal(papersInList(catalog.papers), catalog.papers,
-    "All papers must preserve the catalog and include papers outside curated lists");
-  const diffusionList = paperLists.find((list) => list.id === "diffusion");
-  const visualList = paperLists.find((list) => list.id === "visual-generation");
+  assert.equal(papersInCollection(catalog.papers), catalog.papers,
+    "All papers must preserve the catalog and include papers outside curated collections");
+  const diffusionList = paperCollections.find((list) => list.id === "diffusion");
+  const visualList = paperCollections.find((list) => list.id === "visual-generation");
   assert(visualList.paperIds.includes("var") && !diffusionList.paperIds.includes("var"),
-    "VAR belongs to visual generation rather than the diffusion learning list");
+    "VAR belongs to visual generation rather than the diffusion collection");
   assert(!diffusionList.paperIds.includes("drifting"),
     "Drifting Models should not be mislabeled as diffusion");
-  const { PaperLibrary } = await server.ssrLoadModule("/src/PaperViews.tsx");
+  const { PaperLibrary, matchingPaperModules } = await server.ssrLoadModule("/src/PaperViews.tsx");
+  const transformer = catalog.papers.find((paper) => paper.id === "transformer");
+  const matchingIds = (query, difficulty = "all") =>
+    matchingPaperModules(transformer, catalog.problems, query, difficulty).map((problem) => problem.id);
+  for (const query of ["正弦位置编码", "Sinusoidal Positional Encoding", "  SINUSOIDAL POSITIONAL ENCODING  "]) {
+    assert.deepEqual(matchingIds(query), ["architecture/positional_encoding"],
+      "A module-only search must not put unrelated siblings into the random pool");
+    assert.deepEqual(matchingIds(query, "E"), ["architecture/positional_encoding"]);
+    assert.deepEqual(matchingIds(query, "M"), [],
+      "Search and difficulty must match the same module, not separate siblings");
+  }
+  for (const query of ["Transformer", "Attention Is All You Need", " "])
+    assert.deepEqual(matchingIds(query), transformer.module_ids,
+      "Matching the paper itself should retain all its modules");
+  assert.deepEqual(matchingIds("Transformer", "M"), ["architecture/multihead_attention"],
+    "A paper-level search must still honor the selected module difficulty");
+  assert.deepEqual(matchingIds("absent module query"), []);
+  const cachedStarter = catalog.problems.find((problem) => problem.id === "architecture/positional_encoding");
+  assert.equal(status(cachedStarter, { code: cachedStarter.starter }), "todo",
+    "A pristine cached starter must agree with random eligibility and the Not started filter");
+  assert.equal(status(cachedStarter, { code: `${cachedStarter.starter}\n# Working draft` }), "started");
+  assert.equal(status(cachedStarter, { code: "" }), "started", "An emptied editor is still an edited draft");
+  assert.equal(status(cachedStarter, {
+    code: cachedStarter.starter,
+    report: { problem: cachedStarter.id, summary: { T0: [0, 1] }, tests: [{ id: "failed", layer: "T0", passed: false }] },
+  }), "started", "Resetting a failed attempt to its starter does not make it untouched");
+  console.log("PASS bilingual module searches, paper searches, difficulty conjunction, and pristine-starter status");
   const rowIds = (html) => [...html.matchAll(/href="#\/papers\/([^"]+)"/g)].map((match) => match[1]);
   const headingText = (html) => html.match(/<header\b[^>]*>([\s\S]*?)<\/header>/)[1]
     .replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
@@ -99,19 +129,29 @@ try {
   const libraryProps = {
     papers: catalog.papers, problems: catalog.problems, categories: catalog.categories, onGuide: () => {},
   };
-  for (const list of paperLists) {
+  for (const list of paperCollections) {
     const members = catalog.papers.filter((paper) => list.paperIds.includes(paper.id));
     const moduleIds = new Set(members.flatMap((paper) => paper.module_ids));
     const inside = catalog.problems.find((module) => moduleIds.has(module.id));
     const outside = catalog.problems.find((module) => !moduleIds.has(module.id));
     const saved = {[inside.id]: acceptedFixture(inside), [outside.id]: acceptedFixture(outside)};
-    const html = renderToString(React.createElement(PaperLibrary, {...libraryProps, saved, listId: list.id}));
+    const html = renderToString(React.createElement(PaperLibrary, {...libraryProps, saved, collectionId: list.id}));
+    assert(html.includes(`href="#/collections/${list.id}" aria-current="page"`),
+      `${list.id}: selected card must expose its canonical collection route`);
+    assert(html.includes(`从当前范围内 ${moduleIds.size - 1} 道未开始的题目中随机选择`),
+      `${list.id}: random candidates must exclude accepted modules and stay inside the collection`);
+    const completed = Object.fromEntries(catalog.problems.filter((module) => moduleIds.has(module.id))
+      .map((module) => [module.id, acceptedFixture(module)]));
+    const completedHtml = renderToString(React.createElement(PaperLibrary,
+      {...libraryProps, saved: completed, collectionId: list.id}));
+    assert(/class="random-problem"[^>]*disabled/.test(completedHtml),
+      `${list.id}: do not fall back to unsolved modules outside a fully completed collection`);
     assert.deepEqual(rowIds(html), list.paperIds,
-      `${list.id}: the library must show exactly the selected papers in learning order`);
+      `${list.id}: the library must show exactly the selected papers in curated order`);
     assert(headingText(html).includes(`${list.name} ${members.length}`),
-      `${list.id}: the heading must count papers within the selected list`);
+      `${list.id}: the heading must count papers within the selected collection`);
     assert(headingText(html).includes(`已通过模块 1 / ${moduleIds.size}`),
-      `${list.id}: an accepted module outside this list must not affect its progress`);
+      `${list.id}: an accepted module outside this collection must not affect its progress`);
     const allHtml = renderToString(React.createElement(PaperLibrary, {...libraryProps, saved}));
     assert.deepEqual(rowIds(allHtml), catalog.papers.map((paper) => paper.id),
       "All papers must retain the complete catalog order");
@@ -119,11 +159,18 @@ try {
       "All papers must include progress from both modules");
   }
   const unknownListHtml = renderToString(React.createElement(PaperLibrary, {
-    ...libraryProps, saved: {}, listId: "not-a-maintained-list",
+    ...libraryProps, saved: {}, collectionId: "not-a-maintained-list",
   }));
   assert.deepEqual(rowIds(unknownListHtml), catalog.papers.map((paper) => paper.id),
-    "An obsolete learning-list URL should still expose the paper library");
-  console.log("PASS curated paper-list membership, ordering, selection, and scoped progress");
+    "An unknown collection URL should still expose the paper library");
+  const loadingHtml = renderToString(React.createElement(PaperLibrary,
+    {...libraryProps, saved: {}, progressReady: false}));
+  assert(/class="random-problem"[^>]*disabled/.test(loadingHtml), "Wait for account progress before drawing");
+  const readyHtml = renderToString(React.createElement(PaperLibrary, {...libraryProps, saved: {}}));
+  assert(!/class="random-problem"[^>]*disabled/.test(readyHtml), "Untouched modules should enable random selection");
+  assert.equal([...readyHtml.matchAll(/class="collection-card /g)].length, paperCollections.length);
+  assert(!readyHtml.includes("Study lists") && !readyHtml.includes("library-sidebar"));
+  console.log("PASS featured collection membership, ordering, selection, routing, random availability, and scoped progress");
   const maintained = catalog.problems.filter((p) => !p.id.startsWith("community/"));
   for (const problem of maintained) {
     const file = problem.id.replaceAll("/", "-") + ".json";

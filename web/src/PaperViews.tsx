@@ -1,18 +1,30 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ChevronDown,
-  ChevronRight, Circle, ExternalLink, Search, Library, Layers3, Network, SlidersHorizontal, Waves,
+  ChevronLeft, ChevronRight, Circle, ExternalLink, Search, Library, Shuffle, X,
 } from "lucide-react";
 import { useI18n } from "./i18n";
 import { status } from "./types";
 import type { Category, Paper, Problem, Saved } from "./types";
-import { paperLists, papersInList } from "./paperLists";
+import { paperCollections, papersInCollection } from "./paperCollections";
+import { eligibleUnattemptedProblems, pickRandomUnattemptedProblem } from "./randomProblem";
+import CollectionArtwork from "./CollectionArtwork";
 
 type Practice = { problems: Problem[]; saved: Record<string, Saved> };
 export function paperModules(paper: Paper, problems: Problem[]) {
   return paper.module_ids.flatMap((id) => {
     const problem = problems.find((p) => p.id === id);
     return problem ? [problem] : [];
+  });
+}
+export function matchingPaperModules(paper: Paper, problems: Problem[], query = "", difficulty = "all") {
+  const normalized = query.trim().toLowerCase();
+  const paperMatches = [paper.number, paper.title, paper.short_title, paper.summary, paper.summary_en, ...paper.tags]
+    .join(" ").toLowerCase().includes(normalized);
+  return paperModules(paper, problems).filter((problem) => {
+    const moduleMatches = [problem.title, problem.translations?.en?.title, problem.module.goal, problem.module.goal_en]
+      .join(" ").toLowerCase().includes(normalized);
+    return (difficulty === "all" || problem.difficulty === difficulty) && (paperMatches || moduleMatches);
   });
 }
 export function paperProgress(paper: Paper, { problems, saved }: Practice) {
@@ -48,9 +60,7 @@ const categoryLabels: Record<string, [string, string]> = {
   "world-models": ["世界模型", "World Models"],
 };
 
-const listIcons = { "llm-basics": BookOpen, rl: Network, diffusion: Waves, "post-training": SlidersHorizontal, "visual-generation": Layers3, "jepa-world-models": Network };
-
-export function PaperLibrary({ papers, categories, problems, saved, listId }: Practice & { papers: Paper[]; categories: Category[]; onGuide: () => void; listId?: string }) {
+export function PaperLibrary({ papers, categories, problems, saved, collectionId, progressReady = true }: Practice & { papers: Paper[]; categories: Category[]; onGuide: () => void; collectionId?: string; progressReady?: boolean }) {
   const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [diff, setDiff] = useState("all");
@@ -58,60 +68,85 @@ export function PaperLibrary({ papers, categories, problems, saved, listId }: Pr
   const [tag, setTag] = useState("all");
   const [category, setCategory] = useState("all");
   const practice = { problems, saved };
-  const selectedList = paperLists.find((list) => list.id === listId);
-  const listNavigation = useRef<HTMLElement>(null);
+  const selectedCollection = paperCollections.find((collection) => collection.id === collectionId);
+  const collectionRail = useRef<HTMLElement>(null);
+  const [railEdges, setRailEdges] = useState({ previous: false, next: false });
   useEffect(() => {
-    const nav = listNavigation.current;
-    if (nav && nav.scrollWidth > nav.clientWidth) {
-      nav.querySelector('[aria-current="page"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
-    }
-  }, [selectedList?.id]);
-  const listedPapers = papersInList(papers, selectedList);
+    const rail = collectionRail.current;
+    if (!rail) return;
+    rail.querySelector('[aria-current="page"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    const measure = () => setRailEdges({ previous: rail.scrollLeft > 2, next: rail.scrollLeft + rail.clientWidth < rail.scrollWidth - 2 });
+    measure();
+    rail.addEventListener("scroll", measure, { passive: true });
+    const observer = new ResizeObserver(() => {
+      rail.querySelector('[aria-current="page"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
+      measure();
+    });
+    observer.observe(rail);
+    return () => { rail.removeEventListener("scroll", measure); observer.disconnect(); };
+  }, [selectedCollection?.id]);
+  const listedPapers = papersInCollection(papers, selectedCollection);
   const listedModuleIds = new Set(listedPapers.flatMap((paper) => paper.module_ids));
   const listedModules = problems.filter((problem) => listedModuleIds.has(problem.id));
   const visibleCategories = categories.filter((item) => listedPapers.some((paper) => paper.category === item.id));
   const tags = [...new Set(listedPapers.filter((paper) => category === "all" || paper.category === category).flatMap((paper) => paper.tags))];
   const solvedModules = listedModules.filter((p) => status(p, saved[p.id]) === "done").length;
   const filtered = listedPapers.filter((paper) => {
-    const modules = paperModules(paper, problems);
-    const searchable = [paper.number, paper.title, paper.short_title, paper.summary, paper.summary_en, ...paper.tags,
-      ...modules.flatMap((p) => [p.title, p.translations?.en?.title, p.module.goal, p.module.goal_en])].join(" ").toLowerCase();
     return (category === "all" || paper.category === category) &&
-      (diff === "all" || modules.some((p) => p.difficulty === diff)) &&
+      matchingPaperModules(paper, problems, query, diff).length > 0 &&
       (state === "all" || paperProgress(paper, practice).state === state) &&
-      (tag === "all" || paper.tags.includes(tag)) && searchable.includes(query.trim().toLowerCase());
+      (tag === "all" || paper.tags.includes(tag));
   });
+  const filteredModules = filtered.flatMap((paper) => matchingPaperModules(paper, problems, query, diff));
+  const unattempted = eligibleUnattemptedProblems(filteredModules, saved);
+  function randomProblem() {
+    if (!progressReady) return;
+    const next = pickRandomUnattemptedProblem(filteredModules, saved);
+    if (next) location.hash = `/${next.number}`;
+  }
+  function scrollCollections(direction: number) {
+    const rail = collectionRail.current;
+    if (rail) rail.scrollBy({ left: direction * rail.clientWidth });
+  }
   function clear() { setQuery(""); setDiff("all"); setState("all"); setTag("all"); setCategory("all"); }
   const hasFilters = !!query || diff !== "all" || state !== "all" || tag !== "all" || category !== "all";
   return <main className="home paper-library">
-    <aside className="library-sidebar">
-      <nav ref={listNavigation} aria-label={t("题单导航", "Paper lists")}>
-        <a className="library-list-link library-all" href="#" onClick={clear} aria-current={!selectedList ? "page" : undefined}>
-          <Library size={18} aria-hidden="true" /><span>{t("全部论文", "All papers")}</span><span className="list-count">{papers.length}</span>
-        </a>
-        <h2>{t("学习题单", "Study lists")}</h2>
-        <div className="study-list-links">
-          {paperLists.map((list) => {
-            const Icon = listIcons[list.id as keyof typeof listIcons] || BookOpen;
-            const count = papersInList(papers, list).length;
-            const label = t(list.name, list.name_en);
-            return <a key={list.id} className={`library-list-link list-${list.id}`} href={`#/lists/${list.id}`} onClick={clear} aria-current={selectedList?.id === list.id ? "page" : undefined} aria-label={`${label} · ${count} ${t("篇论文", "papers")}`}>
-              <Icon size={18} aria-hidden="true" /><span>{label}</span><span className="list-count" aria-hidden="true">{count}</span>
-            </a>;
-          })}
+    <section className="featured-collections" aria-label={t("精选合集", "Featured collections")}>
+      <div className="collections-heading">
+        <h2>{t("精选合集", "Featured collections")}</h2>
+        <div className="collection-controls">
+          <button aria-label={t("上一组合集", "Previous collections")} disabled={!railEdges.previous} onClick={() => scrollCollections(-1)}><ChevronLeft size={18} /></button>
+          <button aria-label={t("下一组合集", "Next collections")} disabled={!railEdges.next} onClick={() => scrollCollections(1)}><ChevronRight size={18} /></button>
         </div>
+      </div>
+      <nav ref={collectionRail} className="collection-rail" aria-label={t("精选合集导航", "Featured collection navigation")}>
+        {paperCollections.map((collection) => {
+          const members = papersInCollection(papers, collection);
+          const count = new Set(members.flatMap((paper) => paper.module_ids)).size;
+          const label = t(collection.name, collection.name_en);
+          const selected = selectedCollection?.id === collection.id;
+          return <a key={collection.id} className={`collection-card collection-${collection.id}`} href={`#/collections/${collection.id}`} onClick={clear} aria-current={selected ? "page" : undefined} aria-label={`${label} · ${members.length} ${t("篇论文", "papers")} · ${count} ${t("道题", "problems")}`}>
+            <div className="collection-copy">
+              <span className="collection-count">{members.length} {t("篇论文", "papers")}<span> / </span>{count} {t("道题", "problems")}</span>
+              <h3>{label}</h3>
+              <p>{t(collection.description, collection.description_en)}</p>
+            </div>
+            <CollectionArtwork kind={collection.id} />
+            <span className="collection-open" aria-hidden="true">{selected ? <CheckCircle2 size={20} /> : <ArrowRight size={20} />}</span>
+          </a>;
+        })}
       </nav>
-    </aside>
+    </section>
     <div className="library-main">
     <header className="library-heading">
-      <h1>{selectedList ? t(selectedList.name, selectedList.name_en) : t("论文题库", "Papers")} <span>{listedPapers.length}</span></h1>
+      <div className="library-title"><h1>{selectedCollection ? t(selectedCollection.name, selectedCollection.name_en) : t("论文题库", "Papers")} <span>{listedPapers.length}</span></h1>{selectedCollection && <a className="clear-collection" href="#" onClick={clear} aria-label={t("返回全部论文", "Back to all papers")} title={t("返回全部论文", "Back to all papers")}><X size={17} /></a>}</div>
       <div className="library-progress"><CheckCircle2 size={16} /><span>{t("已通过模块", "Modules solved")}</span><b>{solvedModules} / {listedModules.length}</b></div>
     </header>
     <div className="paper-categories" aria-label={t("论文分类", "Paper categories")}>
-      <button aria-pressed={category === "all"} onClick={() => { setCategory("all"); setTag("all"); }}>{t("全部", "All")}</button>
+      <button aria-pressed={category === "all"} onClick={() => { setCategory("all"); setTag("all"); }}><Library size={16} />{t("全部", "All")}<span>{listedPapers.length}</span></button>
       {visibleCategories.map((item) => {
         const label = categoryLabels[item.id] || [item.name, item.name_en];
-        return <button key={item.id} aria-pressed={category === item.id} onClick={() => { setCategory(item.id); setTag("all"); }}>{t(label[0], label[1])}</button>;
+        return <button key={item.id} className={`category-${item.id}`} aria-pressed={category === item.id} onClick={() => { setCategory(item.id); setTag("all"); }}><i aria-hidden="true" />{t(label[0], label[1])}<span>{listedPapers.filter((paper) => paper.category === item.id).length}</span></button>;
       })}
     </div>
     <section className="problem-list" aria-label={t("论文列表", "Paper list")}>
@@ -128,8 +163,9 @@ export function PaperLibrary({ papers, categories, problems, saved, listId }: Pr
             <option value="all">{t("状态", "Status")}</option><option value="todo">{t("未开始", "Not started")}</option><option value="started">{t("进行中", "In progress")}</option><option value="done">{t("已完成", "Solved")}</option>
           </select><ChevronDown size={12} aria-hidden="true" /></div>
         </div>
+        <button className="random-problem" onClick={randomProblem} disabled={!progressReady || !unattempted.length} title={!progressReady ? t("学习进度尚未就绪", "Practice progress is not ready") : unattempted.length ? t(`从当前范围内 ${unattempted.length} 道未开始的题目中随机选择`, `Pick from ${unattempted.length} unattempted problems in this view`) : t("当前范围内没有未开始的题目", "No unattempted problems in this view")}><Shuffle size={17} />{t("随机一题", "Random problem")}</button>
       </div>
-      <div className="library-results" aria-live="polite"><span>{filtered.length} {t("篇论文", filtered.length === 1 ? "paper" : "papers")}</span>{hasFilters && <button className="text-button" onClick={clear}>{t("重置筛选", "Reset filters")}</button>}</div>
+      <div className="library-results" aria-live="polite"><span>{filtered.length} {t("篇论文", filtered.length === 1 ? "paper" : "papers")}{progressReady && !unattempted.length && <span className="random-empty"> · {t("当前范围暂无未开始的题目", "No unattempted problems in this view")}</span>}</span>{hasFilters && <button className="text-button" onClick={clear}>{t("重置筛选", "Reset filters")}</button>}</div>
       <div className="table-head paper-table-grid"><span>{t("状态", "Status")}</span><span>{t("论文", "Paper")}</span><span className="paper-year">{t("年份", "Year")}</span><span>{t("已通过 / 模块", "Solved / Modules")}</span><span /></div>
       <div className="problem-rows">
         {filtered.map((paper) => {

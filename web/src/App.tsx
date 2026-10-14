@@ -34,6 +34,7 @@ import Visuals from "./Lab";
 import { isPassed, layers, status } from "./types";
 import type { Category, Paper, Problem, Report } from "./types";
 import { PaperDetail, PaperLibrary, paperModules } from "./PaperViews";
+import { collectionIdFromRoute } from "./paperCollections";
 import { decodeProblemHash, parseReport } from "./reports";
 import { LocaleProvider, useI18n } from "./i18n";
 import Submissions from "./Submissions";
@@ -676,8 +677,9 @@ function Workspace() {
           />
         ) : (
           <PaperLibrary
-            key={id.startsWith("lists/") ? id : "all-papers"}
-            listId={id.startsWith("lists/") ? id.slice("lists/".length) : undefined}
+            key={collectionIdFromRoute(id) || "all-papers"}
+            collectionId={collectionIdFromRoute(id)}
+            progressReady={practice.ready && !practice.loading}
             categories={categories}
             papers={papers}
             problems={problems}

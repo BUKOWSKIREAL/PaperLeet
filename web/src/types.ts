@@ -110,7 +110,7 @@ export function isPassed(p: Problem, r?: Report) {
 export function status(p: Problem, s: Saved = {}) {
   return isPassed(p, s.acceptedReport) || isPassed(p, s.report)
     ? "done"
-    : s.code !== undefined || s.report
+    : (s.code !== undefined && s.code !== p.starter) || s.report
       ? "started"
       : "todo";
 }
