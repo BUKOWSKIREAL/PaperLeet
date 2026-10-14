@@ -47,6 +47,8 @@ Passing the full test suite automatically marks the problem as complete and unlo
 
 Use **Light / Dark** in the top bar to choose an appearance. The first visit follows your system preference; an explicit choice is remembered in this browser. The paper library puts categories, search, filters, and module progress together; paper details contain the technical summary and expandable practice scope.
 
+Drag the workspace dividers to resize the description/code columns and the code/results rows. Sizes are remembered in this browser. Double-click a divider or press Enter while it is focused to restore its default; arrow keys fine-tune the split. Run controls stay visible, and narrow screens stack the description above the editor.
+
 The **Featured collections** carousel groups papers into LLM Basics, RL, Diffusion & Flow, Post-training, JEPA / World Models, and Visual Generation. Colorful cards show paper and problem counts; compact category chips below them filter the current collection. Collections can overlap and have shareable routes such as `#/collections/llm-basics` (existing `#/lists/...` links still work). Switching collections clears filters. Membership and bilingual card text live in `web/src/paperCollections.ts`.
 
 **Random problem** opens an unattempted module within the current collection and filters. It excludes any saved run, accepted result, or edited draft; an unchanged starter is still eligible. The button waits for practice progress to load and is disabled when no eligible problems remain.

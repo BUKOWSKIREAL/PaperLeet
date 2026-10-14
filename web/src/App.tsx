@@ -44,6 +44,7 @@ import { AccountNav, AccountProvider, useAccount } from "./social";
 import { usePracticeWorkspace } from "./PracticeWorkspace";
 import Brand from "./Brand";
 import { getProblemStats, ProblemStats, useProblemStats } from "./ProblemStats";
+import ResizableSplit from "./ResizableSplit";
 import "./community.css";
 
 const difficulty = (d: string) =>
@@ -723,8 +724,21 @@ function Workspace() {
               </button>
             </div>
           </div>
-          <main className="workspace">
-            <section className="description-pane">
+          <ResizableSplit
+            as="main"
+            className="workspace"
+            axis="horizontal"
+            storageKey="paperleet.layout.workspace.v1"
+            initial={0.5}
+            minFirst={320}
+            minSecond={360}
+            collapseAt={850}
+            label={t("调整题面与代码区宽度", "Resize description and code panels")}
+            resetLabel={t("拖动或使用方向键调整，双击或按 Enter 恢复默认", "Drag or use arrow keys to resize; double-click or press Enter to reset")}
+            firstId="problem-description-panel"
+            secondId="problem-editor-panel"
+          >
+            <section className="description-pane" id="problem-description-panel">
               <div className="pane-tabs">
                 {tabs.map(([key, label]) => (
                   <button
@@ -939,7 +953,7 @@ function Workspace() {
                 )}
               </div>
             </section>
-            <section className="editor-pane">
+            <section className="editor-pane" id="problem-editor-panel">
               <div className="pane-tabs editor-tabs">
                 <button
                   className={rightTab === "code" ? "selected" : ""}
@@ -963,6 +977,19 @@ function Workspace() {
                 </div>
               ) : (
                 <>
+                  <ResizableSplit
+                    className="editor-split"
+                    axis="vertical"
+                    storageKey="paperleet.layout.editor.v1"
+                    initial={0.72}
+                    minFirst={180}
+                    minSecond={100}
+                    label={t("调整代码与测试结果区高度", "Resize code and test results panels")}
+                    resetLabel={t("拖动或使用方向键调整，双击或按 Enter 恢复默认", "Drag or use arrow keys to resize; double-click or press Enter to reset")}
+                    firstId="problem-code-panel"
+                    secondId="problem-results-panel"
+                  >
+                  <div className="editor-code-panel" id="problem-code-panel">
                   <div className="editor-tools">
                     <span>
                       <FileCode2 size={13} />
@@ -1100,6 +1127,8 @@ function Workspace() {
                       UTF-8 <i>·</i> Python
                     </span>
                   </div>
+                  </div>
+                  <div className="editor-results-panel" id="problem-results-panel">
                   {(practice.error ||
                     practice.conflicts[problem.id] ||
                     (!health && healthError) ||
@@ -1209,6 +1238,8 @@ function Workspace() {
                             )}
                     </p>
                   </div>
+                  </div>
+                  </ResizableSplit>
                   <div className="editor-bottom">
                     <span>
                       {running ? (
@@ -1253,7 +1284,7 @@ function Workspace() {
                 </>
               )}
             </section>
-          </main>
+          </ResizableSplit>
         </>
       )}
       {guide && (
