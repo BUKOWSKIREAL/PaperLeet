@@ -34,7 +34,7 @@ S_t=\bar S_t+\beta_t k_t(v_t-k_t^\top\bar S_t)^\top,\qquad o_t=S_t^\top q_t.$$
 
 第一张图重绘论文 Figure 3(a)：固定 $A=0$、$g_{\min}=-5$，扫描 −10 到 10 的 logit，对比 K3 有界 log-decay 与 Kimi Linear 的负 softplus。标记为 **paper-derived**，不表示复现 GPU 加速比。
 
-第二张图是单独标注的 **LeetPaper 教学改编**：key 0 写入 2，key 1 写入 7，再把 key 0 改写成 5，最后只保留 key 0 的四分之一且停止写入。解析输出为 `[2, 7, 5, 1.25]`。无需训练或下载；T3 实际调用你的函数，参考预览与个人运行结果分别显示。
+第二张图是单独标注的 **PaperLeet 教学改编**：key 0 写入 2，key 1 写入 7，再把 key 0 改写成 5，最后只保留 key 0 的四分之一且停止写入。解析输出为 `[2, 7, 5, 1.25]`。无需训练或下载；T3 实际调用你的函数，参考预览与个人运行结果分别显示。
 
 ## 验证内容
 

@@ -31,7 +31,7 @@ def problem(identifier: str) -> dict:
     for entry in problems():
         if identifier in (entry["id"], entry.get("short_id"), str(entry["number"])):
             return entry
-    raise ValueError(f"Unknown problem {identifier!r}. Run leetpaper list.")
+    raise ValueError(f"Unknown problem {identifier!r}. Run paperleet list.")
 
 
 def workspace_path(entry: dict) -> Path:

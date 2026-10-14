@@ -25,7 +25,7 @@ Inputs are float32/float64 CPU tensors. Preserve shape and dtype; do not mutate 
 
 `experiment.py` supplies a two-head scale sweep. Both heads have the same row space; the first head's magnitude varies from $10^{-3}$ to $10^3$. Your function generates the per-head output norms. An independent closed-form whole-matrix projection supplies the comparison: a joint projection can suppress the smaller head, while per-head projection preserves its scale.
 
-This is a **LeetPaper teaching adaptation**, not a toy supplied by the GLM authors or a claim about benchmark accuracy. T3 records actual submitted outputs, not a canned result. The Lab preview is generated from the reference implementation; submitted-run artifacts use your implementation.
+This is a **PaperLeet teaching adaptation**, not a toy supplied by the GLM authors or a claim about benchmark accuracy. T3 records actual submitted outputs, not a canned result. The Lab preview is generated from the reference implementation; submitted-run artifacts use your implementation.
 
 ## Verification
 

@@ -23,7 +23,7 @@ The sine and cosine in one pair share a frequency. Use the full model width in t
 | Empty sequence | Return an empty `[0, d_model]` tensor |
 | Gradients | Fixed encoding has no trainable parameters; adding it to embeddings preserves their gradient |
 
-Odd widths, an offset and explicit dtype are LeetPaper interface extensions. The original model uses even width 512. The model separately multiplies token embeddings by the square root of their width (§3.4); do not apply that scale to the positional encoding. No dropout is required here.
+Odd widths, an offset and explicit dtype are PaperLeet interface extensions. The original model uses even width 512. The model separately multiplies token embeddings by the square root of their width (§3.4); do not apply that scale to the positional encoding. No dropout is required here.
 
 At position zero, a width-five encoding is `[0, 1, 0, 1, 0]`. For a batch of embeddings `x` shaped `[B,L,D]`, `x + sinusoidal_encoding(L,D,dtype=x.dtype,device=x.device)` broadcasts one set of positions across all batches.
 
@@ -38,7 +38,7 @@ $$
 
 The provided experiment generates 32 positions with eight features, advances every position by seven and compares the submitted output to this independently calculated rotation. It also measures the closest pair of distinct position vectors. The lab plots actual and rotated features and reports their maximum error.
 
-**Provenance:** a LeetPaper teaching adaptation of the relative-offset property discussed in §3.5. The paper does not report this 32-position experiment. T3 invokes your implementation; the reference preview is labeled separately.
+**Provenance:** a PaperLeet teaching adaptation of the relative-offset property discussed in §3.5. The paper does not report this 32-position experiment. T3 invokes your implementation; the reference preview is labeled separately.
 
 ## Validation
 

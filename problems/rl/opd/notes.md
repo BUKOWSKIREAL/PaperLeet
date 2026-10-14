@@ -15,4 +15,4 @@
 
 每个 mutant 都是相对于参考实现的小幅故意错误。T2 包含独立公式或梯度期望，接受结果不只依赖参考值相等。T3 使用传入的学员实现产生结果。
 
-依据：[2306.13649v3](https://arxiv.org/html/2306.13649v3#S3)；[TRL 实现（独立于论文作者；不是本题参考答案来源）](https://github.com/huggingface/trl/blob/main/trl/experimental/gkd/gkd_trainer.py)。实验来源：LeetPaper 定长分类 Markov 模型，不是原作 T5 或混合高斯实验。
+依据：[2306.13649v3](https://arxiv.org/html/2306.13649v3#S3)；[TRL 实现（独立于论文作者；不是本题参考答案来源）](https://github.com/huggingface/trl/blob/main/trl/experimental/gkd/gkd_trainer.py)。实验来源：PaperLeet 定长分类 Markov 模型，不是原作 T5 或混合高斯实验。

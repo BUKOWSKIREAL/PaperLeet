@@ -74,7 +74,7 @@ module:
   - teacher_pair
   optional: false
 toy:
-  provenance: LeetPaper teaching adaptation
+  provenance: PaperLeet teaching adaptation
   description: 固定仿射去噪教师在余弦调度下走两步 DDIM，小型线性学生学习解出的目标，一次前向匹配终点。演示精确蒸馏代数，不代表图像质量或多阶段反复减半。
   description_en: A fixed affine denoiser teacher takes two cosine-schedule DDIM steps;
     a tiny linear student learns the solved target and matches the endpoint in one

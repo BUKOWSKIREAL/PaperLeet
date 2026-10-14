@@ -1,8 +1,8 @@
-# LeetPaper
+# PaperLeet
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="web/public/brand/leetpaper-logo-dark.svg">
-  <img src="web/public/brand/leetpaper-logo-light.svg" alt="LeetPaper" width="320">
+  <source media="(prefers-color-scheme: dark)" srcset="web/public/brand/paperleet-logo-dark.svg">
+  <img src="web/public/brand/paperleet-logo-light.svg" alt="PaperLeet" width="320">
 </picture>
 
 [English](README.md) | **简体中文**
@@ -13,7 +13,7 @@
 
 ## 本地启动
 
-产品名称为 **LeetPaper**，CLI 新增 `leetpaper` 命令；原有 `paperleet` 命令、`PAPERLEET_*` 环境变量和 `.paperleet/` 数据目录继续兼容。已有安装执行 `python -m pip install -e .` 即可获得新命令。
+产品名称为 **PaperLeet**，CLI 使用 `paperleet` 命令；此前的 `leetpaper` 别名继续兼容。
 
 需要 Python 3.10+、Node.js 20.19+。在仓库根目录执行：
 
@@ -21,7 +21,7 @@
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e .
-leetpaper export
+paperleet export
 npm --prefix web ci
 make dev
 ```
@@ -153,7 +153,7 @@ paperleet ci
 
 ```bash
 paperleet vizdata all
-leetpaper export
+paperleet export
 cd web
 npm run check
 npm run build

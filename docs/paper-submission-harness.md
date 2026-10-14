@@ -54,7 +54,7 @@ flowchart LR
 | --- | --- |
 | `author_toy` | 已核实存在作者提供的可运行 toy；定位到对应代码路径或 notebook |
 | `paper_derived` | 根据论文中的实验设置重新实现；原论文的图不等于官方源码 |
-| `teaching_adaptation` | LeetPaper 新设计的教学实验，用来检查论文核心性质 |
+| `teaching_adaptation` | PaperLeet 新设计的教学实验，用来检查论文核心性质 |
 
 `source_url` 必须来自候选包已列出的证据，`locator` 给出具体公式、图、章节或代码位置，`adaptation` 说明数据、模型、步数等删改；没有改动也须明确说明。来源归类是否真实、缩减后是否仍覆盖论文贡献，由人工评审确认。
 

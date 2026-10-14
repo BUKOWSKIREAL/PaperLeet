@@ -1,4 +1,4 @@
-# LeetPaper 独立盲测记录：D2 / R4
+# PaperLeet 独立盲测记录：D2 / R4
 
 ## 时间与方法
 

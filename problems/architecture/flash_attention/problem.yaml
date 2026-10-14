@@ -59,7 +59,7 @@ toy:
   kind: teaching_adaptation
   source: https://arxiv.org/abs/2205.14135
   anchor: 'Section 3.1: tiling and online softmax'
-  adaptation: LeetPaper synthetic CPU experiment; no claim of reproducing the paper training benchmarks.
+  adaptation: PaperLeet synthetic CPU experiment; no claim of reproducing the paper training benchmarks.
 mutants:
 - id: m1_no_numerator_rescale
   bug: 旧 weighted sum 未随新最大值缩放

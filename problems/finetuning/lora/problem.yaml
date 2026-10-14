@@ -62,8 +62,8 @@ module:
 toy:
   provenance: teaching_adaptation
   source: https://arxiv.org/abs/2106.09685v2
-  adaptation: LeetPaper rank-two synthetic regression, not a language-model benchmark.
-  adaptation_zh: LeetPaper rank-2 合成回归，不是语言模型基准。
+  adaptation: PaperLeet rank-two synthetic regression, not a language-model benchmark.
+  adaptation_zh: PaperLeet rank-2 合成回归，不是语言模型基准。
   seed: 42
   device: cpu
 calibration:

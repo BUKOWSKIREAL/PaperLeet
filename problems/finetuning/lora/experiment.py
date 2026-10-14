@@ -1,4 +1,4 @@
-"""LeetPaper teaching adaptation: recover a known rank-two change to a frozen map."""
+"""PaperLeet teaching adaptation: recover a known rank-two change to a frozen map."""
 import torch
 
 
@@ -22,7 +22,7 @@ def run(delta_fn, linear_fn, seed=42, steps=300):
     with torch.no_grad():
         merged = weight + delta_fn(a, b, alpha=4.)
         merge_error = float((linear_fn(x, weight, a, b, alpha=4.) - x @ merged.T).abs().max())
-    out = dict(provenance='LeetPaper synthetic rank-two regression; not a paper benchmark',
+    out = dict(provenance='PaperLeet synthetic rank-two regression; not a paper benchmark',
                 final_mse=curve[-1]['mse'], merge_error=merge_error, training=curve,
                 adapter_parameters=a.numel() + b.numel(), base_parameters=weight.numel(),
                 charts=[dict(kind='line', title='Learn a low-rank update', x=[p['step'] for p in curve],
@@ -30,5 +30,5 @@ def run(delta_fn, linear_fn, seed=42, steps=300):
 
     out['loss_curve'] = [[row['step'], row['mse']] for row in out['training']]
     out['metrics'] = {key: value for key, value in out.items() if key in ('final_kl', 'final_mse', 'merge_error', 'quantization_rmse', 'adapter_parameters', 'base_parameters', 'code_count', 'scale_count')}
-    out.update(kind='toy_experiment', title='Recover a known low-rank update', provenance={'kind': 'teaching_adaptation', 'source': 'https://arxiv.org/abs/2106.09685v2', 'adaptation': 'LeetPaper rank-two synthetic regression, not a language-model benchmark.'})
+    out.update(kind='toy_experiment', title='Recover a known low-rank update', provenance={'kind': 'teaching_adaptation', 'source': 'https://arxiv.org/abs/2106.09685v2', 'adaptation': 'PaperLeet rank-two synthetic regression, not a language-model benchmark.'})
     return out

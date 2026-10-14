@@ -5,7 +5,7 @@ const isObject = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === "object" && !Array.isArray(value);
 
 function invalid(field: string): never {
-  throw new Error(`不是有效的 LeetPaper report.json：${field}`);
+  throw new Error(`不是有效的 PaperLeet report.json：${field}`);
 }
 
 function optionalString(value: unknown, field: string): string | undefined {

@@ -15,4 +15,4 @@ Try token ratios `[2, 0.5]`: their geometric ratio is 1, so both valid log-proba
 
 Each mutant differs from the reference in a small, intentional change. T2 includes independent formula or gradient expectations, so equality with the reference is not the only acceptance evidence. T3 produces artifacts from the supplied implementation.
 
-Source: [2507.18071v1](https://arxiv.org/html/2507.18071v1#S4.SS1); [Author explanation (no author training-code release verified)](https://qwenlm.github.io/blog/gspo/). Toy provenance: Analytic three-response diagnostic written for LeetPaper; not Qwen training results.
+Source: [2507.18071v1](https://arxiv.org/html/2507.18071v1#S4.SS1); [Author explanation (no author training-code release verified)](https://qwenlm.github.io/blog/gspo/). Toy provenance: Analytic three-response diagnostic written for PaperLeet; not Qwen training results.

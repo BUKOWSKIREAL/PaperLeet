@@ -59,7 +59,7 @@ toy:
   kind: teaching_adaptation
   source: https://arxiv.org/abs/2103.00020
   anchor: 'Figure 3: symmetric contrastive training pseudocode'
-  adaptation: LeetPaper synthetic CPU experiment; no claim of reproducing the paper training benchmarks.
+  adaptation: PaperLeet synthetic CPU experiment; no claim of reproducing the paper training benchmarks.
 mutants:
 - id: m1_omit_normalization
   bug: 未归一化图像特征

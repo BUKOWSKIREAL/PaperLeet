@@ -64,8 +64,8 @@ module:
 toy:
   provenance: teaching_adaptation
   source: https://arxiv.org/html/2503.14476v1#S3
-  adaptation: LeetPaper synthetic binary-reward groups and ratio sweep; no AIME reproduction.
-  adaptation_zh: LeetPaper 二元奖励组与比率扫描，不是 AIME 复现。
+  adaptation: PaperLeet synthetic binary-reward groups and ratio sweep; no AIME reproduction.
+  adaptation_zh: PaperLeet 二元奖励组与比率扫描，不是 AIME 复现。
   seed: 42
   device: cpu
 calibration:

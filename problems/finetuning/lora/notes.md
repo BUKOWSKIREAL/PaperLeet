@@ -15,4 +15,4 @@ Toy 冻结一个 6×8 映射，用 28 个 adapter 参数拟合已知 rank-2 变�
 
 每个 mutant 都是相对于参考实现的小幅故意错误。T2 包含独立公式或梯度期望，接受结果不只依赖参考值相等。T3 使用传入的学员实现产生结果。
 
-依据：[2106.09685v2](https://arxiv.org/abs/2106.09685v2)；[微软 LoRA 官方实现](https://github.com/microsoft/LoRA/blob/main/loralib/layers.py)。实验来源：LeetPaper rank-2 合成回归，不是语言模型基准。
+依据：[2106.09685v2](https://arxiv.org/abs/2106.09685v2)；[微软 LoRA 官方实现](https://github.com/microsoft/LoRA/blob/main/loralib/layers.py)。实验来源：PaperLeet rank-2 合成回归，不是语言模型基准。

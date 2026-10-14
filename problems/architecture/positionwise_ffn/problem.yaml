@@ -55,7 +55,7 @@ toy:
   kind: teaching_adaptation
   source: https://arxiv.org/abs/1706.03762
   anchor: 'Section 3.3, Eq. (2): two affine maps with ReLU'
-  adaptation: LeetPaper two-output synthetic nonlinear regression; not a paper translation
+  adaptation: PaperLeet two-output synthetic nonlinear regression; not a paper translation
     benchmark.
 mutants:
 - id: m1_missing_relu

@@ -1,4 +1,4 @@
-"""LeetPaper paired-vector toy: no image/text encoder or original CLIP dataset."""
+"""PaperLeet paired-vector toy: no image/text encoder or original CLIP dataset."""
 import math
 import torch
 import torch.nn.functional as F
@@ -19,7 +19,7 @@ def run(loss_function):
         optimizer.step()
     similarities = F.normalize(images.detach(), dim=-1) @ F.normalize(texts.detach(), dim=-1).T
     labels = torch.arange(8)
-    return {"provenance": "LeetPaper teaching adaptation of CLIP Figure 3",
+    return {"provenance": "PaperLeet teaching adaptation of CLIP Figure 3",
             "losses": losses, "similarities": similarities.tolist(),
             "image_to_text_accuracy": (similarities.argmax(1) == labels).double().mean().item(),
             "text_to_image_accuracy": (similarities.argmax(0) == labels).double().mean().item(),

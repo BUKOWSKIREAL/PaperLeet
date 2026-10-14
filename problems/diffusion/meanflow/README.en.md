@@ -12,7 +12,7 @@ Use paper argument order `(z,r,t)`: JVP tangents `(v,0,1)` hold r fixed. Noise i
 
 ## Runnable experiment
 
-**Provenance: LeetPaper teaching adaptation.** An analytic point-data family learns its center using the learner JVP target. This is a mechanism demonstration, not a low-dimensional experiment claimed by the paper.
+**Provenance: PaperLeet teaching adaptation.** An analytic point-data family learns its center using the learner JVP target. This is a mechanism demonstration, not a low-dimensional experiment claimed by the paper.
 
 The T3 test runs your submitted implementation, saves points/curves/metrics, and uses fixed seed 42. `toy.py` contains the provided experiment. It does not download models or datasets. These exercises reproduce selected mechanisms, not full image benchmark results.
 

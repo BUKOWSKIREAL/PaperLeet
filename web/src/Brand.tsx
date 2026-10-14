@@ -1,21 +1,23 @@
 import { useI18n } from "./i18n";
 
-/** A folded research paper containing a three-node computational graph. */
+/** A front-facing black cat, kept black in both interface themes. */
 export function BrandMark() {
-  return <svg className="brand-symbol" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
-    <path className="brand-sheet" d="M28 5H13a5 5 0 0 0-5 5v28a5 5 0 0 0 5 5h22a5 5 0 0 0 5-5V17L28 5Z" />
-    <path className="brand-fold" d="M28 5v8a4 4 0 0 0 4 4h8" />
-    <path className="brand-graph" d="m16 33 8-10 8 10" />
-    <circle className="brand-node" cx="16" cy="33" r="3" />
-    <circle className="brand-node" cx="32" cy="33" r="3" />
-    <circle className="brand-core" cx="24" cy="23" r="3.5" />
+  return <svg className="brand-symbol" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+    <circle cx="32" cy="32" r="31" fill="#f3efe6" />
+    <path d="M14 27 12 11Q11.5 8 14.5 9.5L25 17.5Q32 15.5 39 17.5L49.5 9.5Q52.5 8 52 11L50 27Q55 35 51 44Q46 55 32 56Q18 55 13 44Q9 35 14 27Z" fill="#161619" />
+    <path d="m17 17 7 6-6 3Zm30 0-7 6 6 3Z" fill="#3b3b40" />
+    <path d="M18 33Q22.5 27.5 28 33.5Q23.5 39 18 33Zm28 0Q41.5 27.5 36 33.5Q40.5 39 46 33Z" fill="#e8c77b" />
+    <ellipse cx="23" cy="33" rx="1.5" ry="3.5" fill="#161619" />
+    <ellipse cx="41" cy="33" rx="1.5" ry="3.5" fill="#161619" />
+    <path d="M29.5 42Q32 40.5 34.5 42L32 44.5Z" fill="#b9b6af" />
+    <path d="M32 44.5v2M32 46.5q-2 2.5-4 0m4 0q2 2.5 4 0" fill="none" stroke="#77757a" strokeWidth="1.25" strokeLinecap="round" />
   </svg>;
 }
 
 export default function Brand() {
   const { t } = useI18n();
-  return <a href="#" className="brand" aria-label={t("LeetPaper 首页", "LeetPaper home")}>
+  return <a href="#" className="brand" aria-label={t("PaperLeet 首页", "PaperLeet home")}>
     <BrandMark />
-    <span className="brand-wordmark">Leet<span>Paper</span></span>
+    <span className="brand-wordmark">Paper<span>Leet</span></span>
   </a>;
 }

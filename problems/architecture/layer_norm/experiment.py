@@ -28,7 +28,7 @@ def run(layer_norm, post_norm_residual):
     changed_output = post_norm_residual(changed_x, changed_sublayer, weight, bias, eps)
     normalized_sum = layer_norm(summed, weight, bias, eps)
     return {
-        "provenance": "LeetPaper teaching adaptation of Transformer Section 3.1; dropout disabled; no training benchmark.",
+        "provenance": "PaperLeet teaching adaptation of Transformer Section 3.1; dropout disabled; no training benchmark.",
         "charts": [
             {"title": "Per-token mean before and after Add & Norm", "kind": "line", "x": list(range(8)), "x_label": "token", "y_label": "mean",
              "series": [{"name": "residual sum", "values": summed.mean(-1).flatten().tolist()},

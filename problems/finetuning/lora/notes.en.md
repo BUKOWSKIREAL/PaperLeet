@@ -15,4 +15,4 @@ The toy freezes a 6-by-8 map and fits a known rank-two change using 28 adapter p
 
 Each mutant differs from the reference in a small, intentional change. T2 includes independent formula or gradient expectations, so equality with the reference is not the only acceptance evidence. T3 produces artifacts from the supplied implementation.
 
-Source: [2106.09685v2](https://arxiv.org/abs/2106.09685v2); [Official Microsoft LoRA implementation](https://github.com/microsoft/LoRA/blob/main/loralib/layers.py). Toy provenance: LeetPaper rank-two synthetic regression, not a language-model benchmark.
+Source: [2106.09685v2](https://arxiv.org/abs/2106.09685v2); [Official Microsoft LoRA implementation](https://github.com/microsoft/LoRA/blob/main/loralib/layers.py). Toy provenance: PaperLeet rank-two synthetic regression, not a language-model benchmark.

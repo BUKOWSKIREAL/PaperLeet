@@ -1021,7 +1021,7 @@ export function UserProfile({ username }: { username: string }) {
         <>
           <section className="social-panel profile-header">
             <div className="profile-cover">
-              <span>LeetPaper</span>
+              <span>PaperLeet</span>
             </div>
             <div className="profile-header-inner">
               <Avatar user={profile} size={84} />

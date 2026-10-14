@@ -34,7 +34,7 @@ def main():
         for shutdown_signal in shutdown_signals:
             previous_handlers[shutdown_signal] = signal.getsignal(shutdown_signal)
             signal.signal(shutdown_signal, stop)
-        print("Starting LeetPaper... (Ctrl-C to stop)", flush=True)
+        print("Starting PaperLeet... (Ctrl-C to stop)", flush=True)
         repository = Path(__file__).resolve().parents[1]
         preflight(repository)
 
@@ -52,14 +52,14 @@ def main():
             for name, process in processes:
                 code = process.poll()
                 if code is not None:
-                    print(f"{name} exited unexpectedly (exit code {code}); stopping LeetPaper.", file=sys.stderr, flush=True)
+                    print(f"{name} exited unexpectedly (exit code {code}); stopping PaperLeet.", file=sys.stderr, flush=True)
                     return code if code > 0 else 1
             time.sleep(.25)
     except KeyboardInterrupt:
-        print("\nStopping LeetPaper...", flush=True)
+        print("\nStopping PaperLeet...", flush=True)
         return 0
     except Exception as error:
-        print(f"LeetPaper startup failed: {error}", file=sys.stderr, flush=True)
+        print(f"PaperLeet startup failed: {error}", file=sys.stderr, flush=True)
         return 1
     finally:
         # A second terminal signal must not interrupt child cleanup.

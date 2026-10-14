@@ -15,4 +15,4 @@ The toy trains adapters on a frozen quantized map. Storage here consumes one byt
 
 Each mutant differs from the reference in a small, intentional change. T2 includes independent formula or gradient expectations, so equality with the reference is not the only acceptance evidence. T3 produces artifacts from the supplied implementation.
 
-Source: [2305.14314v1](https://arxiv.org/html/2305.14314v1#S3); [Official quantization library, pinned 0.43.3 NF4 codebook](https://github.com/bitsandbytes-foundation/bitsandbytes/blob/0.43.3/bitsandbytes/functional.py). Toy provenance: LeetPaper synthetic regression with unpacked NF4 indices; does not measure full QLoRA memory savings.
+Source: [2305.14314v1](https://arxiv.org/html/2305.14314v1#S3); [Official quantization library, pinned 0.43.3 NF4 codebook](https://github.com/bitsandbytes-foundation/bitsandbytes/blob/0.43.3/bitsandbytes/functional.py). Toy provenance: PaperLeet synthetic regression with unpacked NF4 indices; does not measure full QLoRA memory savings.

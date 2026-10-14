@@ -23,10 +23,10 @@ The learning-progress preference is saved for future public progress statistics.
 
 ## Configure real email verification
 
-1. Create a Supabase project and enable the Email authentication provider, with new-user signup allowed. LeetPaper calls Supabase Auth on the server and verifies the returned user identity and confirmed email before creating a local account.
-2. In Supabase's **Magic Link** email template, include `{{ .Token }}` so the recipient receives a code they can enter into LeetPaper. The default link-only template does not provide the code input flow. See [Supabase email OTP setup](https://supabase.com/docs/guides/auth/auth-email-passwordless) and [email templates](https://supabase.com/docs/guides/auth/auth-email-templates).
+1. Create a Supabase project and enable the Email authentication provider, with new-user signup allowed. PaperLeet calls Supabase Auth on the server and verifies the returned user identity and confirmed email before creating a local account.
+2. In Supabase's **Magic Link** email template, include `{{ .Token }}` so the recipient receives a code they can enter into PaperLeet. The default link-only template does not provide the code input flow. See [Supabase email OTP setup](https://supabase.com/docs/guides/auth/auth-email-passwordless) and [email templates](https://supabase.com/docs/guides/auth/auth-email-templates).
 3. Configure custom SMTP in Supabase to send authentication messages to general users. Supabase's default email service restricts recipients to the project's team and is intended for testing. See [custom SMTP setup](https://supabase.com/docs/guides/auth/auth-smtp).
-4. Review the eligible domains in [`institutions.yaml`](../institutions.yaml). Only exact listed domains can request a LeetPaper sign-in code. Verification proves control of an institutional mailbox, not current student or employee status.
+4. Review the eligible domains in [`institutions.yaml`](../institutions.yaml). Only exact listed domains can request a PaperLeet sign-in code. Verification proves control of an institutional mailbox, not current student or employee status.
 5. Configure the environment in the same terminal that starts `make dev`:
 
 ```bash
@@ -48,7 +48,7 @@ make dev
 | `PAPERLEET_ADMIN_EMAILS` | Optional comma-separated institutional mailboxes granted local administrator role after successful verification |
 | `PAPERLEET_SECURE_COOKIES` | `0` for local HTTP; `1` adds the Secure cookie attribute when an HTTPS deployment exists |
 
-No Supabase service-role key is needed. Do not place secrets in `VITE_*` variables. The frontend talks to LeetPaper's `/api/account/` endpoints; it does not receive provider tokens. LeetPaper uses an opaque, HttpOnly session cookie with a seven-day lifetime and stores only the token's hash. Logging out revokes the current local session. Users cannot edit their verified institution or administrator role through profile settings.
+No Supabase service-role key is needed. Do not place secrets in `VITE_*` variables. The frontend talks to PaperLeet's `/api/account/` endpoints; it does not receive provider tokens. PaperLeet uses an opaque, HttpOnly session cookie with a seven-day lifetime and stores only the token's hash. Logging out revokes the current local session. Users cannot edit their verified institution or administrator role through profile settings.
 
 If institutional configuration is missing, the sign-in screen explains that verification is unavailable. Public community browsing and local practice remain available. Test accounts require explicit `PAPERLEET_AUTH_MODE=test` and individual operator-issued access codes; they do not claim email verification and cannot authenticate in institutional mode. Email sending and verification use bounded provider timeouts and per-email request limits; the HTTP adapter also limits writes.
 

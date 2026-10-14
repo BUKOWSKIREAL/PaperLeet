@@ -25,10 +25,10 @@ This is the lambda=1 GKD variant. It is not sampled-token OPD, a policy-gradient
 
 ## Toy provenance
 
-**LeetPaper teaching adaptation.** LeetPaper fixed-length categorical Markov model, not the original T5 or Gaussian-mixture experiment. The test harness calls your submitted functions and records the resulting metrics and curves. The Lab's static preview comes from the reference; your Run/Submit artifacts come from your code. The experiment and test scaffolding are supplied in `experiment.py` and `tests/`.
+**PaperLeet teaching adaptation.** PaperLeet fixed-length categorical Markov model, not the original T5 or Gaussian-mixture experiment. The test harness calls your submitted functions and records the resulting metrics and curves. The Lab's static preview comes from the reference; your Run/Submit artifacts come from your code. The experiment and test scaffolding are supplied in `experiment.py` and `tests/`.
 
 ## Sources and verification
 
-[TRL implementation (independent of the paper authors; not the reference for this exercise)](https://github.com/huggingface/trl/blob/main/trl/experimental/gkd/gkd_trainer.py). All exercise implementations and synthetic data are written for LeetPaper. The paper link pins the version used for the formulas.
+[TRL implementation (independent of the paper authors; not the reference for this exercise)](https://github.com/huggingface/trl/blob/main/trl/experimental/gkd/gkd_trainer.py). All exercise implementations and synthetic data are written for PaperLeet. The paper link pins the version used for the formulas.
 
 T0 checks contracts, T1 compares with the reference, T2 checks mathematical and gradient properties, and T3 runs the toy through your implementation. Implement the starter functions in the online editor, then Run or Submit. The official large-model training system is not required.

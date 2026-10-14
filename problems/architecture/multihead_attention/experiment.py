@@ -1,4 +1,4 @@
-"""Two heads read different feature subspaces: a LeetPaper teaching adaptation."""
+"""Two heads read different feature subspaces: a PaperLeet teaching adaptation."""
 import math
 import torch
 
@@ -21,7 +21,7 @@ def run(multi_head_attention):
     expected = torch.cat(expected_heads, dim=-1)[None] @ output_projection
     actual_values = output[0, 0].detach().tolist()
     return {
-        "provenance": "LeetPaper teaching adaptation of Transformer Section 3.2.2; fixed projections, no training.",
+        "provenance": "PaperLeet teaching adaptation of Transformer Section 3.2.2; fixed projections, no training.",
         "metrics": {"maximum_error": (output - expected).abs().max().item(),
                     "head_weight_error": (weights - expected_weights).abs().max().item(),
                     "head_separation_l1": (weights[0, 0, 0] - weights[0, 1, 0]).abs().sum().item()},

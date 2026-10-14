@@ -36,7 +36,7 @@ Let parameter = 2, gradient = 3, `lr=.1`, `weight_decay=.2`, and zero moments. A
 
 The provided 200-step experiment minimizes a quadratic with different curvature in its two coordinates. It records the trajectory and objective values while calling the submitted `adamw_step`. The target is `[.25,-.5]`; the curvature is `[1,16]`, so one coordinate has a much steeper gradient.
 
-**Provenance:** LeetPaper teaching adaptation of the update rule. This is synthetic optimizer behavior, not the original paper's image-classification/generalization experiment. All computations are CPU-only and require no data download. The deterministic final-loss gate is `.01`; the separate reference preview is not a learner result.
+**Provenance:** PaperLeet teaching adaptation of the update rule. This is synthetic optimizer behavior, not the original paper's image-classification/generalization experiment. All computations are CPU-only and require no data download. The deterministic final-loss gate is `.01`; the separate reference preview is not a learner result.
 
 ## Validation
 

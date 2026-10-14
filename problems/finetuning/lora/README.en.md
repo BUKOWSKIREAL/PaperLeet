@@ -25,10 +25,10 @@ The toy freezes a 6-by-8 map and fits a known rank-two change using 28 adapter p
 
 ## Toy provenance
 
-**LeetPaper teaching adaptation.** LeetPaper rank-two synthetic regression, not a language-model benchmark. The test harness calls your submitted functions and records the resulting metrics and curves. The Lab's static preview comes from the reference; your Run/Submit artifacts come from your code. The experiment and test scaffolding are supplied in `experiment.py` and `tests/`.
+**PaperLeet teaching adaptation.** PaperLeet rank-two synthetic regression, not a language-model benchmark. The test harness calls your submitted functions and records the resulting metrics and curves. The Lab's static preview comes from the reference; your Run/Submit artifacts come from your code. The experiment and test scaffolding are supplied in `experiment.py` and `tests/`.
 
 ## Sources and verification
 
-[Official Microsoft LoRA implementation](https://github.com/microsoft/LoRA/blob/main/loralib/layers.py). All exercise implementations and synthetic data are written for LeetPaper. The paper link pins the version used for the formulas.
+[Official Microsoft LoRA implementation](https://github.com/microsoft/LoRA/blob/main/loralib/layers.py). All exercise implementations and synthetic data are written for PaperLeet. The paper link pins the version used for the formulas.
 
 T0 checks contracts, T1 compares with the reference, T2 checks mathematical and gradient properties, and T3 runs the toy through your implementation. Implement the starter functions in the online editor, then Run or Submit. The official large-model training system is not required.

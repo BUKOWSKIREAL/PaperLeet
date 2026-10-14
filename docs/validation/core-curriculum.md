@@ -44,7 +44,7 @@ The new modules follow [Attention Is All You Need, §§3.1–3.5](https://arxiv.
 
 ## Typography follow-up
 
-Compared the rendered [LeetCode Two Sum workspace](https://leetcode.com/problems/two-sum/description/) with LeetPaper. The interface now uses a system font stack with explicit Chinese fallbacks, 15 px description text, 24 px problem titles, stronger secondary text, and consistent line spacing. Code defaults to 15 px and has an accessible 13–20 px selector that remembers the preference.
+Compared the rendered [LeetCode Two Sum workspace](https://leetcode.com/problems/two-sum/description/) with PaperLeet. The interface now uses a system font stack with explicit Chinese fallbacks, 15 px description text, 24 px problem titles, stronger secondary text, and consistent line spacing. Code defaults to 15 px and has an accessible 13–20 px selector that remembers the preference.
 
 `npm run check` and the production build passed. Chrome checks covered English/Chinese, dark/light themes, the paper library, problem workspace, and community. The code size remained 18 px after reload and was restored to 15 px. At 390 px and 850 px, the header and page widths match the viewport; narrow screens use two navigation rows. The original English/dark preference and default viewport were restored after checking.
 

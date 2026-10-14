@@ -15,4 +15,4 @@ The toy keeps only the mixed group among all-fail, mixed and all-success example
 
 Each mutant differs from the reference in a small, intentional change. T2 includes independent formula or gradient expectations, so equality with the reference is not the only acceptance evidence. T3 produces artifacts from the supplied implementation.
 
-Source: [2503.14476v1](https://arxiv.org/html/2503.14476v1#S3); [Official framework linked by the paper (redirects to verl-project/verl)](https://github.com/volcengine/verl). Toy provenance: LeetPaper synthetic binary-reward groups and ratio sweep; no AIME reproduction.
+Source: [2503.14476v1](https://arxiv.org/html/2503.14476v1#S3); [Official framework linked by the paper (redirects to verl-project/verl)](https://github.com/volcengine/verl). Toy provenance: PaperLeet synthetic binary-reward groups and ratio sweep; no AIME reproduction.

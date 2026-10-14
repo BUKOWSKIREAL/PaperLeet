@@ -24,13 +24,13 @@ $$
 
 Keep the axes explicit: project `[B,Q,D]`, reshape to `[B,Q,H,D/H]`, then transpose to `[B,H,Q,D/H]`. After attention, transpose the head axis back before flattening the last two dimensions. A reshape alone changes which features belong to each query. Cross-attention uses queries from one sequence and keys/values from another.
 
-The fully masked convention is a LeetPaper extension for padding robustness. The supplied kernel handles it. No residual connection or normalization belongs inside this function; those are separate Transformer components.
+The fully masked convention is a PaperLeet extension for padding robustness. The supplied kernel handles it. No residual connection or normalization belongs inside this function; those are separate Transformer components.
 
 ## Toy experiment
 
 Two queries read three tokens through two heads. The first query's first head prefers key 0; its second head prefers key 2. The supplied experiment computes exact probabilities from the constructed logits, then checks concatenation and a nontrivial output projection. Its charts show each head's key weights and the resulting feature vector against the analytic target.
 
-**Provenance:** LeetPaper teaching adaptation of the paper's multi-head operator. The small synthetic example is not an experiment reported in the paper, and no training or dataset download is required. T3 executes the submitted function; the reference preview is labeled separately.
+**Provenance:** PaperLeet teaching adaptation of the paper's multi-head operator. The small synthetic example is not an experiment reported in the paper, and no training or dataset download is required. T3 executes the submitted function; the reference preview is labeled separately.
 
 ## Validation
 

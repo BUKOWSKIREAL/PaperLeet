@@ -1,4 +1,4 @@
-"""LeetPaper teaching adaptation: masked prefix averaging, not a paper experiment."""
+"""PaperLeet teaching adaptation: masked prefix averaging, not a paper experiment."""
 import torch
 
 
@@ -11,7 +11,7 @@ def run(attention):
     changed = values.clone()
     changed[4:] += 1000
     changed_output, _ = attention(q, q, changed[None, None, :, None], mask)
-    return {"provenance": "LeetPaper teaching adaptation of Transformer Section 3.2.1",
+    return {"provenance": "PaperLeet teaching adaptation of Transformer Section 3.2.1",
             "values": values.tolist(), "expected": expected.tolist(),
             "actual": output.flatten().detach().tolist(),
             "weights": weights[0, 0].detach().tolist(),

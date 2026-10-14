@@ -25,10 +25,10 @@ Try token ratios `[2, 0.5]`: their geometric ratio is 1, so both valid log-proba
 
 ## Toy provenance
 
-**LeetPaper teaching adaptation.** Analytic three-response diagnostic written for LeetPaper; not Qwen training results. The test harness calls your submitted functions and records the resulting metrics and curves. The Lab's static preview comes from the reference; your Run/Submit artifacts come from your code. The experiment and test scaffolding are supplied in `experiment.py` and `tests/`.
+**PaperLeet teaching adaptation.** Analytic three-response diagnostic written for PaperLeet; not Qwen training results. The test harness calls your submitted functions and records the resulting metrics and curves. The Lab's static preview comes from the reference; your Run/Submit artifacts come from your code. The experiment and test scaffolding are supplied in `experiment.py` and `tests/`.
 
 ## Sources and verification
 
-[Author explanation (no author training-code release verified)](https://qwenlm.github.io/blog/gspo/). All exercise implementations and synthetic data are written for LeetPaper. The paper link pins the version used for the formulas.
+[Author explanation (no author training-code release verified)](https://qwenlm.github.io/blog/gspo/). All exercise implementations and synthetic data are written for PaperLeet. The paper link pins the version used for the formulas.
 
 T0 checks contracts, T1 compares with the reference, T2 checks mathematical and gradient properties, and T3 runs the toy through your implementation. Implement the starter functions in the online editor, then Run or Submit. The official large-model training system is not required.

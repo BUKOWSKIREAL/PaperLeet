@@ -15,4 +15,4 @@ Toy 在全错、混合、全对三个组中只保留混合组，然后扫描 .5 
 
 每个 mutant 都是相对于参考实现的小幅故意错误。T2 包含独立公式或梯度期望，接受结果不只依赖参考值相等。T3 使用传入的学员实现产生结果。
 
-依据：[2503.14476v1](https://arxiv.org/html/2503.14476v1#S3)；[原论文链接的官方框架（重定向至 verl-project/verl）](https://github.com/volcengine/verl)。实验来源：LeetPaper 二元奖励组与比率扫描，不是 AIME 复现。
+依据：[2503.14476v1](https://arxiv.org/html/2503.14476v1#S3)；[原论文链接的官方框架（重定向至 verl-project/verl）](https://github.com/volcengine/verl)。实验来源：PaperLeet 二元奖励组与比率扫描，不是 AIME 复现。

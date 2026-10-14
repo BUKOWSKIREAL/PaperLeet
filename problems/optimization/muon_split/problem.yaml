@@ -59,7 +59,7 @@ toy:
   kind: teaching_adaptation
   source: https://arxiv.org/abs/2602.15763v2
   anchor: 'Section 2.1, Multi-latent Attention: Muon Split on W^UQ, W^UK, W^UV'
-  adaptation: LeetPaper deterministic CPU synthetic experiment; not an author-provided toy or large-model
+  adaptation: PaperLeet deterministic CPU synthetic experiment; not an author-provided toy or large-model
     benchmark.
 mutants:
 - id: m1_whole_matrix

@@ -25,10 +25,10 @@ Toy 冻结一个 6×8 映射，用 28 个 adapter 参数拟合已知 rank-2 变�
 
 ## Toy 来源
 
-**LeetPaper 教学改编。** LeetPaper rank-2 合成回归，不是语言模型基准。 判题 harness 调用本次提交的函数，保存由其产生的指标与曲线。Lab 静态预览来自参考实现，Run/Submit 的产物来自你的代码。`experiment.py` 与 `tests/` 已提供实验和判题脚手架。
+**PaperLeet 教学改编。** PaperLeet rank-2 合成回归，不是语言模型基准。 判题 harness 调用本次提交的函数，保存由其产生的指标与曲线。Lab 静态预览来自参考实现，Run/Submit 的产物来自你的代码。`experiment.py` 与 `tests/` 已提供实验和判题脚手架。
 
 ## 来源与验证
 
-[微软 LoRA 官方实现](https://github.com/microsoft/LoRA/blob/main/loralib/layers.py)。题目实现与合成数据由 LeetPaper 编写；论文链接固定公式依据的版本。
+[微软 LoRA 官方实现](https://github.com/microsoft/LoRA/blob/main/loralib/layers.py)。题目实现与合成数据由 PaperLeet 编写；论文链接固定公式依据的版本。
 
 T0 验证接口，T1 对照参考值，T2 检查数学性质与梯度，T3 用你的实现运行 toy。在在线编辑器补全 starter 后 Run 或 Submit，无需部署完整大模型训练系统。

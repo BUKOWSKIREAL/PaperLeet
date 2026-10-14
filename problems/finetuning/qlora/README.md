@@ -26,10 +26,10 @@ Toy 在冻结量化映射上训练 adapter。这里每个索引占一字节，�
 
 ## Toy 来源
 
-**LeetPaper 教学改编。** LeetPaper 未打包 NF4 索引合成回归；不衡量完整 QLoRA 显存节省。 判题 harness 调用本次提交的函数，保存由其产生的指标与曲线。Lab 静态预览来自参考实现，Run/Submit 的产物来自你的代码。`experiment.py` 与 `tests/` 已提供实验和判题脚手架。
+**PaperLeet 教学改编。** PaperLeet 未打包 NF4 索引合成回归；不衡量完整 QLoRA 显存节省。 判题 harness 调用本次提交的函数，保存由其产生的指标与曲线。Lab 静态预览来自参考实现，Run/Submit 的产物来自你的代码。`experiment.py` 与 `tests/` 已提供实验和判题脚手架。
 
 ## 来源与验证
 
-[官方量化库，固定 0.43.3 的 NF4 码本](https://github.com/bitsandbytes-foundation/bitsandbytes/blob/0.43.3/bitsandbytes/functional.py)。题目实现与合成数据由 LeetPaper 编写；论文链接固定公式依据的版本。
+[官方量化库，固定 0.43.3 的 NF4 码本](https://github.com/bitsandbytes-foundation/bitsandbytes/blob/0.43.3/bitsandbytes/functional.py)。题目实现与合成数据由 PaperLeet 编写；论文链接固定公式依据的版本。
 
 T0 验证接口，T1 对照参考值，T2 检查数学性质与梯度，T3 用你的实现运行 toy。在在线编辑器补全 starter 后 Run 或 Submit，无需部署完整大模型训练系统。

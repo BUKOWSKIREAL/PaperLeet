@@ -19,8 +19,8 @@ def _print_report(report):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(prog="leetpaper", description="LeetPaper: implement and test the core algorithms of AI research papers.")
-    parser.add_argument("--version", action="version", version="LeetPaper 0.1.0")
+    parser = argparse.ArgumentParser(prog="paperleet", description="PaperLeet: implement and test the core algorithms of AI research papers.")
+    parser.add_argument("--version", action="version", version="PaperLeet 0.1.0")
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("list", help="List problems and local progress")
     init = commands.add_parser("init", help="Copy starter into workspace")
@@ -110,7 +110,7 @@ def main(argv=None):
             from paperleet.server import serve
             serve(args.port)
     except (ValueError, FileNotFoundError, OSError) as exc:
-        print(f"leetpaper: {exc}", file=sys.stderr)
+        print(f"paperleet: {exc}", file=sys.stderr)
         return 2
     return 0
 

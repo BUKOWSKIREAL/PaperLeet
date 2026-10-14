@@ -36,7 +36,7 @@ Edit `deploy/.env`. Put the generated token in `PAPERLEET_JUDGE_TOKEN`; do not l
 
 | Setting | Value |
 | --- | --- |
-| `PAPERLEET_DOMAIN` | Your DNS name, such as `leetpaper.yourdomain.com`; no scheme or path |
+| `PAPERLEET_DOMAIN` | Your DNS name, such as `paperleet.yourdomain.com`; no scheme or path |
 | `PAPERLEET_AUTH_MODE` | `institutional` by default; `test` enables administrator-created accounts without email |
 | `SUPABASE_URL` | Your Supabase project URL |
 | `SUPABASE_PUBLISHABLE_KEY` | The project's publishable key, or its legacy anon key; never a service-role key |
@@ -46,7 +46,7 @@ Edit `deploy/.env`. Put the generated token in `PAPERLEET_JUDGE_TOKEN`; do not l
 
 Every invited email must also match an approved **exact domain** in [`institutions.yaml`](../institutions.yaml). Invitations and institution approval are separate checks. Adding an address does not approve its school; adding a school does not invite everyone at that school. Initially `mit.edu` and `berkeley.edu` are approved. Review official institution evidence before adding more domains, including specific student subdomains. An institution-request form only creates a request for review.
 
-In Supabase, enable Email authentication and signup. Add `{{ .Token }}` to the **Magic Link** email template so users receive a code they can enter into LeetPaper. Configure custom SMTP for delivery to invited users; the default Supabase sender restricts recipients to project-team addresses. See [email OTP](https://supabase.com/docs/guides/auth/auth-email-passwordless), [email templates](https://supabase.com/docs/guides/auth/auth-email-templates), and [SMTP setup](https://supabase.com/docs/guides/auth/auth-smtp).
+In Supabase, enable Email authentication and signup. Add `{{ .Token }}` to the **Magic Link** email template so users receive a code they can enter into PaperLeet. Configure custom SMTP for delivery to invited users; the default Supabase sender restricts recipients to project-team addresses. See [email OTP](https://supabase.com/docs/guides/auth/auth-email-passwordless), [email templates](https://supabase.com/docs/guides/auth/auth-email-templates), and [SMTP setup](https://supabase.com/docs/guides/auth/auth-smtp).
 
 Mailbox verification establishes control of an institutional email address; it does not establish current student or employee status. Email and session details stay private. Display names and avatars are always public; institution and country visibility are separate user settings. The country is user-entered, not inferred from IP.
 
@@ -65,7 +65,7 @@ In test-account mode, create accounts with `./deploy/manage.sh test-users create
 Check the real domain:
 
 ```sh
-curl --fail https://leetpaper.yourdomain.com/api/health
+curl --fail https://paperleet.yourdomain.com/api/health
 ./deploy/manage.sh logs
 ```
 
