@@ -45,7 +45,26 @@ def test_empty_community_is_not_seeded(community):
     assert community.list_posts()["items"] == []
     assert community.activity("alice", "posts")["total"] == 0
     assert community.profile("alice")["counts"] == {
-        "posts": 0, "replies": 0, "likes": 0, "reposts": 0, "followers": 0, "following": 0}
+        "posts": 0, "replies": 0, "likes": 0, "reposts": 0, "followers": 0, "following": 0,
+        "likes_received": 0, "reposts_received": 0}
+
+
+def test_profile_received_reactions_exclude_self_and_track_removal(community):
+    first, second = make_post(community), make_post(community, title="Another post")
+    for post in (first, second):
+        for actor in ("a", "b", "c"):
+            for kind in ("like", "repost"):
+                community.set_reaction(actor, post["id"], kind, True)
+                community.set_reaction(actor, post["id"], kind, True)
+    counts = community.profile("alice")["counts"]
+    assert counts["likes_received"] == counts["reposts_received"] == 4
+    assert counts["likes"] == counts["reposts"] == 2
+    assert community.profile("bob")["counts"]["likes_received"] == 0
+    community.set_reaction("b", first["id"], "like", False)
+    assert community.profile("alice")["counts"]["likes_received"] == 3
+    community.delete_post("a", second["id"])
+    counts = community.profile("alice")["counts"]
+    assert counts["likes_received"] == 1 and counts["reposts_received"] == 2
 
 
 def test_author_identity_is_taken_from_session_actor_and_persists(community):

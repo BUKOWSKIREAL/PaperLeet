@@ -173,3 +173,21 @@ def test_local_problem_statistics_are_explicitly_unavailable(api, monkeypatch):
     monkeypatch.setenv("PAPERLEET_MODE", "local")
     assert api("practice/stats")[0:2] == (200, {"available": False, "stats": {}})
     assert api("practice/stats?problem=rl%2Fgae")[1] == {"available": False, "stats": {}}
+
+
+def test_profile_practice_route_privacy_timezone_and_validation(api):
+    alice, owner = login(api, "alice")
+    _, other = login(api, "bob")
+    path = f"community/profiles/{alice['username']}/practice"
+    status, data, _ = api(path + "?year=2024&timezone=America%2FNew_York")
+    assert status == 200 and data["visible"] is True
+    assert data["year"] == 2024 and data["timezone"] == "America/New_York"
+    assert len(data["calendar"]["days"]) == 366
+    assert data["total_submissions"] == 0
+    assert api(path + "?year=bad")[0] == 400
+    assert api(path + "?timezone=not-a-timezone")[0] == 400
+    assert api("community/profiles/missing/practice")[0] == 404
+    assert api("account/profile", {"show_progress": False}, owner)[0] == 200
+    assert api(path)[0:2] == (200, {"visible": False})
+    assert api(path, cookie=other)[1] == {"visible": False}
+    assert api(path, cookie=owner)[1]["visible"] is True

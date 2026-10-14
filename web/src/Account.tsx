@@ -660,12 +660,12 @@ export function ProfileSettings({ user }: { user: AccountUser }) {
               <small>
                 {health?.mode === "hosted"
                   ? t(
-                      "在线练习草稿与判题结果会同步到你的账号；公开学习统计尚未开放，此开关暂不发布这些记录。",
-                      "Online drafts and judging results sync privately to your account. Public learning statistics are not available yet, so this setting does not publish those records.",
+                      "公开累计做题数、每日活跃记录和最近通过的题目。关闭后仅自己可见；代码、草稿和详细判题报告始终私有。",
+                      "Show your problem totals, daily activity, and recent accepted problems. Turn this off to keep these visible only to you. Code, drafts, and detailed judge reports always stay private.",
                     )
                   : t(
-                      "当前练习进度仍保存在本机，尚未同步到公开主页。",
-                      "Practice progress is currently saved in this browser and is not yet synced to your public profile.",
+                      "此开关控制账号中已保存判题记录的公开统计。本地模式的浏览器练习记录不会自动上传；代码和详细报告始终私有。",
+                      "Controls public statistics from saved account submissions. Browser-only practice is not uploaded automatically. Code and detailed reports always stay private.",
                     )}
               </small>
             </span>

@@ -159,6 +159,9 @@ def dispatch(handler, method, data=None):
         if parts[:3] == ["api", "community", "profiles"] and method == "GET":
             if len(parts) == 4:
                 return handler.respond(200, community.profile(parts[3], viewer_id=viewer))
+            if len(parts) == 5 and parts[4] == "practice":
+                return handler.respond(200, community.practice_progress(parts[3], viewer_id=viewer,
+                    year=option("year") or None, timezone_name=option("timezone", "UTC")))
             if len(parts) == 5 and parts[4] == "activity":
                 return handler.respond(200, community.activity(parts[3], option("tab", "posts"), viewer_id=viewer,
                     limit=int(option("limit", "30")), offset=int(option("offset", "0"))))

@@ -27,6 +27,7 @@ import {
   X,
 } from "lucide-react";
 import { useI18n } from "./i18n";
+import ProfileProgress from "./ProfileProgress";
 import {
   Avatar,
   DateLabel,
@@ -64,7 +65,7 @@ type Reply = {
 };
 type PostDetail = Post & { replies: Reply[] };
 type Profile = PublicUser & {
-  counts: Counts & { posts: number; followers: number; following: number };
+  counts: Counts & { posts: number; followers: number; following: number; likes_received: number; reposts_received: number };
   viewer: { following: boolean; is_self: boolean };
 };
 type Connection = PublicUser & {
@@ -899,6 +900,11 @@ function Discussion({ id }: { id: string }) {
   );
 }
 export function UserProfile({ username }: { username: string }) {
+  const { user } = useAccount();
+  // Account changes must remove a previous viewer's private progress immediately.
+  return <UserProfileContents key={`${username}:${user?.id || "guest"}`} username={username} />;
+}
+function UserProfileContents({ username }: { username: string }) {
   const { t } = useI18n();
   const { user } = useAccount();
   const [profile, setProfile] = useState<Profile>(),
@@ -1018,11 +1024,9 @@ export function UserProfile({ username }: { username: string }) {
       {loading && !profile ? (
         <Loading />
       ) : profile ? (
-        <>
+        <div className="profile-dashboard">
+          <aside className="profile-sidebar">
           <section className="social-panel profile-header">
-            <div className="profile-cover">
-              <span>PaperLeet</span>
-            </div>
             <div className="profile-header-inner">
               <Avatar user={profile} size={84} />
               <div className="profile-primary">
@@ -1074,14 +1078,6 @@ export function UserProfile({ username }: { username: string }) {
               )}
             </div>
             <div className="profile-stats">
-              <button onClick={() => chooseTab("posts")}>
-                <b>{profile.counts.posts}</b>
-                {t("帖子", "Posts")}
-              </button>
-              <button onClick={() => chooseTab("replies")}>
-                <b>{profile.counts.replies}</b>
-                {t("回复", "Replies")}
-              </button>
               <button onClick={() => chooseTab("following")}>
                 <b>{profile.counts.following}</b>
                 {t("关注", "Following")}
@@ -1092,11 +1088,43 @@ export function UserProfile({ username }: { username: string }) {
               </button>
             </div>
           </section>
-          <div className="social-tabs profile-tabs">
+          <section className="social-panel profile-community-summary">
+            <h2>{t("社区贡献", "Community")}</h2>
+            <dl>
+              <div><dt><MessagesSquare size={16} />{t("帖子", "Posts")}</dt><dd><button aria-label={t("查看帖子", "View posts")} onClick={() => chooseTab("posts")}>{profile.counts.posts}</button></dd></div>
+              <div><dt><MessageCircle size={16} />{t("回复", "Replies")}</dt><dd><button aria-label={t("查看回复", "View replies")} onClick={() => chooseTab("replies")}>{profile.counts.replies}</button></dd></div>
+              <div><dt><Heart size={16} />{t("获赞", "Likes received")}</dt><dd>{profile.counts.likes_received}</dd></div>
+              <div><dt><Repeat2 size={16} />{t("获转发", "Reposts received")}</dt><dd>{profile.counts.reposts_received}</dd></div>
+            </dl>
+            {profile.viewer.is_self && <a href="#/community">{t("加入讨论", "Join a discussion")}<ArrowRight size={14} /></a>}
+          </section>
+          </aside>
+          <div className="profile-main">
+          <ProfileProgress username={username} isSelf={profile.viewer.is_self} />
+          <section className="profile-community-content" aria-labelledby="profile-community-title">
+          <h2 id="profile-community-title">{t("社区动态", "Community activity")}</h2>
+          <div className="social-tabs profile-tabs" role="tablist" aria-label={t("社区动态分类", "Community activity categories")}>
             {tabs.map(([key, label]) => (
               <button
                 key={key}
+                role="tab"
+                id={`profile-tab-${key}`}
+                aria-selected={tab === key}
+                aria-controls="profile-community-panel"
+                tabIndex={tab === key ? 0 : -1}
                 className={tab === key ? "selected" : ""}
+                onKeyDown={(event) => {
+                  const index = tabs.findIndex(([value]) => value === key);
+                  let next = index;
+                  if (event.key === "ArrowRight") next = (index + 1) % tabs.length;
+                  else if (event.key === "ArrowLeft") next = (index + tabs.length - 1) % tabs.length;
+                  else if (event.key === "Home") next = 0;
+                  else if (event.key === "End") next = tabs.length - 1;
+                  else return;
+                  event.preventDefault();
+                  chooseTab(tabs[next][0]);
+                  document.getElementById(`profile-tab-${tabs[next][0]}`)?.focus();
+                }}
                 onClick={() => chooseTab(key)}
               >
                 {label}
@@ -1104,7 +1132,7 @@ export function UserProfile({ username }: { username: string }) {
               </button>
             ))}
           </div>
-          <section className="social-panel profile-activity">
+          <section className="social-panel profile-activity" id="profile-community-panel" role="tabpanel" aria-labelledby={`profile-tab-${tab}`} aria-busy={activityLoading}>
             {activityLoading ? (
               <Loading />
             ) : activityError ? (
@@ -1216,7 +1244,9 @@ export function UserProfile({ username }: { username: string }) {
             total={connectionTab ? connections.total : activity.total}
             onChange={setOffset}
           />
-        </>
+          </section>
+          </div>
+        </div>
       ) : null}
     </main>
   );

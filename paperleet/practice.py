@@ -19,6 +19,52 @@ MAX_CODE_BYTES = 128 * 1024
 MAX_REPORT_BYTES = 2 * 1024 * 1024
 
 
+def full_submission_query(catalog, user_id=None):
+    """Return a shared CTE for public aggregates, without selecting private code.
+
+    The immutable accepted flag is produced by save_run. Report metadata only
+    decides whether a run was a complete submission rather than a layer check or
+    mutation experiment. Filter the user before examining JSON for profiles.
+    """
+    required = {entry["id"]: [layer for layer, count in entry.get("tests", {}).items()
+                              if type(count) is int and count > 0 and layer in LAYERS]
+                for entry in catalog}
+    scope = "WHERE user_id=?" if user_id is not None else ""
+    params = ([user_id] if user_id is not None else []) + [json.dumps(required)]
+    return """
+        WITH candidates AS (
+            SELECT problem_id,user_id,accepted,created_at,
+                   CASE WHEN json_valid(report_json) THEN report_json ELSE '{}' END AS report
+            FROM practice_runs
+    """ + scope + """
+        ), full_submissions AS (
+            SELECT r.problem_id,r.user_id,r.accepted,r.created_at
+            FROM json_each(?) AS specification
+            JOIN candidates r ON r.problem_id=specification.key
+            WHERE json_array_length(specification.value)>0
+              AND json_extract(r.report,'$.problem')=r.problem_id
+              AND json_type(r.report,'$.layers')='array'
+              AND json_type(r.report,'$.tests')='array'
+              AND json_type(r.report,'$.summary')='object'
+              AND (json_type(r.report,'$.mutation') IS NULL OR json_type(r.report,'$.mutation')='null')
+              AND NOT EXISTS (
+                  SELECT 1 FROM json_each(r.report,'$.layers') AS selected_layer
+                  WHERE selected_layer.type!='text' OR selected_layer.value NOT IN ('T0','T1','T2','T3')
+              )
+              AND json_array_length(r.report,'$.layers')=(
+                  SELECT COUNT(DISTINCT value) FROM json_each(r.report,'$.layers')
+              )
+              AND NOT EXISTS (
+                  SELECT 1 FROM json_each(specification.value) AS required_layer
+                  WHERE NOT EXISTS (
+                      SELECT 1 FROM json_each(r.report,'$.layers') AS selected_layer
+                      WHERE selected_layer.type='text' AND selected_layer.value=required_layer.value
+                  )
+              )
+        )
+    """, params
+
+
 class PracticeConflict(ValueError):
     pass
 
@@ -218,39 +264,19 @@ class PracticeService:
         submission; a partial-layer check never enters these denominators.
         """
         catalog = problems()
-        required = {entry["id"]: [layer for layer, count in entry.get("tests", {}).items()
-                                   if type(count) is int and count > 0 and layer in LAYERS]
-                    for entry in catalog}
+        query, params = full_submission_query(catalog)
         result = {entry["id"]: {"attempted_users": 0, "solved_users": 0,
                                  "total_submissions": 0, "accepted_submissions": 0,
                                  "failed_submissions": 0, "acceptance_rate": None}
                   for entry in catalog}
         with self._connect() as conn:
-            rows = conn.execute("""
-                WITH candidates AS (
-                    SELECT problem_id,user_id,accepted,
-                           CASE WHEN json_valid(report_json) THEN report_json ELSE '{}' END AS report
-                    FROM practice_runs
-                )
-                SELECT r.problem_id, COUNT(DISTINCT r.user_id) AS attempted_users,
-                       COUNT(DISTINCT CASE WHEN r.accepted=1 THEN r.user_id END) AS solved_users,
+            rows = conn.execute(query + """
+                SELECT problem_id, COUNT(DISTINCT user_id) AS attempted_users,
+                       COUNT(DISTINCT CASE WHEN accepted=1 THEN user_id END) AS solved_users,
                        COUNT(*) AS total_submissions,
-                       SUM(CASE WHEN r.accepted=1 THEN 1 ELSE 0 END) AS accepted_submissions
-                FROM json_each(?) AS specification
-                JOIN candidates r ON r.problem_id=specification.key
-                WHERE json_array_length(specification.value)>0
-                  AND json_extract(r.report,'$.problem')=r.problem_id
-                  AND json_type(r.report,'$.layers')='array'
-                  AND (json_type(r.report,'$.mutation') IS NULL OR json_type(r.report,'$.mutation')='null')
-                  AND NOT EXISTS (
-                      SELECT 1 FROM json_each(specification.value) AS required_layer
-                      WHERE NOT EXISTS (
-                          SELECT 1 FROM json_each(r.report,'$.layers') AS selected_layer
-                          WHERE selected_layer.type='text' AND selected_layer.value=required_layer.value
-                      )
-                  )
-                GROUP BY r.problem_id
-            """, (json.dumps(required),)).fetchall()
+                       SUM(CASE WHEN accepted=1 THEN 1 ELSE 0 END) AS accepted_submissions
+                FROM full_submissions GROUP BY problem_id
+            """, params).fetchall()
         for row in rows:
             total, accepted = row["total_submissions"], row["accepted_submissions"]
             result[row["problem_id"]] = {"attempted_users": row["attempted_users"],

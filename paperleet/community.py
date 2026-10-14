@@ -253,6 +253,11 @@ class CommunityService:
             counts[label] = db.execute(f"SELECT COUNT(*) FROM {table} WHERE {field} = ?", (uid,)).fetchone()[0]
         for label, kind in (("likes", "like"), ("reposts", "repost")):
             counts[label] = db.execute("SELECT COUNT(*) FROM community_reactions WHERE user_id = ? AND kind = ?", (uid, kind)).fetchone()[0]
+            counts[label + "_received"] = db.execute("""
+                SELECT COUNT(*) FROM community_reactions r
+                JOIN community_posts p ON p.id=r.post_id
+                WHERE p.user_id=? AND r.user_id!=p.user_id AND r.kind=?
+            """, (uid, kind)).fetchone()[0]
         result["counts"] = counts
         result["viewer"] = self._relationship(db, uid, viewer_id)
         return result
@@ -264,6 +269,16 @@ class CommunityService:
     def profile(self, username, viewer_id=None):
         with self.connection() as db:
             return self._profile(db, self._by_username(db, username), viewer_id)
+
+    def practice_progress(self, username, viewer_id=None, *, year=None, timezone_name="UTC"):
+        from .practice_progress import profile_progress
+        with self.connection() as db:
+            # The visibility check and data read share one consistent snapshot.
+            db.execute("BEGIN")
+            user = self._by_username(db, username)
+            if not user["show_progress"] and viewer_id != user["id"]:
+                return {"visible": False}
+            return profile_progress(db, user["id"], year=year, timezone_name=timezone_name)
 
     def follow(self, user_id, target_username, active):
         if not isinstance(active, bool):

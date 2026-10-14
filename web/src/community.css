@@ -1368,3 +1368,66 @@
   flex-shrink: 0;
   font-weight: 400;
 }
+
+/* Member profiles: identity and community on the left; learning history on the right. */
+.social-page.profile-page { max-width: 1360px; }
+.profile-dashboard { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 24px; align-items: start; }
+.profile-sidebar { display: grid; gap: 20px; min-width: 0; }
+.profile-main { display: grid; gap: 26px; min-width: 0; }
+.profile-sidebar .social-panel { border-radius: 12px; }
+.profile-sidebar .profile-header-inner { display: flex; flex-direction: column; padding: 25px 22px 21px; gap: 15px; }
+.profile-sidebar .profile-header-inner > .social-avatar { margin: 0; border: 0; width: 72px !important; height: 72px !important; }
+.profile-sidebar .profile-primary { width: 100%; }
+.profile-sidebar .profile-primary h1 { font-size: 23px; margin: 0 0 1px; line-height: 1.4; }
+.profile-sidebar .profile-facts { flex-direction: column; align-items: flex-start; gap: 9px; }
+.profile-sidebar .profile-bio { font-size: 14px; margin: 13px 0 0; }
+.profile-sidebar .profile-edit { width: 100%; margin: 0; font-size: 13px; justify-content: center; }
+.profile-sidebar .profile-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 22px; padding: 17px 0 20px; gap: 15px; }
+.profile-sidebar .profile-stats button { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; font-size: 12px; }
+.profile-sidebar .profile-stats b { font-size: 22px; font-weight: 550; }
+.profile-community-summary { padding: 22px; }
+.profile-community-summary h2, .profile-community-content > h2 { font-size: 16px; font-weight: 550; line-height: 1.5; margin: 0; }
+.profile-community-summary dl { display: grid; gap: 18px; margin: 22px 0 0; }
+.profile-community-summary dl > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; }
+.profile-community-summary dt { display: flex; align-items: center; gap: 9px; color: var(--text-secondary); }
+.profile-community-summary dt svg { color: var(--green); }
+.profile-community-summary dl > div:nth-child(2) svg { color: var(--chart-2); }
+.profile-community-summary dl > div:nth-child(3) svg { color: #df828e; }
+.profile-community-summary dl > div:nth-child(4) svg { color: var(--accent); }
+.profile-community-summary dd { margin: 0; font-weight: 550; font-size: 15px; }
+.profile-community-summary dd button { padding: 0 2px; color: var(--text); }
+.profile-community-summary dd button:hover { color: var(--accent); }
+.profile-community-summary > a { display: inline-flex; align-items: center; gap: 6px; margin-top: 23px; color: var(--text-secondary); font-size: 12px; }
+.profile-community-summary > a:hover { color: var(--accent); }
+.profile-community-content { min-width: 0; }
+.profile-community-content > h2 { margin-bottom: 15px; }
+.profile-community-content .profile-tabs { margin: 0 0 15px; gap: 22px; overflow-x: auto; scrollbar-width: thin; }
+.profile-community-content .profile-tabs button { flex-shrink: 0; white-space: nowrap; font-size: 13px; padding: 0 0 13px; }
+.profile-community-content .profile-activity { border-radius: 12px; }
+@media (max-width: 1100px) and (min-width: 901px) {
+  .profile-dashboard { grid-template-columns: 215px minmax(0, 1fr); gap: 20px; }
+  .profile-sidebar .profile-header-inner, .profile-community-summary { padding: 21px 18px; }
+  .profile-sidebar .profile-stats { margin: 0 18px; }
+}
+@media (max-width: 900px) {
+  .profile-dashboard { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .profile-sidebar { grid-template-columns: minmax(0, 1.4fr) minmax(230px, 1fr); gap: 20px; align-items: start; }
+}
+@media (max-width: 600px) {
+  .profile-sidebar { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .profile-sidebar .profile-header-inner { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 16px; padding: 22px 20px 17px; }
+  .profile-sidebar .profile-header-inner > .social-avatar { width: 64px !important; height: 64px !important; }
+  .profile-sidebar .profile-primary { grid-column: 2; }
+  .profile-sidebar .profile-primary h1 { font-size: 22px; }
+  .profile-sidebar .profile-facts { gap: 6px; }
+  .profile-sidebar .profile-edit { grid-column: 1 / -1; }
+  .profile-sidebar .profile-stats { display: flex; gap: 36px; margin: 0 20px; padding: 14px 0 17px; }
+  .profile-sidebar .profile-stats button { flex-direction: row; align-items: center; gap: 8px; }
+  .profile-community-summary { padding: 19px 20px; }
+  .profile-community-summary dl { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 25px; gap: 17px 25px; margin-top: 17px; }
+  .profile-community-summary dt { font-size: 12px; gap: 6px; }
+  .profile-community-summary > a { margin-top: 18px; }
+  .profile-main { gap: 22px; }
+  .profile-community-content .profile-tabs { gap: 19px; }
+  .profile-community-content .profile-tabs button { font-size: 13px; }
+}
