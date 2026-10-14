@@ -9,6 +9,8 @@ import type { Category, Paper, Problem, Saved } from "./types";
 import { paperCollections, papersInCollection } from "./paperCollections";
 import { eligibleUnattemptedProblems, pickRandomUnattemptedProblem } from "./randomProblem";
 import CollectionArtwork from "./CollectionArtwork";
+import { getProblemStats, ProblemStatsSummary } from "./ProblemStats";
+import type { ProblemStatsMap } from "./ProblemStats";
 
 type Practice = { problems: Problem[]; saved: Record<string, Saved> };
 export function paperModules(paper: Paper, problems: Problem[]) {
@@ -185,7 +187,7 @@ export function PaperLibrary({ papers, categories, problems, saved, collectionId
   </main>;
 }
 
-export function PaperDetail({ paper, problems, saved }: Practice & { paper: Paper; onGuide: () => void }) {
+export function PaperDetail({ paper, problems, saved, stats }: Practice & { paper: Paper; onGuide: () => void; stats?: ProblemStatsMap }) {
   const { t, locale } = useI18n();
   const modules = paperModules(paper, problems);
   const progress = paperProgress(paper, { problems, saved });
@@ -211,6 +213,7 @@ export function PaperDetail({ paper, problems, saved }: Practice & { paper: Pape
               <div className="module-card-tags"><span className={`difficulty ${problem.difficulty}`}>{({ E: "Easy", M: "Medium", H: "Hard" } as Record<string, string>)[problem.difficulty] || problem.difficulty}</span><span>{problem.estimated_minutes || 25} min</span><span>{problem.module.optional ? t("可选拓展", "Optional extension") : t("核心模块", "Core module")}</span>{state === "done" && <span className="accepted">{t("已通过", "Solved")}</span>}</div>
               <div className="module-functions"><span>{t("需要实现", "Implement")}</span>{problem.module.required_functions.map((name) => <code key={name}>{name}</code>)}</div>
               {!!problem.module.provided_functions.length && <div className="module-functions provided-functions"><span>{t("已提供", "Provided")}</span>{problem.module.provided_functions.map((name) => <code key={name}>{name}</code>)}</div>}
+              <ProblemStatsSummary stats={getProblemStats(stats, problem.id)} />
             </a>;
           })}
         </section>

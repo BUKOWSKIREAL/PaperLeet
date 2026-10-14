@@ -28,6 +28,9 @@ def dispatch(handler, method, payload=None):
     parsed = urlsplit(handler.path)
     path = parsed.path
     try:
+        if path == "/api/practice/stats" and method == "GET":
+            accounts, _ = social_api.services()
+            return handler.respond(200, {"available": True, "stats": PracticeService(accounts.db_path).problem_stats()})
         user = current_user(handler)
         if path == "/api/submissions/capabilities" and method == "GET":
             return handler.respond(200, {"mode": "hosted", "can_submit": bool(user),

@@ -1,5 +1,6 @@
 import copy
 import hashlib
+import json
 import sqlite3
 
 import pytest
@@ -185,3 +186,100 @@ def test_inputs_are_bounded_and_unknown_or_inactive_users_are_denied(practice):
         service.save_draft(alice, entry["id"], "code")
     with pytest.raises(PermissionError):
         service.workspace(alice)
+
+
+def test_problem_stats_count_distinct_people_and_every_full_submission(practice):
+    service, alice, bob, entry = practice
+    empty = {"attempted_users": 0, "solved_users": 0, "total_submissions": 0,
+             "accepted_submissions": 0, "failed_submissions": 0, "acceptance_rate": None}
+    assert service.problem_stats() == {entry["id"]: empty}
+    service.save_draft(bob, entry["id"], "drafts do not count")
+    for _ in range(2):
+        service.save_run(alice, entry, "correct", report())
+    service.save_run(alice, entry, "later failure", report(failed=True))
+    service.save_run(bob, entry, "wrong", report(failed=True))
+    assert service.problem_stats()[entry["id"]] == {
+        "attempted_users": 2, "solved_users": 1, "total_submissions": 4,
+        "accepted_submissions": 2, "failed_submissions": 2, "acceptance_rate": 50.0,
+    }
+    # T3 is not required for this module; selected required layers are a full run.
+    service.save_run(bob, entry, "correct", report(layers=["T0", "T1", "T2"]))
+    assert service.problem_stats()[entry["id"]] == {
+        "attempted_users": 2, "solved_users": 2, "total_submissions": 5,
+        "accepted_submissions": 3, "failed_submissions": 2, "acceptance_rate": 60.0,
+    }
+
+
+def test_problem_stats_exclude_partial_checks_and_mutations_but_count_full_runtime_failures(practice):
+    service, alice, bob, entry = practice
+    service.save_run(alice, entry, "partial success", report(layers=["T0"]))
+    service.save_run(alice, entry, "partial failure", report(layers=["T0"], failed=True))
+    for mutation in ({}, {"mutant": ["test_T0"]}):
+        candidate = report()
+        candidate["mutation"] = mutation
+        service.save_run(alice, entry, "mutation run", candidate)
+    assert service.problem_stats()[entry["id"]]["total_submissions"] == 0
+    failed = report(layers=["T3"])
+    failed.update(layers=["T0", "T1", "T2", "T3"], error="RuntimeError before the first test completed")
+    service.save_run(bob, entry, "crashing source", failed)
+    assert service.problem_stats()[entry["id"]] == {
+        "attempted_users": 1, "solved_users": 0, "total_submissions": 1,
+        "accepted_submissions": 0, "failed_submissions": 1, "acceptance_rate": 0.0,
+    }
+
+
+def test_problem_stats_include_historical_records_without_rewriting_or_reading_private_code(practice, monkeypatch):
+    from contextlib import contextmanager
+    service, alice, bob, entry = practice
+    full, partial = report(), report(layers=["T0"])
+    with sqlite3.connect(service.db_path) as conn:
+        conn.execute("DROP INDEX practice_run_problem_stats")
+        history = [("historical-full", alice, entry["id"], "private historical source", json.dumps(full), "old-hash", 1, "2026-01-01"),
+                   ("historical-partial", bob, entry["id"], "private partial source", json.dumps(partial), "old-hash", 0, "2026-01-02"),
+                   ("malformed-legacy", alice, entry["id"], "unread source", "not json", "old-hash", 0, "2026-01-03"),
+                   ("legacy-mutation", bob, entry["id"], "private mutant source", json.dumps({**full, "mutation": {}}), "old-hash", 1, "2026-01-04"),
+                   ("invalid-mutation", bob, entry["id"], "private source", json.dumps({**full, "mutation": False}), "old-hash", 1, "2026-01-05")]
+        conn.executemany("INSERT INTO practice_runs VALUES (?,?,?,?,?,?,?,?)", history)
+    restarted = PracticeService(service.db_path)
+    original_connection = restarted._connect
+
+    @contextmanager
+    def privacy_guard():
+        with original_connection() as conn:
+            def authorize(action, table, column, database, context):
+                if action == sqlite3.SQLITE_READ and ((table == "practice_runs" and column == "code")
+                                                     or table in ("accounts_private", "account_sessions", "test_accounts")):
+                    return sqlite3.SQLITE_DENY
+                return sqlite3.SQLITE_OK
+            conn.set_authorizer(authorize)
+            yield conn
+
+    monkeypatch.setattr(restarted, "_connect", privacy_guard)
+    assert restarted.problem_stats()[entry["id"]] == {
+        "attempted_users": 1, "solved_users": 1, "total_submissions": 1,
+        "accepted_submissions": 1, "failed_submissions": 0, "acceptance_rate": 100.0,
+    }
+    with sqlite3.connect(service.db_path) as conn:
+        assert conn.execute("SELECT * FROM practice_runs ORDER BY created_at").fetchall() == history
+        assert conn.execute("SELECT name FROM sqlite_master WHERE type='index' AND name='practice_run_problem_stats'").fetchone()
+
+
+def test_concurrent_full_submissions_have_consistent_aggregate_counts(practice):
+    from concurrent.futures import ThreadPoolExecutor
+    service, alice, bob, entry = practice
+
+    def submit(index):
+        return service.save_run(alice if index % 2 == 0 else bob, entry,
+                                f"source {index}", report(failed=index % 4 >= 2))
+
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        futures = [pool.submit(submit, index) for index in range(12)]
+        snapshot = service.problem_stats()[entry["id"]]
+        assert snapshot["total_submissions"] == snapshot["accepted_submissions"] + snapshot["failed_submissions"]
+        assert snapshot["solved_users"] <= snapshot["attempted_users"] <= 2
+        for future in futures:
+            future.result()
+    assert PracticeService(service.db_path).problem_stats()[entry["id"]] == {
+        "attempted_users": 2, "solved_users": 2, "total_submissions": 12,
+        "accepted_submissions": 6, "failed_submissions": 6, "acceptance_rate": 50.0,
+    }

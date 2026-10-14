@@ -43,6 +43,7 @@ import Account from "./Account";
 import { AccountNav, AccountProvider, useAccount } from "./social";
 import { usePracticeWorkspace } from "./PracticeWorkspace";
 import Brand from "./Brand";
+import { getProblemStats, ProblemStats, useProblemStats } from "./ProblemStats";
 import "./community.css";
 
 const difficulty = (d: string) =>
@@ -354,6 +355,7 @@ function Workspace() {
     [guide, setGuide] = useState(false),
     [font, setFont] = useState(initialEditorFontSize),
     [theme, setTheme] = useState<Theme>(initialTheme);
+  const { stats: problemStats, refresh: refreshProblemStats, loading: statsLoading } = useProblemStats(id);
   const sourceProblem = problems.find(
     (p) => p.id === id || String(p.number) === id,
   );
@@ -482,6 +484,7 @@ function Workspace() {
         throw Error(
           t("判题服务返回了无效结果", "The judge returned an invalid result"),
         );
+      void refreshProblemStats();
       if (!practice.owns(runOwner)) return;
       practice.applyReport(problem, report, runOwner);
       setTab("tests");
@@ -663,6 +666,7 @@ function Workspace() {
             paper={selectedPaper}
             problems={problems}
             saved={saved}
+            stats={problemStats}
             onGuide={() => setGuide(true)}
           />
         ) : (
@@ -850,6 +854,7 @@ function Workspace() {
                           </a>
                         )}
                       </div>
+                      <ProblemStats stats={getProblemStats(problemStats, problem.id)} loading={statsLoading} />
                     </div>
                     <a
                       className="paper-card"

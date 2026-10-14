@@ -3,7 +3,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import threading
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlsplit
 
 from paperleet.catalog import problem, root, workspace_path
 from paperleet.judge.runner import normalize_layers, run_problem
@@ -56,6 +56,8 @@ class JudgeHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if not self.valid_origin():
             return self.respond(403, {"error": "This request origin is not allowed"})
+        if not hosted() and urlsplit(self.path).path == "/api/practice/stats":
+            return self.respond(200, {"available": False, "stats": {}})
         if self.path == "/api/health":
             result = {"ok": True, "mode": "hosted" if hosted() else "local", "version": "0.1.0",
                       "auth_required": hosted(), "judge": {"ready": True}}

@@ -15,6 +15,7 @@ The default **local development service** runs practice code on your machine and
 | Country or region | Optional and hidden by default; user controls its switch |
 | Full email, provider identity, session data | Private; excluded from public API projections |
 | Learning progress | Browser-local in development; private per-user storage when hosted; not displayed on public profiles |
+| Problem statistics | Public aggregate participants, solvers, full submissions, accepted/failed counts, and acceptance rate; no user identities, code, or individual reports |
 | Test-account label | Always public for administrator-created test identities; no verified institution is claimed |
 
 Avatars currently use generated initials and a configurable color. Uploading profile photos is not implemented. The country field is a user-entered ISO country or region code; the application does not look up, infer, or publish an IP-derived location. The backend uses the same public-user projection on profiles, posts, replies, and follow lists, so turning off institution visibility also removes it from those author cards.

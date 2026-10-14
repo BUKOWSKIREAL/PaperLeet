@@ -20,7 +20,7 @@ PUBLIC_ORIGIN = "https://paperleet.test"
 @pytest.fixture
 def hosted_api_server(tmp_path, monkeypatch):
     settings = {
-        "PAPERLEET_MODE": "hosted", "PAPERLEET_PUBLIC_URL": PUBLIC_ORIGIN,
+        "PAPERLEET_MODE": "hosted", "PAPERLEET_AUTH_MODE": "institutional", "PAPERLEET_PUBLIC_URL": PUBLIC_ORIGIN,
         "PAPERLEET_DATA_DIR": str(tmp_path / "persistent-data"),
         "PAPERLEET_INVITE_EMAILS": "alice@mit.edu,bob@mit.edu,admin@mit.edu,invited@gmail.com",
         "PAPERLEET_ADMIN_EMAILS": "admin@mit.edu",
@@ -56,6 +56,11 @@ def hosted_api_server(tmp_path, monkeypatch):
         if endpoint == "/health":
             return {"ready": remote_state["ready"]}
         assert endpoint == "/run"
+        if payload["code"] == "runtime_error":
+            return {"problem": payload["problem"], "layers": payload["layers"], "tests": [],
+                    "source_sha256": hashlib.sha256(payload["code"].encode()).hexdigest(),
+                    "created_at": "2026-10-13T00:00:00Z", "passed": False,
+                    "error": "The implementation raised a runtime error before completing any tests"}
         entry = problem(payload["problem"])
         tests = []
         for (name, layer), count in judge_client.expected_tests(entry, payload["layers"]).items():
@@ -276,3 +281,49 @@ def test_public_health_reports_hosted_sandbox_readiness_without_exposing_credent
     assert api("health")[1]["judge"]["ready"] is False
     monkeypatch.delenv("PAPERLEET_JUDGE_TOKEN")
     assert api("health")[1]["judge"]["ready"] is False
+
+
+def test_public_problem_stats_return_real_zeroes_and_no_user_data(hosted_api_server):
+    api = hosted_api_server
+    status, data, _ = api("practice/stats", cookie="paperleet_session=invalid", origin=None)
+    assert status == 200 and data["available"] is True
+    assert "rl/gae" in data["stats"]
+    expected_keys = {"attempted_users", "solved_users", "total_submissions",
+                     "accepted_submissions", "failed_submissions", "acceptance_rate"}
+    for stats in data["stats"].values():
+        assert set(stats) == expected_keys
+        assert stats["acceptance_rate"] is None
+        assert all(value == 0 for key, value in stats.items() if key != "acceptance_rate")
+    assert api.remote_calls == [] and api.hosted_calls == []
+    assert api("practice/stats", origin="https://attacker.example")[0] == 403
+    assert api("practice/stats", {"accepted_submissions": 100})[0] == 404
+
+
+def test_public_problem_stats_refresh_after_full_runs_and_exclude_infrastructure_errors(hosted_api_server):
+    api = hosted_api_server
+    alice, alice_cookie = sign_in(api, "alice")
+    bob, bob_cookie = sign_in(api, "bob")
+
+    def run(user, cookie, code, layers=None):
+        body = {"problem": "rl/gae", "code": code, "expected_user_id": user["id"]}
+        if layers is not None:
+            body["layers"] = layers
+        return api("test", body, cookie)
+
+    assert run(alice, alice_cookie, "private partial source", ["T0"])[0] == 200
+    assert api("practice/stats")[1]["stats"]["rl/gae"]["total_submissions"] == 0
+    assert run(alice, alice_cookie, "private correct source")[0] == 200
+    assert run(alice, alice_cookie, "private repeated correct source")[0] == 200
+    assert run(bob, bob_cookie, "private broken source")[0] == 200
+    assert run(bob, bob_cookie, "runtime_error")[0] == 200
+    public = api("practice/stats")[1]
+    assert public["stats"]["rl/gae"] == {
+        "attempted_users": 2, "solved_users": 1, "total_submissions": 4,
+        "accepted_submissions": 2, "failed_submissions": 2, "acceptance_rate": 50.0,
+    }
+    encoded = json.dumps(public)
+    for private_value in (alice["id"], bob["id"], alice["email"], bob["email"], "private correct source", "runtime_error"):
+        assert private_value not in encoded
+    api.remote_state["unavailable"] = True
+    assert run(bob, bob_cookie, "no judge available")[0] == 503
+    assert api("practice/stats")[1] == public

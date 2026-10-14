@@ -167,3 +167,9 @@ def test_secure_cookie_option(monkeypatch):
     monkeypatch.setenv("PAPERLEET_SECURE_COOKIES", "1")
     assert "Secure" in social_api.session_cookie("test")
     assert "Secure" in social_api.session_cookie()
+
+
+def test_local_problem_statistics_are_explicitly_unavailable(api, monkeypatch):
+    monkeypatch.setenv("PAPERLEET_MODE", "local")
+    assert api("practice/stats")[0:2] == (200, {"available": False, "stats": {}})
+    assert api("practice/stats?problem=rl%2Fgae")[1] == {"available": False, "stats": {}}
