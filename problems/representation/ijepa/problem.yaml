@@ -1,0 +1,93 @@
+id: representation/ijepa
+number: 57
+title: I-JEPA 掩码潜在目标与 EMA
+title_en: I-JEPA Masked Latent Targets and EMA
+paper:
+  title: Self-Supervised Learning from Images with a Joint-Embedding Predictive Architecture
+  authors: Mahmoud Assran, Quentin Duval, Ishan Misra, Piotr Bojanowski, Pascal Vincent,
+    Michael Rabbat, Yann LeCun, Nicolas Ballas
+  venue: CVPR 2023
+  arxiv: '2301.08243'
+  url: https://arxiv.org/abs/2301.08243
+  anchors:
+  - 'Section 3: target encoder, joint-embedding prediction and exponential moving
+    average'
+  - 'Official src/train.py: layer-normalized target patches and smooth_l1_loss'
+paper_id: i-jepa
+difficulty: M
+functions:
+- name: masked_targets
+  signature: 'masked_targets(features: Tensor, masks: list[Tensor], num_context: int
+    = 1, eps: float = 1e-5) -> Tensor'
+- name: masked_prediction_loss
+  signature: 'masked_prediction_loss(prediction: Tensor, target: Tensor) -> Tensor'
+- name: ema_update
+  signature: 'ema_update(target: Tensor, online: Tensor, momentum: float) -> Tensor'
+type: implement
+parent: null
+module:
+  goal: 提取冻结的目标块，训练潜在预测并维护动量目标参数。
+  goal_en: Extract frozen target blocks, train latent predictions and maintain momentum
+    target parameters.
+  scope: 实现官方代码中的目标层归一化、掩码收集、smooth L1 和 EMA；给定目标特征与掩码，不实现 ViT 或掩码采样。
+  scope_en: Implement target layer normalization, masked extraction, smooth L1 and
+    EMA from the author code; target features and masks are supplied, without a ViT
+    or mask sampler.
+  required_functions:
+  - masked_targets
+  - masked_prediction_loss
+  - ema_update
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: CPU float32/float64; preserve dtype/device and all inputs
+  device: CPU; no pretrained weights or downloads
+  shape: features [B,N,D]; K masks, each int64 [B,M], same M; targets [K*C*B,M,D]
+    where C=num_context.
+  normalization: Per-token feature-dimension layer norm, population variance and eps
+    inside sqrt; no affine scale/bias.
+  ordering: Target block first, context second, batch third; replicate whole B-sized
+    batches for each context.
+  loss: 'Released author code convention: smooth L1, beta=1, mean over all entries.
+    The paper describes an average L2 distance.'
+  autograd: Target features and loss target are detached internally; prediction keeps
+    gradients. EMA returns a fresh detached tensor and mutates neither input.
+  ema: target_new=momentum*target_old+(1-momentum)*online; finite momentum in [0,1].
+tests:
+  T0: 2
+  T1: 2
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 35
+tags:
+- JEPA
+- Self-supervised Learning
+- Masked Prediction
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2301.08243
+  - https://github.com/facebookresearch/ijepa/blob/52c1ae95d05f743e000e8f10a1f3a79b10cff048/src/train.py
+  - https://github.com/facebookresearch/ijepa/blob/52c1ae95d05f743e000e8f10a1f3a79b10cff048/src/masks/utils.py
+  - https://github.com/facebookresearch/ijepa/blob/52c1ae95d05f743e000e8f10a1f3a79b10cff048/src/utils/tensors.py
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/abs/2301.08243
+  anchor: 'Section 3: target encoder, joint-embedding prediction and exponential moving
+    average; Official src/train.py: layer-normalized target patches and smooth_l1_loss'
+  adaptation: Fit predictions to synthetic target blocks and separately track fixed-online
+    EMA; no image pretraining or reproduced paper benchmark.
+mutants:
+- id: m1_wrong_norm_axis
+  bug: Normalize across patches as well as features.
+- id: m2_trainable_targets
+  bug: Target features and loss targets incorrectly retain their gradient graph.
+- id: m3_squared_loss
+  bug: Use MSE instead of the released smooth-L1 training objective.
+- id: m4_reverse_momentum
+  bug: Swap the old target and online EMA weights.

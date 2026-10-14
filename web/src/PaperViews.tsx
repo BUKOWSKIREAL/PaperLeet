@@ -45,9 +45,10 @@ const categoryLabels: Record<string, [string, string]> = {
   architecture: ["架构与推理", "Architecture"],
   optimization: ["优化算法", "Optimization"],
   representation: ["表征学习", "Representation"],
+  "world-models": ["世界模型", "World Models"],
 };
 
-const listIcons = { "llm-basics": BookOpen, rl: Network, diffusion: Waves, "post-training": SlidersHorizontal, "visual-generation": Layers3 };
+const listIcons = { "llm-basics": BookOpen, rl: Network, diffusion: Waves, "post-training": SlidersHorizontal, "visual-generation": Layers3, "jepa-world-models": Network };
 
 export function PaperLibrary({ papers, categories, problems, saved, listId }: Practice & { papers: Paper[]; categories: Category[]; onGuide: () => void; listId?: string }) {
   const { t } = useI18n();

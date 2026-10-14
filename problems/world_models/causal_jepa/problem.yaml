@@ -1,0 +1,90 @@
+id: world_models/causal_jepa
+number: 60
+title: Causal-JEPA 对象轨迹遮蔽
+title_en: Causal-JEPA Object Trajectory Masking
+paper:
+  title: 'Causal-JEPA: Learning World Models through Object-Level Latent Masking'
+  authors: Heejeong Nam, Quentin Le Lidec, Lucas Maes, Yann LeCun, Randall Balestriero
+  venue: arXiv 2026
+  arxiv: '2602.11389'
+  url: https://arxiv.org/abs/2602.11389
+  anchors:
+  - 'Section 4.2, Eq. (3): projected first-frame identity anchors and time embeddings'
+  - 'Section 4.2, Eqs. (5)-(6): masked-history and future prediction objectives'
+paper_id: causal-jepa
+difficulty: M
+functions:
+- name: object_mask_inputs
+  signature: 'object_mask_inputs(history: Tensor, masked_slots: Tensor, anchor_projection: Tensor, time_embeddings:
+    Tensor, mask_token: Tensor) -> tuple[Tensor, Tensor]'
+- name: masked_prediction_loss
+  signature: 'masked_prediction_loss(predictions: Tensor, targets: Tensor, history_length: int, masked_slots: Tensor)
+    -> tuple[Tensor, Tensor, Tensor]'
+type: implement
+parent: null
+module:
+  goal: 沿时间遮蔽对象轨迹、保留首帧身份锚点，并实现冻结目标的历史与未来联合预测损失。
+  goal_en: Mask object trajectories across time, preserve first-frame identity anchors, and implement masked-history
+    plus future prediction against frozen targets.
+  scope: 提供对象 slot、投影矩阵与时间嵌入；实现输入组装和损失，不训练视觉编码器或完整 Transformer。
+  scope_en: Object slots, projection weights and time embeddings are supplied; implement input assembly and losses
+    without training an image encoder or full transformer.
+  required_functions:
+  - object_mask_inputs
+  - masked_prediction_loss
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: CPU float32/float64; preserve dtype/device and do not mutate inputs
+  device: CPU; no downloads or pretrained weights
+  shape: history (B,H,S,D), bool masked_slots (B,S), projection (D,D), time (T,D), mask_token (D,); T>H>=1.
+  inputs: Visible tokens = history + time. Masked tokens = history[:,0] @ projection.T + time + mask_token; first
+    frame always visible, all future object tokens masked.
+  objective: Mean squared error on selected history tokens excluding time0 + independently mean-normalized MSE on
+    every future token. Empty history selection contributes differentiable zero.
+  autograd: Detach target tensors in loss. Input assembly remains differentiable through visible inputs, anchors
+    and supplied parameters; frozen encoder is the caller boundary.
+  mask: Batch-specific selections are a deterministic teaching extension of the official shared slot selection.
+    True means masked/target, not visible. Auxiliary action/proprioception slots are excluded from this object-only
+    interface.
+  paper_code_difference: Follow paper Eq. (5) excluding visible time0; the released CLEVRER training loop also supervises
+    selected slots at time0. Separate component means and detached targets follow code; anchor exclusion follows
+    the paper indicator.
+tests:
+  T0: 2
+  T1: 2
+  T2: 3
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 30
+tags:
+- JEPA
+- World Models
+- Latent Prediction
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2602.11389
+  - https://arxiv.org/html/2602.11389v2
+  - https://github.com/galilai-group/cjepa/blob/412337d0210bf98cee2ca90c3586ab2ea7ca519e/src/cjepa_predictor.py
+  - https://github.com/galilai-group/cjepa/blob/412337d0210bf98cee2ca90c3586ab2ea7ca519e/src/train/train_causalwm_from_clevrer_slot.py
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/abs/2602.11389
+  anchor: 'Section 4.2, Eq. (3): projected first-frame identity anchors and time embeddings; Section 4.2, Eqs. (5)-(6):
+    masked-history and future prediction objectives'
+  adaptation: Sixteen synthetic coupled-object trajectories use visible motion to reconstruct a masked object. A
+    supplied linear probe replaces the transformer; no causal identification or CLEVRER score is claimed.
+mutants:
+- id: m1_hide_anchor
+  bug: 错误遮蔽首帧身份锚点
+- id: m2_leak_history
+  bug: 给被遮蔽对象保留真实历史
+- id: m3_train_target
+  bug: 冻结视觉编码器目标错误地保留梯度
+- id: m4_visible_history_loss
+  bug: 历史损失错误地包含可见对象

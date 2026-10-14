@@ -41,6 +41,12 @@ export const paperLists: PaperList[] = [
     paperIds: ["lora", "qlora", "dpo", "gkd", "opsd", "sdpo", "distillm-2"],
   },
   {
+    id: "jepa-world-models",
+    name: "JEPA / 世界模型",
+    name_en: "JEPA / World Models",
+    paperIds: ["vicreg", "i-jepa", "lejepa", "visreg", "lewm", "causal-jepa"],
+  },
+  {
     id: "visual-generation",
     name: "视觉生成",
     name_en: "Visual Generation",

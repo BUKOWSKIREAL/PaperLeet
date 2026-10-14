@@ -455,3 +455,69 @@ papers:
     scope: 原始一阶与二阶矩的 EMA、协方差恢复、可微 Fréchet 距离和多表征损失归一化。
     scope_en: EMA of raw first and second moments, covariance recovery, differentiable Fréchet distance, and multi-representation loss normalization.
     module_ids: [diffusion/fd_population, diffusion/fd_loss]
+  - id: vicreg
+    number: 41
+    category: representation
+    short_title: VICReg
+    year: 2022
+    tags: [JEPA, Self-Supervised Learning, Variance, Covariance, Regularization]
+    summary: 用方差、视图一致性与去相关约束学习表征。
+    summary_en: Learn representations with variance, view invariance, and decorrelation constraints.
+    scope: 三项损失的批统计、权重与梯度。
+    scope_en: Batch statistics, weights, and gradients of the three loss terms.
+    module_ids: [representation/vicreg]
+  - id: lejepa
+    number: 42
+    category: representation
+    short_title: LeJEPA
+    year: 2025
+    tags: [JEPA, SIGReg, Gaussianity, Random Projections, Regularization]
+    summary: 用随机投影上的高斯性约束学习各向同性表征。
+    summary_en: Learn isotropic representations with Gaussianity constraints on random projections.
+    scope: SIGReg 的特征函数检验、数值积分与切片聚合。
+    scope_en: SIGReg characteristic-function statistics, numerical integration, and slice aggregation.
+    module_ids: [representation/sigreg]
+  - id: visreg
+    number: 43
+    category: representation
+    short_title: VISReg
+    year: 2026
+    tags: [JEPA, Sliced Wasserstein, Gaussianity, Regularization]
+    summary: 分离表征的尺度与分布形状，用切片匹配约束高斯性。
+    summary_en: Separate representation scale and distribution shape with sliced Gaussian matching.
+    scope: 尺度、切片形状、中心与多视图一致性损失。
+    scope_en: Scale, sliced shape, centering, and multi-view invariance losses.
+    module_ids: [representation/visreg]
+  - id: i-jepa
+    number: 44
+    category: representation
+    short_title: I-JEPA
+    year: 2023
+    tags: [JEPA, Masked Prediction, Stop Gradient, EMA Teacher]
+    summary: 从上下文预测被遮挡图像块的教师表征。
+    summary_en: Predict teacher representations of masked image blocks from context.
+    scope: 目标块提取、预测损失与 EMA 教师更新。
+    scope_en: Target-block gathering, prediction loss, and EMA teacher updates.
+    module_ids: [representation/ijepa]
+  - id: lewm
+    number: 45
+    category: world-models
+    short_title: LeWorldModel
+    year: 2026
+    tags: [JEPA, World Models, Action Conditioning, Planning, CEM]
+    summary: 联合学习动作条件潜空间预测，并用潜空间 rollout 规划动作。
+    summary_en: Jointly learn action-conditioned latent predictions and plan actions with latent rollouts.
+    scope: 可微预测与正则目标、自回归 rollout、终点代价和 CEM 精英重拟合。
+    scope_en: Differentiable prediction and regularization, autoregressive rollout, terminal cost, and CEM elite refitting.
+    module_ids: [world_models/lewm_prediction, world_models/lewm_planning]
+  - id: causal-jepa
+    number: 46
+    category: world-models
+    short_title: Causal-JEPA
+    year: 2026
+    tags: [JEPA, World Models, Object-centric Learning, Masked Prediction]
+    summary: 遮挡对象的潜空间轨迹，让模型从其他对象推断其动态。
+    summary_en: Mask object-level latent trajectories to infer their dynamics from other objects.
+    scope: 保留初始身份锚点的对象遮挡与历史、未来预测损失。
+    scope_en: Object masking with initial identity anchors and history/future prediction losses.
+    module_ids: [world_models/causal_jepa]

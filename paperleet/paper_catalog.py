@@ -13,6 +13,7 @@ CATEGORIES = (
     {"id": "architecture", "name": "架构与推理", "name_en": "Architecture & Inference"},
     {"id": "optimization", "name": "优化算法", "name_en": "Optimization"},
     {"id": "representation", "name": "表征学习", "name_en": "Representation Learning"},
+    {"id": "world-models", "name": "世界模型", "name_en": "World Models"},
     {"id": "community", "name": "社区精选", "name_en": "Community Selections"},
 )
 

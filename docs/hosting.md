@@ -2,7 +2,7 @@
 
 [English](hosting.md) | [简体中文](hosting.zh-CN.md)
 
-This deployment serves the paper library, accounts, community, and the 53 maintained practice modules. You still need a server and domain. For a beta without real registration, use [test accounts](test-accounts.md): set `PAPERLEET_AUTH_MODE=test` and create a login name and access code for each tester. Supabase and email configuration are only required for institutional sign-in.
+This deployment serves the paper library, accounts, community, and the 60 maintained practice modules. You still need a server and domain. For a beta without real registration, use [test accounts](test-accounts.md): set `PAPERLEET_AUTH_MODE=test` and create a login name and access code for each tester. Supabase and email configuration are only required for institutional sign-in.
 
 ## Server and architecture
 
@@ -71,7 +71,7 @@ curl --fail https://paperleet.yourdomain.com/api/health
 
 The health response should contain `"mode":"hosted"`, `"auth_required":true`, and `"judge":{"ready":true,...}`. Confirm the certificate, then test a real invited mailbox end to end: receive a code, sign in, run a module, and reopen its draft from another browser after signing into the same account. Test an uninvited address and a wrong-domain address too; neither should gain access. Do not use mocked accounts as evidence that SMTP works.
 
-If the judge is busy, the UI asks the user to retry; the beta uses bounded concurrency rather than a persistent job queue. Hosted judging supports the **53 maintained modules** only. It never falls back to running submitted Python inside the API container. Test assets and references are available inside workers, so accepted results are learning feedback, not cheat-proof competition scores.
+If the judge is busy, the UI asks the user to retry; the beta uses bounded concurrency rather than a persistent job queue. Hosted judging supports the **60 maintained modules** only. It never falls back to running submitted Python inside the API container. Test assets and references are available inside workers, so accepted results are learning feedback, not cheat-proof competition scores.
 
 Paper proposals are saved privately for their owner and administrators. Generation, validation, review, and publication remain an **offline maintainer workflow** during the beta. Generated community exercises are not accepted by the hosted judge. Public profiles currently show community activity; public learning-progress statistics are not implemented. Signed-in practice drafts and run history are stored privately on the server.
 

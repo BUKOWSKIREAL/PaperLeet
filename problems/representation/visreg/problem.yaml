@@ -1,0 +1,85 @@
+id: representation/visreg
+number: 56
+title: VISReg 尺度与分布形状正则
+title_en: VISReg Scale and Distribution Shape
+paper:
+  title: 'VISReg: Variance-Invariance-Sketching Regularization for JEPA training'
+  authors: Haiyu Wu, Randall Balestriero, Morgan Levine
+  venue: arXiv 2026
+  arxiv: '2606.02572'
+  url: https://arxiv.org/abs/2606.02572
+  anchors:
+  - 'Section 3.1, Eqs. (1)-(9): scale, shape, center and global-view invariance'
+  - 'Algorithm 1: population standard deviation, Gaussian quantiles, mean reductions'
+paper_id: visreg
+difficulty: M
+functions:
+- name: visreg_terms
+  signature: 'visreg_terms(z: Tensor, directions: Tensor, eps: float = 1e-4) -> tuple[Tensor,
+    Tensor, Tensor]'
+- name: view_invariance
+  signature: 'view_invariance(views: Tensor, num_global: int = 2) -> Tensor'
+type: implement
+parent: null
+module:
+  goal: 分离特征尺度、分布形状和视图一致性，并实现准确的梯度边界。
+  goal_en: Separate feature scale, distribution shape and view invariance with the
+    correct gradient boundaries.
+  scope: 实现论文正则项和全局视图均值一致性；给定投影方向和特征，不实现编码器或图像预训练。
+  scope_en: Implement the paper regularizer and global-view-mean invariance with supplied
+    directions and features; encoders and image pretraining are outside this module.
+  required_functions:
+  - visreg_terms
+  - view_invariance
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: CPU float32/float64; preserve dtype/device and all inputs
+  device: CPU; no pretrained weights or downloads
+  shape: z [N,D], N>=2; nonzero directions [D,K], K>=1; views [V,N,D], num_global
+    in [1,V].
+  statistics: Population standard deviation (correction=0), squared scale loss, mean
+    reductions as Algorithm 1. Gaussian quantiles i/(N+1).
+  normalization: Center first, divide by stopgrad(std)+eps using Eq. (2); normalize
+    supplied direction columns to unit length.
+  autograd: Gradients reach z and every view, including the global-view mean. Direction
+    tensors are constants; only shape normalization std is detached.
+  ties: Collapsed forward values are defined by eps; unique sorting gradients are
+    not asserted at tied projections.
+tests:
+  T0: 2
+  T1: 2
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 35
+tags:
+- JEPA
+- Self-supervised Learning
+- Regularization
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2606.02572
+  - https://arxiv.org/html/2606.02572v1#alg1
+  - https://github.com/HaiyuWu/visreg/blob/7e0a0bb3a4ee302d65678dcc9b85cb6ef718d356/README.md
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/abs/2606.02572
+  anchor: 'Section 3.1, Eqs. (1)-(9): scale, shape, center and global-view invariance;
+    Algorithm 1: population standard deviation, Gaussian quantiles, mean reductions'
+  adaptation: Optimize three synthetic 24-by-2 feature tables with deterministic projection
+    directions; not a reproduced paper benchmark.
+mutants:
+- id: m1_sample_std
+  bug: Mistaken sample standard deviation replaces population standard deviation.
+- id: m2_trainable_std
+  bug: Shape gradients incorrectly propagate through their normalization scale.
+- id: m3_unsorted_projection
+  bug: Sample order is wrongly used as quantile order.
+- id: m4_frozen_global_anchor
+  bug: The global-view mean is incorrectly detached.

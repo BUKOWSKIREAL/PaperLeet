@@ -1,0 +1,87 @@
+id: representation/sigreg
+number: 55
+title: LeJEPA 切片高斯正则 SIGReg
+title_en: LeJEPA Sliced Gaussian Regularization
+paper:
+  title: 'LeJEPA: Provable and Scalable Self-Supervised Learning Without the Heuristics'
+  authors: Randall Balestriero, Yann LeCun
+  venue: arXiv 2025
+  arxiv: '2511.08544'
+  url: https://arxiv.org/abs/2511.08544
+  anchors:
+  - 'Section 4.2.3: Epps-Pulley characteristic-function statistic'
+  - 'Section 5.1 and official MINIMAL.md: symmetric positive-grid quadrature'
+paper_id: lejepa
+difficulty: M
+functions:
+- name: epps_pulley
+  signature: 'epps_pulley(projected: Tensor, t: Tensor) -> Tensor'
+- name: sigreg_loss
+  signature: 'sigreg_loss(features: Tensor, directions: Tensor, t: Tensor) -> Tensor'
+type: implement
+parent: null
+module:
+  goal: 通过一维切片的经验特征函数约束标准高斯分布，并保留特征梯度。
+  goal_en: Match a standard Gaussian through sliced empirical characteristic functions while retaining feature
+    gradients.
+  scope: 给定单位投影方向与正半轴积分网格，实现 Epps-Pulley 统计量与切片平均；无需抽样方向、编码器、多视图预测或分布式通信。
+  scope_en: Given unit projection directions and a positive quadrature grid, implement Epps-Pulley statistics
+    and their slice mean. Direction sampling, encoders, multiview prediction and distributed communication are
+    supplied or outside scope.
+  required_functions:
+  - epps_pulley
+  - sigreg_loss
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: CPU float32/float64; preserve dtype/device and inputs
+  device: CPU; no downloads or pretrained weights
+  shape: 'features: (N,D), directions: (D,M) with unit columns, t: (T,); N,D,M>=1, T>=2. epps_pulley input: (N,M),
+    output: (M,).'
+  grid: Finite strictly increasing nonnegative nodes starting at0; nonuniform spacing supported. The usual supplied
+    grid has17 nodes from0 to3.
+  quadrature: 2*N*trapezoid(((mean cos-phi)^2+(mean sin)^2)*phi,t), phi=exp(-t^2/2); then mean over slices.
+  autograd: Features/projected values differentiate; directions and t are fixed and detached internally. Do not
+    center, standardize or detach features.
+  collapse: All-zero features have positive statistic but zero gradient. Finite fixed slices/quadrature are approximations,
+    not universal identification guarantees.
+tests:
+  T0: 2
+  T1: 2
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 30
+tags:
+- JEPA
+- Self-supervised Learning
+- Characteristic Function
+- Anti-collapse
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/html/2511.08544v1
+  - https://github.com/galilai-group/lejepa/blob/c293d291ca87cd4fddee9d3fffe4e914c7272052/lejepa/univariate/epps_pulley.py
+  - https://github.com/galilai-group/lejepa/blob/c293d291ca87cd4fddee9d3fffe4e914c7272052/lejepa/multivariate/slicing.py
+  - https://github.com/galilai-group/lejepa/blob/c293d291ca87cd4fddee9d3fffe4e914c7272052/MINIMAL.md
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/abs/2511.08544
+  anchor: 'Section 4.2.3: Epps-Pulley characteristic-function statistic; Section 5.1 and official MINIMAL.md:
+    symmetric positive-grid quadrature'
+  adaptation: Optimize64 free 2D embeddings with16 fixed unit slices; compare standardized Gaussian quantiles
+    and balanced +/-1 samples sharing mean0 and population variance1. This is a finite-grid teaching illustration,
+    not full LeJEPA pretraining.
+mutants:
+- id: m1_missing_imaginary
+  bug: 丢失经验特征函数的虚部
+- id: m2_missing_sample_factor
+  bug: 遗漏 Epps-Pulley 统计量的样本数 N
+- id: m3_missing_symmetry
+  bug: 正半轴积分忘记乘以2
+- id: m4_standardize_features
+  bug: 先标准化投影使目标的均值与尺度约束失效

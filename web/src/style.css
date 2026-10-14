@@ -3688,8 +3688,8 @@ html { scrollbar-gutter: stable; }
 .library-sidebar { position: sticky; top: 88px; padding-right: 18px; border-right: 1px solid var(--line); }
 .library-sidebar h2 { margin: 28px 12px 10px; font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: .3px; }
 .library-list-link { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 10px 12px; margin-bottom: 4px; border-radius: 7px; font-size: 14px; color: var(--muted); }
-.library-list-link > span:not(.list-count) { flex: 1; white-space: nowrap; }
-.library-list-link > svg { color: var(--muted); }
+.library-list-link > span:not(.list-count) { flex: 1; min-width: 0; line-height: 1.4; }
+.library-list-link > svg { flex-shrink: 0; color: var(--muted); }
 .library-list-link:hover { color: var(--text); background: var(--surface2); }
 .library-list-link[aria-current="page"] { background: var(--surface3); color: var(--text); font-weight: 500; }
 .library-list-link[aria-current="page"] > svg { color: var(--accent); }
@@ -3765,6 +3765,7 @@ html { scrollbar-gutter: stable; }
   .library-sidebar h2 { display: none; }
   .study-list-links { display: flex; gap: 8px; }
   .library-list-link { flex: 0 0 auto; margin: 0; min-height: 42px; gap: 8px; background: var(--surface); }
+  .library-list-link > span:not(.list-count) { white-space: nowrap; }
   .library-list-link .list-count { min-width: auto; }
 }
 @media (max-width: 600px) {

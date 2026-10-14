@@ -1,0 +1,81 @@
+id: representation/vicreg
+number: 54
+title: VICReg 方差、不变性与协方差
+title_en: VICReg Variance, Invariance and Covariance
+paper:
+  title: 'VICReg: Variance-Invariance-Covariance Regularization for Self-Supervised Learning'
+  authors: Adrien Bardes, Jean Ponce, Yann LeCun
+  venue: ICLR 2022
+  arxiv: '2105.04906'
+  url: https://arxiv.org/abs/2105.04906v3
+  anchors:
+  - 'Section 4.1: variance, invariance and covariance criteria'
+  - 'Official main_vicreg.py: VICReg.forward normalization'
+paper_id: vicreg
+difficulty: M
+functions:
+- name: vicreg_terms
+  signature: 'vicreg_terms(x: Tensor, y: Tensor, eps: float = 1e-4) -> tuple[Tensor, Tensor, Tensor]'
+- name: vicreg_loss
+  signature: 'vicreg_loss(x: Tensor, y: Tensor, sim_coeff: float = 25., std_coeff: float = 25., cov_coeff: float
+    = 1., eps: float = 1e-4) -> Tensor'
+type: implement
+parent: null
+module:
+  goal: 实现显式防塌缩与去冗余目标，区分方差下界和协方差惩罚。
+  goal_en: Implement an explicit anti-collapse and redundancy objective, separating a variance floor from covariance
+    penalties.
+  scope: 只实现两视图特征上的三个标量项与加权目标；编码器、投影头与分布式特征收集由题目范围排除。
+  scope_en: Implement three scalar terms and their weighted sum on two feature views. Encoder, projector and distributed
+    gathering are outside the module.
+  required_functions:
+  - vicreg_terms
+  - vicreg_loss
+  provided_functions: []
+  optional: false
+conventions:
+  seed: 42
+  dtype: CPU float32/float64; preserve dtype/device and inputs
+  device: CPU; no downloads or pretrained weights
+  shape: 'x,y: (B,D), B>=2, D>=1; scalar terms in order invariance, variance, covariance.'
+  statistics: Centered sample variance/covariance use B-1. Invariance averages B*D entries. Variance averages
+    both views; covariance sums both views and divides each squared off-diagonal sum by D.
+  epsilon: Positive finite eps inside sqrt(var+eps); default1e-4; variance hinge threshold1.
+  weights: Finite nonnegative Python coefficients; defaults25,25,1 match official code.
+  autograd: Both views remain differentiable. Exactly constant identical embeddings have positive variance loss
+    but zero gradient; do not promise escape from exact collapse.
+tests:
+  T0: 2
+  T1: 2
+  T2: 4
+  T3: 1
+t3_budget_s: 10
+estimated_minutes: 30
+tags:
+- JEPA
+- Self-supervised Learning
+- Anti-collapse
+- Covariance
+viz:
+- toy_experiment
+sources_verified: '2026-10-13'
+verified_sources:
+  checked_at: '2026-10-13'
+  links:
+  - https://arxiv.org/abs/2105.04906v3
+  - https://github.com/facebookresearch/vicreg/blob/4e12602fd495af83efd1631fbe82523e6db092e0/main_vicreg.py
+toy:
+  kind: teaching_adaptation
+  source: https://arxiv.org/abs/2105.04906v3
+  anchor: 'Section 4.1: variance, invariance and covariance criteria; Official main_vicreg.py: VICReg.forward normalization'
+  adaptation: Optimize two sets of16 paired 2D embeddings from small correlated but nonconstant values; show objective,
+    standard deviation and off-diagonal covariance. This teaching geometry experiment is not image pretraining.
+mutants:
+- id: m1_population_variance
+  bug: 把样本统计的 B-1 错写为 B
+- id: m2_variance_view_sum
+  bug: 忘记对两个视图的方差惩罚取平均
+- id: m3_diagonal_penalty
+  bug: 把协方差对角线也加入去冗余惩罚
+- id: m4_stop_second_view
+  bug: 错误地阻断第二个视图的梯度

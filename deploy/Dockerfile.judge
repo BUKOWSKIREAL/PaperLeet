@@ -66,5 +66,12 @@ COPY problems/architecture/var_next_scale/ ./problems/architecture/var_next_scal
 COPY problems/representation/var_tokenizer/ ./problems/representation/var_tokenizer/
 COPY problems/diffusion/fd_population/ ./problems/diffusion/fd_population/
 COPY problems/diffusion/fd_loss/ ./problems/diffusion/fd_loss/
+COPY problems/representation/vicreg/ ./problems/representation/vicreg/
+COPY problems/representation/sigreg/ ./problems/representation/sigreg/
+COPY problems/representation/visreg/ ./problems/representation/visreg/
+COPY problems/representation/ijepa/ ./problems/representation/ijepa/
+COPY problems/world_models/lewm_prediction/ ./problems/world_models/lewm_prediction/
+COPY problems/world_models/lewm_planning/ ./problems/world_models/lewm_planning/
+COPY problems/world_models/causal_jepa/ ./problems/world_models/causal_jepa/
 USER 65534:65534
 ENTRYPOINT ["python", "-m", "paperleet.hosting.worker"]
