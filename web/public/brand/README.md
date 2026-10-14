@@ -1,6 +1,6 @@
 # PaperLeet brand assets
 
-The PaperLeet mark is a soft, abstract front-facing black cat head with rounded cheeks, simple cream oval eyes, and a tiny smile. Its cream circular badge keeps the cat visible on both light and dark backgrounds. The geometry and colors match `web/src/Brand.tsx`.
+The PaperLeet mark is a smiling black cat emoji with a soft, abstract front-facing head, closed crescent eyes, warm coral cheeks, and an open smile with a small coral tongue. Its cream circular badge keeps the cat visible on both light and dark backgrounds. The geometry and colors match `web/src/Brand.tsx`.
 
 | Asset | Canvas | Use |
 | --- | --- | --- |
@@ -14,7 +14,8 @@ The PaperLeet mark is a soft, abstract front-facing black cat head with rounded 
 | Color | Value |
 | --- | --- |
 | Black cat | `#161619` |
-| Eyes, smile, and badge | `#f3efe6` |
+| Closed eyes, smile, and badge | `#f3efe6` |
+| Cheeks and tongue | `#f09996` |
 | Light-theme wordmark | `#262626` |
 | Dark-theme wordmark | `#efeff1` |
 
