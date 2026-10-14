@@ -38,6 +38,8 @@ Passing the full test suite automatically marks the problem as complete and unlo
 
 Use **Light / Dark** in the top bar to choose an appearance. The first visit follows your system preference; an explicit choice is remembered in this browser. The paper library puts categories, search, filters, and module progress together; paper details contain the technical summary and expandable practice scope.
 
+The **Study lists** sidebar provides LLM Basics, RL, Diffusion & Flow, Post-training, and Visual Generation. Lists group papers in a suggested order and can overlap; counts and completion progress reflect the selected list. Each list has a shareable route such as `#/lists/llm-basics`. Search and filters apply within the list, and switching lists clears them. On smaller screens, list navigation becomes a horizontal strip. The curated membership is maintained in `web/src/paperLists.ts`.
+
 The website runs code through the judge service and displays results automatically, with no report files to manage manually. The local service listens on `127.0.0.1:8765`, and Vite proxies `/api` requests to it. Code is saved to `workspace/` and executed by Python/PyTorch on your machine. This local setup is intended for personal use. Use the separate hosted configuration for isolated multi-user judging; do not expose the development service directly.
 
 ## Community and accounts

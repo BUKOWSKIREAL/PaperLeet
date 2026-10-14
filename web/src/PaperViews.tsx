@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ChevronDown,
-  ChevronRight, Circle, ExternalLink, Search,
+  ChevronRight, Circle, ExternalLink, Search, Library, Layers3, Network, SlidersHorizontal, Waves,
 } from "lucide-react";
 import { useI18n } from "./i18n";
 import { status } from "./types";
 import type { Category, Paper, Problem, Saved } from "./types";
+import { paperLists, papersInList } from "./paperLists";
 
 type Practice = { problems: Problem[]; saved: Record<string, Saved> };
 export function paperModules(paper: Paper, problems: Problem[]) {
@@ -46,7 +47,9 @@ const categoryLabels: Record<string, [string, string]> = {
   representation: ["表征学习", "Representation"],
 };
 
-export function PaperLibrary({ papers, categories, problems, saved }: Practice & { papers: Paper[]; categories: Category[]; onGuide: () => void }) {
+const listIcons = { "llm-basics": BookOpen, rl: Network, diffusion: Waves, "post-training": SlidersHorizontal, "visual-generation": Layers3 };
+
+export function PaperLibrary({ papers, categories, problems, saved, listId }: Practice & { papers: Paper[]; categories: Category[]; onGuide: () => void; listId?: string }) {
   const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [diff, setDiff] = useState("all");
@@ -54,9 +57,21 @@ export function PaperLibrary({ papers, categories, problems, saved }: Practice &
   const [tag, setTag] = useState("all");
   const [category, setCategory] = useState("all");
   const practice = { problems, saved };
-  const tags = [...new Set(papers.flatMap((paper) => paper.tags))];
-  const solvedModules = problems.filter((p) => status(p, saved[p.id]) === "done").length;
-  const filtered = papers.filter((paper) => {
+  const selectedList = paperLists.find((list) => list.id === listId);
+  const listNavigation = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const nav = listNavigation.current;
+    if (nav && nav.scrollWidth > nav.clientWidth) {
+      nav.querySelector('[aria-current="page"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    }
+  }, [selectedList?.id]);
+  const listedPapers = papersInList(papers, selectedList);
+  const listedModuleIds = new Set(listedPapers.flatMap((paper) => paper.module_ids));
+  const listedModules = problems.filter((problem) => listedModuleIds.has(problem.id));
+  const visibleCategories = categories.filter((item) => listedPapers.some((paper) => paper.category === item.id));
+  const tags = [...new Set(listedPapers.filter((paper) => category === "all" || paper.category === category).flatMap((paper) => paper.tags))];
+  const solvedModules = listedModules.filter((p) => status(p, saved[p.id]) === "done").length;
+  const filtered = listedPapers.filter((paper) => {
     const modules = paperModules(paper, problems);
     const searchable = [paper.number, paper.title, paper.short_title, paper.summary, paper.summary_en, ...paper.tags,
       ...modules.flatMap((p) => [p.title, p.translations?.en?.title, p.module.goal, p.module.goal_en])].join(" ").toLowerCase();
@@ -68,13 +83,32 @@ export function PaperLibrary({ papers, categories, problems, saved }: Practice &
   function clear() { setQuery(""); setDiff("all"); setState("all"); setTag("all"); setCategory("all"); }
   const hasFilters = !!query || diff !== "all" || state !== "all" || tag !== "all" || category !== "all";
   return <main className="home paper-library">
+    <aside className="library-sidebar">
+      <nav ref={listNavigation} aria-label={t("题单导航", "Paper lists")}>
+        <a className="library-list-link library-all" href="#" onClick={clear} aria-current={!selectedList ? "page" : undefined}>
+          <Library size={18} aria-hidden="true" /><span>{t("全部论文", "All papers")}</span><span className="list-count">{papers.length}</span>
+        </a>
+        <h2>{t("学习题单", "Study lists")}</h2>
+        <div className="study-list-links">
+          {paperLists.map((list) => {
+            const Icon = listIcons[list.id as keyof typeof listIcons] || BookOpen;
+            const count = papersInList(papers, list).length;
+            const label = t(list.name, list.name_en);
+            return <a key={list.id} className={`library-list-link list-${list.id}`} href={`#/lists/${list.id}`} onClick={clear} aria-current={selectedList?.id === list.id ? "page" : undefined} aria-label={`${label} · ${count} ${t("篇论文", "papers")}`}>
+              <Icon size={18} aria-hidden="true" /><span>{label}</span><span className="list-count" aria-hidden="true">{count}</span>
+            </a>;
+          })}
+        </div>
+      </nav>
+    </aside>
+    <div className="library-main">
     <header className="library-heading">
-      <h1>{t("论文题库", "Papers")} <span>{papers.length}</span></h1>
-      <div className="library-progress"><CheckCircle2 size={16} /><span>{t("已通过模块", "Modules solved")}</span><b>{solvedModules} / {problems.length}</b></div>
+      <h1>{selectedList ? t(selectedList.name, selectedList.name_en) : t("论文题库", "Papers")} <span>{listedPapers.length}</span></h1>
+      <div className="library-progress"><CheckCircle2 size={16} /><span>{t("已通过模块", "Modules solved")}</span><b>{solvedModules} / {listedModules.length}</b></div>
     </header>
     <div className="paper-categories" aria-label={t("论文分类", "Paper categories")}>
       <button aria-pressed={category === "all"} onClick={() => { setCategory("all"); setTag("all"); }}>{t("全部", "All")}</button>
-      {categories.map((item) => {
+      {visibleCategories.map((item) => {
         const label = categoryLabels[item.id] || [item.name, item.name_en];
         return <button key={item.id} aria-pressed={category === item.id} onClick={() => { setCategory(item.id); setTag("all"); }}>{t(label[0], label[1])}</button>;
       })}
@@ -84,7 +118,7 @@ export function PaperLibrary({ papers, categories, problems, saved }: Practice &
         <label className="search"><Search size={17} aria-hidden="true" /><input type="search" aria-label={t("搜索论文或模块", "Search papers or modules")} placeholder={t("搜索论文或模块…", "Search papers or modules…")} value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => { if (e.key === "Escape") setQuery(""); }} /></label>
         <div className="filter-bar">
           <div className="select-wrap"><select aria-label={t("主题筛选", "Filter by topic")} value={tag} onChange={(e) => setTag(e.target.value)}>
-            <option value="all">{t("主题", "Topic")}</option>{tags.filter((name) => papers.some((paper) => (category === "all" || paper.category === category) && paper.tags.includes(name))).map((name) => <option key={name}>{name}</option>)}
+            <option value="all">{t("主题", "Topic")}</option>{tags.map((name) => <option key={name}>{name}</option>)}
           </select><ChevronDown size={12} aria-hidden="true" /></div>
           <div className="select-wrap"><select aria-label={t("模块难度筛选", "Filter module difficulty")} value={diff} onChange={(e) => setDiff(e.target.value)}>
             <option value="all">{t("难度", "Difficulty")}</option><option value="E">{t("简单", "Easy")}</option><option value="M">{t("中等", "Medium")}</option><option value="H">{t("困难", "Hard")}</option>
@@ -110,6 +144,7 @@ export function PaperLibrary({ papers, categories, problems, saved }: Practice &
       </div>
       {!filtered.length && <div className="no-results"><Search size={25} /><p>{t("没有符合条件的论文", "No matching papers")}</p><button className="text-button" onClick={clear}>{t("清除筛选", "Clear filters")}</button></div>}
     </section>
+    </div>
   </main>;
 }
 

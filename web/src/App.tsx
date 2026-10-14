@@ -676,6 +676,8 @@ function Workspace() {
           />
         ) : (
           <PaperLibrary
+            key={id.startsWith("lists/") ? id : "all-papers"}
+            listId={id.startsWith("lists/") ? id.slice("lists/".length) : undefined}
             categories={categories}
             papers={papers}
             problems={problems}

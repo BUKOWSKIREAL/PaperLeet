@@ -61,6 +61,69 @@ try {
         assert(schedule.bars.every(Number.isFinite));
       }
   const catalog = JSON.parse(fs.readFileSync("public/data/catalog.json", "utf8"));
+  const { paperLists, papersInList } = await server.ssrLoadModule("/src/paperLists.ts");
+  const catalogPaperIds = new Set(catalog.papers.map((paper) => paper.id));
+  assert.equal(new Set(paperLists.map((list) => list.id)).size, paperLists.length,
+    "Learning lists need unique route IDs");
+  for (const list of paperLists) {
+    assert(list.name && list.name_en && list.paperIds.length,
+      `${list.id}: learning lists need bilingual names and papers`);
+    assert.equal(new Set(list.paperIds).size, list.paperIds.length,
+      `${list.id}: a paper must not be counted twice within one list`);
+    for (const id of list.paperIds)
+      assert(catalogPaperIds.has(id), `${list.id}: unknown catalog paper ${id}`);
+    const selected = papersInList([...catalog.papers].reverse(), list);
+    assert.deepEqual(selected.map((paper) => paper.id), list.paperIds,
+      `${list.id}: learning order must survive a different catalog order`);
+  }
+  assert.equal(papersInList(catalog.papers), catalog.papers,
+    "All papers must preserve the catalog and include papers outside curated lists");
+  const diffusionList = paperLists.find((list) => list.id === "diffusion");
+  const visualList = paperLists.find((list) => list.id === "visual-generation");
+  assert(visualList.paperIds.includes("var") && !diffusionList.paperIds.includes("var"),
+    "VAR belongs to visual generation rather than the diffusion learning list");
+  assert(!diffusionList.paperIds.includes("drifting"),
+    "Drifting Models should not be mislabeled as diffusion");
+  const { PaperLibrary } = await server.ssrLoadModule("/src/PaperViews.tsx");
+  const rowIds = (html) => [...html.matchAll(/href="#\/papers\/([^"]+)"/g)].map((match) => match[1]);
+  const headingText = (html) => html.match(/<header\b[^>]*>([\s\S]*?)<\/header>/)[1]
+    .replace(/<!--[\s\S]*?-->/g, "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
+  const acceptedFixture = (module) => ({
+    acceptedReport: {
+      problem: module.id,
+      summary: Object.fromEntries(Object.entries(module.tests).map(([layer, count]) => [layer, [count, count]])),
+      tests: Object.entries(module.tests).flatMap(([layer, count]) =>
+        Array.from({length: count}, (_, index) => ({id: `${layer}-${index}`, layer, passed: true}))),
+    },
+  });
+  const libraryProps = {
+    papers: catalog.papers, problems: catalog.problems, categories: catalog.categories, onGuide: () => {},
+  };
+  for (const list of paperLists) {
+    const members = catalog.papers.filter((paper) => list.paperIds.includes(paper.id));
+    const moduleIds = new Set(members.flatMap((paper) => paper.module_ids));
+    const inside = catalog.problems.find((module) => moduleIds.has(module.id));
+    const outside = catalog.problems.find((module) => !moduleIds.has(module.id));
+    const saved = {[inside.id]: acceptedFixture(inside), [outside.id]: acceptedFixture(outside)};
+    const html = renderToString(React.createElement(PaperLibrary, {...libraryProps, saved, listId: list.id}));
+    assert.deepEqual(rowIds(html), list.paperIds,
+      `${list.id}: the library must show exactly the selected papers in learning order`);
+    assert(headingText(html).includes(`${list.name} ${members.length}`),
+      `${list.id}: the heading must count papers within the selected list`);
+    assert(headingText(html).includes(`已通过模块 1 / ${moduleIds.size}`),
+      `${list.id}: an accepted module outside this list must not affect its progress`);
+    const allHtml = renderToString(React.createElement(PaperLibrary, {...libraryProps, saved}));
+    assert.deepEqual(rowIds(allHtml), catalog.papers.map((paper) => paper.id),
+      "All papers must retain the complete catalog order");
+    assert(headingText(allHtml).includes(`已通过模块 2 / ${catalog.problems.length}`),
+      "All papers must include progress from both modules");
+  }
+  const unknownListHtml = renderToString(React.createElement(PaperLibrary, {
+    ...libraryProps, saved: {}, listId: "not-a-maintained-list",
+  }));
+  assert.deepEqual(rowIds(unknownListHtml), catalog.papers.map((paper) => paper.id),
+    "An obsolete learning-list URL should still expose the paper library");
+  console.log("PASS curated paper-list membership, ordering, selection, and scoped progress");
   const maintained = catalog.problems.filter((p) => !p.id.startsWith("community/"));
   for (const problem of maintained) {
     const file = problem.id.replaceAll("/", "-") + ".json";
