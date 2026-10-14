@@ -1,16 +1,13 @@
 import { useI18n } from "./i18n";
 
-/** A front-facing black cat, kept black in both interface themes. */
+/** A soft, abstract black cat with a tiny smile, legible at icon sizes. */
 export function BrandMark() {
   return <svg className="brand-symbol" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
     <circle cx="32" cy="32" r="31" fill="#f3efe6" />
-    <path d="M14 27 12 11Q11.5 8 14.5 9.5L25 17.5Q32 15.5 39 17.5L49.5 9.5Q52.5 8 52 11L50 27Q55 35 51 44Q46 55 32 56Q18 55 13 44Q9 35 14 27Z" fill="#161619" />
-    <path d="m17 17 7 6-6 3Zm30 0-7 6 6 3Z" fill="#3b3b40" />
-    <path d="M18 33Q22.5 27.5 28 33.5Q23.5 39 18 33Zm28 0Q41.5 27.5 36 33.5Q40.5 39 46 33Z" fill="#e8c77b" />
-    <ellipse cx="23" cy="33" rx="1.5" ry="3.5" fill="#161619" />
-    <ellipse cx="41" cy="33" rx="1.5" ry="3.5" fill="#161619" />
-    <path d="M29.5 42Q32 40.5 34.5 42L32 44.5Z" fill="#b9b6af" />
-    <path d="M32 44.5v2M32 46.5q-2 2.5-4 0m4 0q2 2.5 4 0" fill="none" stroke="#77757a" strokeWidth="1.25" strokeLinecap="round" />
+    <path d="M12 27 11.5 16Q11 11 15.5 13.5L24 19Q32 17 40 19L48.5 13.5Q53 11 52.5 16L52 27Q57 33 55 41Q52 54 32 55Q12 54 9 41Q7 33 12 27Z" fill="#161619" />
+    <ellipse cx="23" cy="35" rx="3.5" ry="4.5" fill="#f3efe6" />
+    <ellipse cx="41" cy="35" rx="3.5" ry="4.5" fill="#f3efe6" />
+    <path d="M28 44q2 3 4 0 2 3 4 0" fill="none" stroke="#f3efe6" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
   </svg>;
 }
 

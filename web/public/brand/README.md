@@ -1,6 +1,6 @@
 # PaperLeet brand assets
 
-The PaperLeet mark is a front-facing black cat head with pointed ears and gold eyes. Its cream circular badge keeps the cat visible on both light and dark backgrounds. The geometry and colors match `web/src/Brand.tsx`.
+The PaperLeet mark is a soft, abstract front-facing black cat head with rounded cheeks, simple cream oval eyes, and a tiny smile. Its cream circular badge keeps the cat visible on both light and dark backgrounds. The geometry and colors match `web/src/Brand.tsx`.
 
 | Asset | Canvas | Use |
 | --- | --- | --- |
@@ -14,11 +14,7 @@ The PaperLeet mark is a front-facing black cat head with pointed ears and gold e
 | Color | Value |
 | --- | --- |
 | Black cat | `#161619` |
-| Inner ears | `#3b3b40` |
-| Gold eyes | `#e8c77b` |
-| Cream badge | `#f3efe6` |
-| Nose | `#b9b6af` |
-| Mouth | `#77757a` |
+| Eyes, smile, and badge | `#f3efe6` |
 | Light-theme wordmark | `#262626` |
 | Dark-theme wordmark | `#efeff1` |
 
