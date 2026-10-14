@@ -47,6 +47,7 @@ import { usePracticeWorkspace } from "./PracticeWorkspace";
 import Brand from "./Brand";
 import { getProblemStats, ProblemStats, useProblemStats } from "./ProblemStats";
 import ResizableSplit from "./ResizableSplit";
+import OnlinePresence from "./OnlinePresence";
 import "./community.css";
 
 const difficulty = (d: string) =>
@@ -607,6 +608,7 @@ function Workspace() {
                 ? t("判题服务已连接", "Judge connected")
                 : t("判题服务未连接", "Judge offline")}
             </span>
+            <OnlinePresence />
             <button
               className="language-toggle"
               aria-label={t("切换到英文", "Switch to Chinese")}

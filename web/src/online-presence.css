@@ -1,0 +1,47 @@
+.topbar .online-presence {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  min-height: 32px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: default;
+  outline-offset: 4px;
+}
+.online-presence b { font-weight: 500; font-variant-numeric: tabular-nums; }
+.online-presence > i { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+.online-presence.unavailable { color: var(--muted); }
+.online-presence.unavailable > i { background: var(--muted); }
+.online-presence:focus-visible { outline: 2px solid var(--accent); border-radius: 3px; }
+.online-presence-tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 7px);
+  right: 0;
+  z-index: 100;
+  width: 250px;
+  max-width: calc(100vw - 32px);
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: normal;
+  box-shadow: 0 4px 16px #0002;
+}
+.online-presence:focus-visible .online-presence-tooltip,
+.online-presence:hover .online-presence-tooltip { display: block; }
+@media (max-width: 600px) {
+  .topbar .online-presence { gap: 4px; font-size: 12px; }
+  .online-presence-label { display: none; }
+  .online-presence-tooltip { left: 0; right: auto; width: 190px; }
+}
+@media (max-width: 400px) {
+  .topbar .nav-inner .brand > span:nth-child(2) { display: none; }
+  .topbar .nav-actions { gap: 5px; }
+}

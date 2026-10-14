@@ -11,6 +11,7 @@ from paperleet.submissions import Conflict, store
 from paperleet.submissions.model import ModelUnavailable
 from paperleet.social_api import is_social_path, dispatch as dispatch_social
 from paperleet.config import hosted, origin, public_origin, validate_hosted_settings
+from paperleet.presence import PresenceTracker, MAX_BODY_BYTES, dispatch as dispatch_presence
 
 
 _judge_lock = threading.Lock()
@@ -56,6 +57,8 @@ class JudgeHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         if not self.valid_origin():
             return self.respond(403, {"error": "This request origin is not allowed"})
+        if self.path == "/api/presence":
+            return dispatch_presence(self, "GET")
         if not hosted() and urlsplit(self.path).path == "/api/practice/stats":
             return self.respond(200, {"available": False, "stats": {}})
         if self.path == "/api/health":
@@ -87,8 +90,9 @@ class JudgeHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.valid_origin():
             return self.respond(403, {"error": "This request origin is not allowed"})
+        presence_heartbeat = self.path == "/api/presence/heartbeat"
         submission_action = re.fullmatch(r"/api/submissions/([0-9a-f]{32})/(generate|validate|review)", self.path)
-        if self.path not in ("/api/test", "/api/submissions", "/api/practice/draft") and not submission_action and not is_social_path(self.path):
+        if self.path not in ("/api/test", "/api/submissions", "/api/practice/draft") and not presence_heartbeat and not submission_action and not is_social_path(self.path):
             return self.respond(404, {"error": "Unknown endpoint"})
         if self.headers.get_content_type() != "application/json":
             return self.respond(415, {"error": "Expected application/json"})
@@ -96,11 +100,15 @@ class JudgeHandler(BaseHTTPRequestHandler):
             return self.respond(400, {"error": "Expected one Content-Length header"})
         try:
             size = int(self.headers.get("Content-Length", "0"))
-            if not 0 < size <= 256 * 1024:
-                return self.respond(413, {"error": "Request must be between 1 byte and 256 KB"})
+            body_limit = MAX_BODY_BYTES if presence_heartbeat else 256 * 1024
+            if not 0 < size <= body_limit:
+                message = "Request must be between 1 byte and 512 bytes" if presence_heartbeat else "Request must be between 1 byte and 256 KB"
+                return self.respond(413, {"error": message})
             data = json.loads(self.rfile.read(size))
             if not isinstance(data, dict):
                 raise ValueError("Expected a JSON object")
+            if presence_heartbeat:
+                return dispatch_presence(self, "POST", data)
             if is_social_path(self.path):
                 return dispatch_social(self, "POST", data)
             if hosted():
@@ -147,6 +155,7 @@ class BoundedHTTPServer(ThreadingHTTPServer):
 
     def __init__(self, *args, **kwargs):
         self.slots = threading.BoundedSemaphore(32)
+        self.presence = PresenceTracker()
         super().__init__(*args, **kwargs)
 
     def process_request(self, request, client_address):
