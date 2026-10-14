@@ -12,9 +12,8 @@
   outline-offset: 4px;
 }
 .online-presence b { font-weight: 500; font-variant-numeric: tabular-nums; }
-.online-presence > i { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+.online-presence-icon { flex-shrink: 0; color: currentColor; }
 .online-presence.unavailable { color: var(--muted); }
-.online-presence.unavailable > i { background: var(--muted); }
 .online-presence:focus-visible { outline: 2px solid var(--accent); border-radius: 3px; }
 .online-presence-tooltip {
   display: none;

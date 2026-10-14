@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Globe2 } from "lucide-react";
 import { useI18n } from "./i18n";
 import { useAccount } from "./social";
 import { createPresenceHeartbeat, presenceStorageKey, presenceVisitorId } from "./presence";
@@ -65,7 +66,7 @@ export default function OnlinePresence() {
       aria-label={`${label}. ${tooltip}`}
       tabIndex={0}
     >
-      <i aria-hidden="true" />
+      <Globe2 className="online-presence-icon" size={14} strokeWidth={1.8} aria-hidden="true" />
       <span aria-hidden="true"><b>{count}</b><span className="online-presence-label"> {t("人在线", "online")}</span></span>
       <span className="online-presence-tooltip" role="tooltip">{tooltip}</span>
     </span>
