@@ -10,8 +10,6 @@ import type { Category, Paper, Problem, Saved } from "./types";
 import { paperCollections, papersInCollection } from "./paperCollections";
 import { eligibleUnattemptedProblems, pickRandomUnattemptedProblem } from "./randomProblem";
 import CollectionArtwork from "./CollectionArtwork";
-import { getProblemStats, ProblemStatsSummary } from "./ProblemStats";
-import type { ProblemStatsMap } from "./ProblemStats";
 
 type Practice = { problems: Problem[]; saved: Record<string, Saved> };
 export function paperModules(paper: Paper, problems: Problem[]) {
@@ -63,7 +61,7 @@ const categoryLabels: Record<string, [string, string]> = {
   "world-models": ["世界模型", "World Models"],
 };
 
-export function PaperLibrary({ papers, categories, problems, saved, progressReady = true }: Practice & { papers: Paper[]; categories: Category[]; onGuide: () => void; progressReady?: boolean }) {
+export function PaperLibrary({ papers, categories, problems, saved, progressReady = true }: Practice & { papers: Paper[]; categories: Category[]; progressReady?: boolean }) {
   const { t } = useI18n();
   const [query, setQuery] = useState("");
   const [diff, setDiff] = useState("all");
@@ -141,6 +139,7 @@ export function PaperLibrary({ papers, categories, problems, saved, progressRead
       <div className="library-title"><h1>{t("论文题库", "Papers")} <span>{listedPapers.length}</span></h1></div>
       <div className="library-progress"><CheckCircle2 size={16} /><span>{t("已通过模块", "Modules solved")}</span><b>{solvedModules} / {listedModules.length}</b></div>
     </header>
+    <p className="offline-library-note">{t("用自己的 CPU 练习。草稿与学习进度自动保存在此浏览器，运行记录另存本机。", "Practice on your own CPU. Drafts and progress stay in this browser, with run files saved on this computer.")}</p>
     <div className="paper-categories" aria-label={t("论文分类", "Paper categories")}>
       <button aria-pressed={category === "all"} onClick={() => { setCategory("all"); setTag("all"); }}><Library size={16} />{t("全部", "All")}<span>{listedPapers.length}</span></button>
       {visibleCategories.map((item) => {
@@ -184,7 +183,7 @@ export function PaperLibrary({ papers, categories, problems, saved, progressRead
   </main>;
 }
 
-export function PaperDetail({ paper, problems, saved, stats }: Practice & { paper: Paper; onGuide: () => void; stats?: ProblemStatsMap }) {
+export function PaperDetail({ paper, problems, saved }: Practice & { paper: Paper }) {
   const { t, locale } = useI18n();
   const modules = paperModules(paper, problems);
   const progress = paperProgress(paper, { problems, saved });
@@ -210,7 +209,6 @@ export function PaperDetail({ paper, problems, saved, stats }: Practice & { pape
               <div className="module-card-tags"><span className={`difficulty ${problem.difficulty}`}>{({ E: "Easy", M: "Medium", H: "Hard" } as Record<string, string>)[problem.difficulty] || problem.difficulty}</span><span>{problem.estimated_minutes || 25} min</span><span>{problem.module.optional ? t("可选拓展", "Optional extension") : t("核心模块", "Core module")}</span>{state === "done" && <span className="accepted">{t("已通过", "Solved")}</span>}</div>
               <div className="module-functions"><span>{t("需要实现", "Implement")}</span>{problem.module.required_functions.map((name) => <code key={name}>{name}</code>)}</div>
               {!!problem.module.provided_functions.length && <div className="module-functions provided-functions"><span>{t("已提供", "Provided")}</span>{problem.module.provided_functions.map((name) => <code key={name}>{name}</code>)}</div>}
-              <ProblemStatsSummary stats={getProblemStats(stats, problem.id)} />
             </a>;
           })}
         </section>

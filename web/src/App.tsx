@@ -19,7 +19,6 @@ import {
   ExternalLink,
   FileCode2,
   FlaskConical,
-  Globe2,
   LockKeyhole,
   Moon,
   Play,
@@ -37,18 +36,15 @@ import { PaperDetail, PaperLibrary, paperModules } from "./PaperViews";
 import { collectionIdFromRoute, paperCollections, papersInCollection } from "./paperCollections";
 import CollectionDetail from "./CollectionDetail";
 import { parseReport } from "./reports";
+import { useLocalJudge } from "./useLocalJudge";
+import { jobErrorText } from "./judgeJobs";
+import { localRequest } from "./localApi";
+import { useLocalHealth } from "./useLocalHealth";
 import { navigateToProblem, resolveAppLocation } from "./navigation";
 import { LocaleProvider, useI18n } from "./i18n";
-import Submissions from "./Submissions";
-import Community, { UserProfile } from "./Community";
-import Account from "./Account";
-import { AccountNav, AccountProvider, useAccount } from "./social";
 import { usePracticeWorkspace } from "./PracticeWorkspace";
 import Brand from "./Brand";
-import { getProblemStats, ProblemStats, useProblemStats } from "./ProblemStats";
 import ResizableSplit from "./ResizableSplit";
-import OnlinePresence from "./OnlinePresence";
-import "./community.css";
 
 const difficulty = (d: string) =>
   ({ E: "Easy", M: "Medium", H: "Hard" })[d] || d;
@@ -162,7 +158,7 @@ export function Prose({
     if (href?.includes("README.md") && problemId) {
       const resolved = new URL(
         href,
-        `https://local/problems/${problemId}/README.md`,
+        `http://localhost/problems/${problemId}/README.md`,
       ).pathname;
       const match = /\/problems\/([a-z_]+)\/([^/]+)\/README(?:\.en)?\.md$/.exec(
         resolved,
@@ -333,22 +329,15 @@ function ReportView({
 export default function App() {
   return (
     <LocaleProvider>
-      <AccountProvider>
-        <Workspace />
-      </AccountProvider>
+      <Workspace />
     </LocaleProvider>
   );
 }
 function Workspace() {
   const { locale, setLocale, t } = useI18n();
-  const { user, health, healthError, refreshHealth, capabilities } =
-    useAccount();
   const practice = usePracticeWorkspace();
   const { saved, update } = practice;
-  const online = !!health?.judge.ready && !healthError;
-  const hosted = health?.mode === "hosted";
-  const testAuth = capabilities?.auth_mode === "test";
-  const runController = useRef<AbortController | undefined>(undefined);
+  const { online, refresh: refreshHealth } = useLocalHealth();
   const [problems, setProblems] = useState<Problem[]>([]),
     [categories, setCategories] = useState<Category[]>([]),
     [papers, setPapers] = useState<Paper[]>([]),
@@ -356,28 +345,23 @@ function Workspace() {
     [id, setId] = useState(getId),
     [tab, setTab] = useState("description"),
     [rightTab, setRightTab] = useState("code"),
-    [running, setRunning] = useState(false),
     [toast, setToast] = useState(""),
-    [guide, setGuide] = useState(false),
     [font, setFont] = useState(initialEditorFontSize),
     [theme, setTheme] = useState<Theme>(initialTheme);
-  const { stats: problemStats, refresh: refreshProblemStats, loading: statsLoading } = useProblemStats(id);
   const sourceProblem = problems.find(
     (p) => p.id === id || String(p.number) === id,
   );
   const localize = (p: Problem): Problem =>
     locale === "en" && p.translations?.en ? { ...p, ...p.translations.en } : p;
   const problem = sourceProblem ? localize(sourceProblem) : undefined;
-  const submissionPage = id === "submit";
-  const communityPage = id === "community" || id.startsWith("community/");
-  const accountPage = id === "account";
-  const profileUsername = id.startsWith("u/") ? id.slice(2) : "";
+  const activeProblem = useRef(problem?.id);
+  activeProblem.current = problem?.id;
   const collectionId = collectionIdFromRoute(id);
   const selectedCollection = paperCollections.find((collection) => collection.id === collectionId);
   useEffect(() => {
     document.title = selectedCollection
-      ? `${t(selectedCollection.name, selectedCollection.name_en)} - PaperLeet`
-      : collectionId !== undefined ? `${t("合集未找到", "Collection not found")} - PaperLeet` : "PaperLeet";
+      ? `${t(selectedCollection.name, selectedCollection.name_en)} - PaperLeet Offline`
+      : collectionId !== undefined ? `${t("合集未找到", "Collection not found")} - PaperLeet Offline` : "PaperLeet Offline";
   }, [collectionId, selectedCollection, locale]);
   const collectionModules = selectedCollection
     ? papersInCollection(papers, selectedCollection).flatMap((paper) => paperModules(paper, problems))
@@ -401,8 +385,8 @@ function Workspace() {
         if (!r.ok)
           throw Error(
             t(
-              "暂时无法加载题库，请稍后刷新。",
-              "The problem catalog is unavailable. Please refresh shortly.",
+              "无法加载本机题库。请运行 make dev 或重新导出题库。",
+              "The local catalog is unavailable. Run make dev or export the catalog again.",
             ),
           );
         return r.json();
@@ -433,12 +417,6 @@ function Workspace() {
     return () => window.removeEventListener("hashchange", h);
   }, []);
   useEffect(() => {
-    runController.current?.abort();
-    setRunning(false);
-    setToast("");
-    setTab("description");
-  }, [practice.owner]);
-  useEffect(() => {
     document.documentElement.dataset.theme = theme;
     document.documentElement.style.colorScheme = theme;
     document.querySelector('meta[name="theme-color"]')?.setAttribute(
@@ -459,64 +437,42 @@ function Workspace() {
     const timer = setTimeout(() => setToast(""), 6000);
     return () => clearTimeout(timer);
   }, [toast]);
+  const judge = useLocalJudge((report) => {
+    const tested = problems.find((item) => item.id === report.problem);
+    if (!tested) return;
+    practice.applyReport(tested, report);
+    if (tested.id === problem?.id) setTab("tests");
+    setToast(t("本机测试已完成", "Local run complete"));
+  }, problems.length > 0);
+  const running = judge.active;
   async function run() {
-    if (
-      !problem ||
-      !practice.ready ||
-      (hosted && (!user || !online || practice.conflicts[problem.id]))
-    )
-      return;
-    const runOwner = practice.owner;
-    const submittedCode = current.code ?? problem.starter;
-    setRunning(true);
+    if (!problem || running || !online) return;
+    // Preserve the exact editor snapshot before handing it to local Python.
+    const code = current.code ?? problem.starter;
+    update(problem.id, { code });
+    await judge.submit(problem.id, code);
+  }
+  async function loadLocalFile() {
+    if (!problem) return;
     try {
-      if (hosted) await practice.flush();
-      if (!practice.owns(runOwner)) return;
-      const controller = new AbortController();
-      runController.current = controller;
-      const response = await fetch("/api/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          problem: problem.id,
-          code: submittedCode,
-          ...(hosted ? { expected_user_id: user?.id } : {}),
-        }),
-        signal: AbortSignal.any([
-          controller.signal,
-          AbortSignal.timeout(180000),
-        ]),
-      });
-      const data = await response.json();
-      if (
-        !response.ok ||
-        (data.error && !Array.isArray(data.tests) && !data.report)
-      )
-        throw Error(
-          data.error || t("判题服务返回错误", "The judge returned an error"),
-        );
-      const report = parseReport(data.report || data);
-      if (report.problem !== problem.id)
-        throw Error(
-          t("判题服务返回了无效结果", "The judge returned an invalid result"),
-        );
-      void refreshProblemStats();
-      if (!practice.owns(runOwner)) return;
-      practice.applyReport(problem, report, runOwner);
-      setTab("tests");
-      setToast(t("判题已完成", "Run complete"));
-    } catch (e) {
-      if (!practice.owns(runOwner)) return;
-      setToast(
-        e instanceof Error && e.name !== "SyntaxError" && e.name !== "TypeError"
-          ? e.message
-          : t(
-              "暂时无法连接判题服务，请稍后重试。你的代码已保存在浏览器。",
-              "The judge is unavailable. Please try again shortly. Your code is saved in this browser.",
-            ),
-      );
-    } finally {
-      if (practice.owns(runOwner)) setRunning(false);
+      const data = await localRequest(`/api/workspace?problem=${encodeURIComponent(problem.id)}`, { signal: AbortSignal.timeout(10000) }) as { problem: string; code: string | null; report: unknown };
+      if (activeProblem.current !== problem.id) return;
+      if (data.problem !== problem.id || (data.code !== null && typeof data.code !== "string")) throw Error("Invalid workspace response");
+      if (data.code === null) {
+        setToast(t("这道题还没有本机文件。运行测试会保存文件。", "No local file exists for this module yet. Running tests saves one."));
+        return;
+      }
+      if (data.code !== (practice.getSaved(problem.id).code ?? problem.starter) && !window.confirm(t("用本机 workspace 文件替换当前编辑器草稿？如需保留当前代码，请先下载。", "Replace this editor draft with the local workspace file? Download the current code first if you want to keep it."))) return;
+      update(problem.id, { code: data.code });
+      if (data.report) {
+        try {
+          const report = parseReport(data.report);
+          if (report.problem === problem.id) practice.applyReport(problem, report);
+        } catch { /* A malformed report must never prevent loading the source. */ }
+      }
+      setToast(t("已载入本机文件", "Local file loaded"));
+    } catch {
+      setToast(t("无法读取本机文件，请确认本机服务正在运行。当前草稿未改变。", "Could not read the local file. Check that the local service is running. Your draft is unchanged."));
     }
   }
   async function copy(text: string) {
@@ -542,7 +498,7 @@ function Workspace() {
   ];
   const webReadme = problem?.readme.replace(
     /##\s*6[.、．]?\s*(?:怎么运行|编写与运行|Write and run|Running)[^\n]*\n[\s\S]*?(?=\n##\s*7|$)/,
-    `## 6. ${t("编写与运行", "Write and run")}\n\n${hosted ? (testAuth ? t("使用内测账号登录后，可在右侧完成实现并运行测试。草稿与判题结果会私密同步到账号；全部通过后解锁坑点。", "Sign in with your test account, implement the module, and run tests. Drafts and judging results sync privately to your account; passing all tests unlocks Notes.") : t("受邀用户登录后，可在右侧完成实现并运行测试。草稿与判题结果会私密同步到账号；全部通过后解锁坑点。", "Invited members can sign in, implement the module, and run tests. Drafts and judging results sync privately to your account; passing all tests unlocks Notes.")) : t("在右侧编辑器中完成实现，点击「运行全部测试」。测试结果会在「测试」标签页显示；全部通过后解锁坑点。草稿会自动保存在当前浏览器。", "Complete the implementation in the editor and select Run all tests. Results appear in the Tests tab; passing all tests unlocks Notes. Drafts are saved automatically in this browser.")}\n`,
+    `## 6. ${t("编写与运行", "Write and run")}\n\n${t("在右侧完成实现，点击「运行全部测试」，由本机 Python / PyTorch 使用 CPU 执行。草稿、最近结果和通过状态保存在当前浏览器；运行时的代码与报告也会写入本机文件。", "Implement the module and select Run all tests to execute Python / PyTorch on your own CPU. Drafts, latest results and completion are saved in this browser; each run also writes its source and report to local files.")}\n`,
   );
   return (
     <div className={`app ${problem ? "workspace-view" : ""}`}>
@@ -551,15 +507,7 @@ function Workspace() {
           <Brand />
           <nav>
             <a
-              className={
-                !problem &&
-                !submissionPage &&
-                !communityPage &&
-                !accountPage &&
-                !profileUsername
-                  ? "active"
-                  : ""
-              }
+              className={!problem ? "active" : ""}
               href="/"
             >
               {t("论文题库", "Papers")}
@@ -582,39 +530,25 @@ function Workspace() {
             >
               {problem ? t("工作区", "Workspace") : t("继续练习", "Continue")}
             </button>
-            <a className={submissionPage ? "active" : ""} href="/#/submit">
-              {t("提交论文", "Submit paper")}
-            </a>
-            <a
-              className={communityPage || profileUsername ? "active" : ""}
-              href="/#/community"
-            >
-              {t("社区", "Community")}
-            </a>
-            <button onClick={() => setGuide(true)}>
-              {t("使用指南", "Guide")}
-            </button>
           </nav>
           <div className="nav-actions">
             <span
               className={`connection ${online ? "connected" : ""}`}
               title={t(
-                "网页直接提交代码并显示测试结果",
-                "Run code and view test results in this workspace",
+                "代码仅发送到本机 Python 服务，使用自己的 CPU 运行",
+                "Code runs only on this computer’s Python service and CPU",
               )}
             >
               <i />
               {online
-                ? t("判题服务已连接", "Judge connected")
-                : t("判题服务未连接", "Judge offline")}
+                ? t("本机 CPU 已连接", "Local CPU ready")
+                : t("本机服务未连接", "Local service offline")}
             </span>
-            <OnlinePresence />
             <button
               className="language-toggle"
               aria-label={t("切换到英文", "Switch to Chinese")}
               onClick={() => setLocale(locale === "zh" ? "en" : "zh")}
             >
-              <Globe2 size={15} />
               <span className={locale === "zh" ? "selected" : ""}>中</span>
               <i>/</i>
               <span className={locale === "en" ? "selected" : ""}>EN</span>
@@ -633,7 +567,6 @@ function Workspace() {
                 onClick={() => selectTheme("light")}
               >
                 <Sun size={15} aria-hidden="true" />
-                <span className="theme-label">{t("浅色", "Light")}</span>
               </button>
               <button
                 type="button"
@@ -644,29 +577,17 @@ function Workspace() {
                 onClick={() => selectTheme("dark")}
               >
                 <Moon size={15} aria-hidden="true" />
-                <span className="theme-label">{t("深色", "Dark")}</span>
               </button>
             </div>
-            <AccountNav />
           </div>
         </div>
       </header>
-      {communityPage ? (
-        <Community
-          postId={
-            id === "community" ? undefined : id.slice("community/".length)
-          }
-        />
-      ) : accountPage ? (
-        <Account />
-      ) : profileUsername ? (
-        <UserProfile key={profileUsername} username={profileUsername} />
-      ) : submissionPage ? (
-        <Submissions
-          key={`${health?.mode || "pending"}:${user?.id || "anonymous"}`}
-          onPublished={loadCatalog}
-        />
-      ) : loadError ? (
+      {judge.active && <p className="local-job-notice" role="status">{judge.reconnecting
+        ? t("正在重新连接本机任务…", "Reconnecting to the local run…")
+        : judge.job?.status === "queued"
+          ? t(`正在等待本机 CPU，前面还有 ${judge.job.ahead} 个任务。`, `Waiting for the local CPU: ${judge.job.ahead} job(s) ahead.`)
+          : t("本机 CPU 正在运行测试；可以继续编辑，结果对应点击运行时的代码。", "Your CPU is running tests. You can keep editing; results belong to the code you ran.")}</p>}
+      {loadError ? (
         <main className="load-error">
           <Terminal size={35} />
           <h2>{t("题库暂时不可用", "Catalog unavailable")}</h2>
@@ -686,8 +607,6 @@ function Workspace() {
             paper={selectedPaper}
             problems={problems}
             saved={saved}
-            stats={problemStats}
-            onGuide={() => setGuide(true)}
           />
         ) : collectionId !== undefined ? (
           <CollectionDetail
@@ -705,7 +624,6 @@ function Workspace() {
             papers={papers}
             problems={problems}
             saved={saved}
-            onGuide={() => setGuide(true)}
           />
         )
       ) : (
@@ -894,7 +812,6 @@ function Workspace() {
                           </a>
                         )}
                       </div>
-                      <ProblemStats stats={getProblemStats(problemStats, problem.id)} loading={statsLoading} />
                     </div>
                     <a
                       className="paper-card"
@@ -1022,6 +939,9 @@ function Workspace() {
                       solution.py
                     </span>
                     <div>
+                      <button className="text-button" disabled={!online} onClick={loadLocalFile} title={t("读取 workspace 中的本机文件", "Read the workspace file on this computer")}>
+                        {t("载入本机文件", "Load local file")}
+                      </button>
                       <label className="editor-font-size">
                         <span aria-hidden="true">Aa</span>
                         <select
@@ -1070,32 +990,12 @@ function Workspace() {
                       </button>
                       <button
                         className="icon-button"
-                        title={t(
-                          "恢复初始代码（先下载备份）",
-                          "Reset code (download backup first)",
-                        )}
-                        disabled={!practice.ready}
-                        aria-label={t(
-                          "恢复初始代码并备份",
-                          "Reset starter with backup",
-                        )}
+                        title={t("恢复初始代码", "Restore starter")}
+                        aria-label={t("恢复初始代码", "Restore starter")}
                         onClick={() => {
-                          const hasDraft =
-                            !!current.code && current.code !== problem.starter;
-                          if (hasDraft)
-                            download(
-                              `problem-${problem.number}-backup.py`,
-                              current.code!,
-                            );
+                          if ((current.code ?? problem.starter) !== problem.starter && !window.confirm(t("恢复初始代码会替换当前草稿。已通过状态和最近测试结果会保留。继续？", "Restore the starter and replace this draft? Completion and the latest test results will be kept."))) return;
                           update(problem.id, { code: problem.starter });
-                          setToast(
-                            hasDraft
-                              ? t(
-                                  "已恢复初始代码，原代码已下载备份。",
-                                  "Starter restored. Your previous code was downloaded as a backup.",
-                                )
-                              : t("已恢复初始代码。", "Starter restored."),
-                          );
+                          setToast(t("已恢复初始代码", "Starter restored"));
                         }}
                       >
                         <RotateCcw size={14} />
@@ -1104,7 +1004,7 @@ function Workspace() {
                   </div>
                   <div className="code-editor">
                     <CodeMirror
-                      key={`${practice.owner}:${problem.id}`}
+                      key={problem.id}
                       readOnly={!practice.ready}
                       value={current.code ?? problem.starter}
                       height="100%"
@@ -1121,33 +1021,14 @@ function Workspace() {
                       aria-label={`${problem.title} ${t("Python 代码编辑器", "Python code editor")}`}
                     />
                   </div>
-                  <div className="editor-status">
+                  <div className={`editor-status ${practice.error ? "error" : ""}`} title={t("草稿和通过状态保存在当前浏览器；不同浏览器或端口相互独立。清除浏览器数据会移除记录。运行时的代码与报告另存本机文件。", "Drafts and completion stay in this browser, separately for each browser and port. Clearing browser data removes them. Each run also saves local source and report files.")}>
                     <span>
                       <Check size={12} />
-                      {practice.loading
-                        ? t("正在加载工作区…", "Loading workspace…")
-                        : hosted
-                          ? !user
-                            ? t(
-                                "草稿仅保存在此浏览器，登录后使用独立工作区",
-                                "Browser-only draft · sign in for your account workspace",
-                              )
-                            : practice.error
-                              ? t(
-                                  "同步失败，草稿保留在当前浏览器",
-                                  "Sync failed · draft kept in this browser",
-                                )
-                              : practice.conflicts[problem.id]
-                                ? t(
-                                    "草稿版本冲突，请选择保留的版本",
-                                    "Draft conflict · choose a version below",
-                                  )
-                                : practice.saving || practice.pending
-                                  ? t("正在同步草稿…", "Syncing draft…")
-                                  : t("已同步到账号", "Synced to your account")
-                          : current.code !== undefined
-                            ? t("草稿已自动保存", "Draft saved automatically")
-                            : t("初始代码", "Starter code")}
+                      {practice.error
+                        ? t("未能保存到浏览器，请下载代码", "Browser save failed · download your code")
+                        : current.code !== undefined
+                          ? t("已自动保存在此浏览器", "Saved automatically in this browser")
+                          : t("初始代码 · 本机 CPU", "Starter code · local CPU")}
                     </span>
                     <span>
                       UTF-8 <i>·</i> Python
@@ -1155,85 +1036,19 @@ function Workspace() {
                   </div>
                   </div>
                   <div className="editor-results-panel" id="problem-results-panel">
-                  {(practice.error ||
-                    practice.conflicts[problem.id] ||
-                    (!health && healthError) ||
-                    (hosted && (!user || !online))) && (
+                  {(practice.error || judge.error || !online) && (
                     <div className="practice-notice" role="status">
-                      {practice.conflicts[problem.id] ? (
-                        <>
-                          <span>
-                            {t(
-                              "其他设备更新了这道题的草稿。选择保留哪个版本；当前代码尚未覆盖服务器。",
-                              "Another device updated this draft. Choose which version to keep; your current code has not overwritten the server.",
-                            )}
-                          </span>
-                          <button
-                            onClick={() =>
-                              practice.resolveConflict(problem.id, false)
-                            }
-                          >
-                            {t("使用服务器版本", "Use server draft")}
-                          </button>
-                          <button
-                            onClick={() =>
-                              practice.resolveConflict(problem.id, true)
-                            }
-                          >
-                            {t("保留当前版本", "Keep this draft")}
-                          </button>
-                        </>
-                      ) : practice.error ? (
-                        <>
-                          <span>{practice.error}</span>
-                          <button onClick={practice.retry}>
-                            {t("重试同步", "Retry sync")}
-                          </button>
-                        </>
-                      ) : !health ? (
-                        <>
-                          <span>
-                            {t(
-                              "无法确认服务配置，工作区尚未加载。",
-                              "Service configuration is unavailable. Your workspace has not been loaded.",
-                            )}
-                          </span>
-                          <button onClick={() => void refreshHealth()}>
-                            {t("重试", "Retry")}
-                          </button>
-                        </>
-                      ) : !user ? (
-                        <>
-                          <span>
-                            {testAuth
-                              ? t(
-                                  "使用管理员提供的内测账号和访问码登录后，即可运行测试。",
-                                  "Sign in with your administrator-issued test account and access code to run tests.",
-                                )
-                              : t(
-                                  "在线内测仅向受邀且已验证机构邮箱的用户开放判题。",
-                                  "Online judging is available to invited members with a verified institutional email.",
-                                )}
-                          </span>
-                          <a href="#/account">
-                            {t("登录以运行", "Sign in to run")}
-                          </a>
-                        </>
-                      ) : (
-                        <>
-                          <span>
-                            {t(
-                              "判题沙箱尚未就绪，请稍后重试。草稿仍会同步。",
-                              "The judge sandbox is not ready. Please try again shortly; your drafts will still sync.",
-                            )}
-                          </span>
-                          <button onClick={() => void refreshHealth()}>
-                            {t("刷新状态", "Refresh status")}
-                          </button>
-                        </>
-                      )}
+                      <span>{practice.error
+                        ? t("浏览器存储不可用或已满。代码仍在当前页面，请下载代码后再关闭或刷新。", "Browser storage is unavailable or full. Your code is still on this page. Download it before closing or refreshing.")
+                        : judge.error ? jobErrorText(judge.error, locale)
+                        : t("请启动本机服务（make dev），然后重试连接。草稿可以继续编辑。", "Start the local service (make dev), then retry the connection. You can keep editing your draft.")}</span>
+                      <button onClick={practice.error ? practice.retry : refreshHealth}>{t("重试", "Retry")}</button>
                     </div>
                   )}
+                  {judge.reconnecting && <div className="practice-notice" role="status">{t("连接中断，正在重新获取本机任务状态；不会重复运行代码。", "Reconnecting to the local job; your code will not run twice.")}</div>}
+                  {current.report?.workspace_preserved && <div className="practice-notice" role="status">
+                    {t("本机 workspace 文件在排队期间发生了修改，已保留该文件；本次测试使用的代码已另存到本机。", "The local workspace file changed while this run was queued. That file was kept, and the tested code was saved separately on this computer.")}
+                  </div>}
                   <div className="console">
                     <div className="console-header">
                       <span>
@@ -1253,8 +1068,8 @@ function Workspace() {
                     <p>
                       {running
                         ? t(
-                            "正在执行测试，结果将自动显示。",
-                            "Running tests. Results will appear automatically.",
+                            "本机 CPU 正在执行测试，结果将自动显示。",
+                            "Your CPU is running the tests. Results will appear automatically.",
                           )
                         : current.report
                           ? `${current.report.tests.filter((test) => test.passed).length} / ${current.report.tests.length} ${t("项测试通过。修改代码后可再次运行。", "tests passed. Edit your code and run again.")}`
@@ -1267,16 +1082,13 @@ function Workspace() {
                   </div>
                   </ResizableSplit>
                   <div className="editor-bottom">
+                    {judge.job?.status === "queued" && <button className="text-button" onClick={() => void judge.cancel()}>{t("取消排队", "Cancel queued run")}</button>}
                     <span>
                       {running ? (
                         <>
                           <span className="spinner" />
                           {t("正在判题…", "Running tests…")}
                         </>
-                      ) : hosted && !user ? (
-                        <a href="#/account">
-                          {t("登录后运行", "Sign in to run")}
-                        </a>
                       ) : online ? (
                         <>
                           <i className="green-dot" />
@@ -1291,14 +1103,7 @@ function Workspace() {
                     </span>
                     <button
                       className="button run-button"
-                      disabled={
-                        running ||
-                        !practice.ready ||
-                        (hosted &&
-                          (!user ||
-                            !online ||
-                            !!practice.conflicts[problem.id]))
-                      }
+                      disabled={running || !online}
                       onClick={run}
                     >
                       <Play size={15} fill="currentColor" />
@@ -1312,79 +1117,6 @@ function Workspace() {
             </section>
           </ResizableSplit>
         </>
-      )}
-      {guide && (
-        <div className="modal-backdrop" onClick={() => setGuide(false)}>
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="guide-title"
-            className="guide-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="icon-button modal-close"
-              aria-label={t("关闭指南", "Close guide")}
-              onClick={() => setGuide(false)}
-            >
-              <X size={19} />
-            </button>
-            <div className="eyebrow">
-              <BookOpen size={16} />
-              PAPERLEET
-            </div>
-            <h2 id="guide-title">
-              {t("实现论文里的核心模块", "Implement a paper’s core modules")}
-            </h2>
-            <p>
-              {t(
-                "阅读论文、编写代码、运行测试都在这个工作区完成。",
-                "Read the paper, write code, and run tests in this workspace.",
-              )}
-            </p>
-            <ol>
-              <li>
-                <b>{t("选择论文与模块", "Choose a paper and module")}</b>
-                <small>
-                  {t(
-                    "先了解论文的核心思想和练习范围，再选择模块，阅读接口与约定。",
-                    "Read the paper’s core idea and selected scope, then choose a module and review its contract.",
-                  )}
-                </small>
-              </li>
-              <li>
-                <b>{t("在编辑器中实现", "Implement in the editor")}</b>
-                <small>
-                  {t(
-                    "草稿自动保存；实验台可以帮助你观察公式的行为。",
-                    "Drafts are saved automatically. Use the lab to explore how the formulas behave.",
-                  )}
-                </small>
-              </li>
-              <li>
-                <b>{t("运行全部测试", "Run all tests")}</b>
-                <small>
-                  {t(
-                    "检查失败原因并修改代码。全部通过后，解锁这道题的坑点。",
-                    "Read failure details and revise your code. Passing all tests unlocks the problem's notes.",
-                  )}
-                </small>
-              </li>
-              <li>
-                <b>{t("提交新论文", "Contribute a paper")}</b>
-                <small>
-                  {t(
-                    "提交论文和官方代码来源，生成候选实现与测试；通过验证和人工评审后才会加入题库。",
-                    "Submit a paper and official code source. Generated code and tests enter the catalog only after validation and human review.",
-                  )}
-                </small>
-              </li>
-            </ol>
-            <button className="button" onClick={() => setGuide(false)}>
-              {t("开始练习", "Start practicing")} <ArrowRight size={15} />
-            </button>
-          </section>
-        </div>
       )}
       {toast && (
         <div role="status" className="toast">

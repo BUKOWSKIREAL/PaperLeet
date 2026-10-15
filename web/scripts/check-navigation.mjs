@@ -12,20 +12,25 @@ try {
   const { default: CollectionDetail } = await server.ssrLoadModule("/src/CollectionDetail.tsx");
   const { default: Brand } = await server.ssrLoadModule("/src/Brand.tsx");
   const catalog = JSON.parse(fs.readFileSync("public/data/catalog.json", "utf8"));
-  const origin = "https://paperleet.com";
+  const origin = "http://127.0.0.1:5173";
 
   assert.equal(server.config.base, "/", "Nested collection reloads need root-relative assets and catalog requests");
   assert.equal(new URL(`${server.config.base}data/catalog.json`, `${origin}/collections/rl/`).pathname,
     "/data/catalog.json", "The catalog must not resolve beneath a collection path");
 
   assert.equal(resolveAppLocation({ pathname: "/", hash: "" }).route, "");
-  for (const route of ["31", "papers/transformer", "account", "community", "community/123", "u/tester1", "submit"]) {
+  for (const route of ["31", "papers/transformer", "rl/gae"]) {
     assert.equal(resolveAppLocation({ pathname: "/", hash: `#/${route}` }).route, route,
       `${route}: existing root hash links must retain their destination`);
     const fromCollection = resolveAppLocation({ pathname: "/collections/rl/", hash: `#/${route}` });
     assert.equal(fromCollection.route, route, `${route}: hash navigation must leave the collection`);
     assert.equal(fromCollection.canonicalUrl, `/#/${route}`,
       `${route}: copied destinations must not retain an unrelated collection pathname`);
+  }
+
+  for (const route of ["account", "community", "community/123", "u/tester1", "submit", "unknown"]) {
+    assert.deepEqual(resolveAppLocation({ pathname: "/", hash: `#/${route}` }), { route: "", canonicalUrl: "/" });
+    assert.deepEqual(resolveAppLocation({ pathname: "/collections/rl/", hash: `#/${route}` }), { route: "", canonicalUrl: "/" });
   }
 
   for (const collection of paperCollections) {

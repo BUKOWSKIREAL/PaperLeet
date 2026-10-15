@@ -160,7 +160,7 @@ try {
     const solvedGroups = collectionModuleGroups(catalog.papers, catalog.problems, list, {...unfiltered, state: "done"}, saved, true);
     assert.deepEqual(solvedGroups.flatMap(({modules}) => modules.map((module) => module.id)), [inside.id]);
     const pending = renderToString(React.createElement(CollectionDetail, {...props, progressReady: false}));
-    assert(!pending.includes('aria-valuenow='), "Pending account progress must not appear as zero or stale solved progress");
+    assert(!pending.includes('aria-valuenow='), "Pending local progress must not appear as zero or stale solved progress");
     assert(/class="random-problem"[^>]*disabled/.test(pending));
     assert(/class="button collection-start" disabled/.test(pending));
     const allHtml = renderToString(React.createElement(PaperLibrary, {...libraryProps, saved}));
@@ -174,7 +174,7 @@ try {
   for (const query of ["正弦位置编码", "Sinusoidal Positional Encoding", String(cachedStarter.number)])
     assert.deepEqual(groupIds(query), [cachedStarter.id], "Collection search must support both languages and numeric problem IDs");
   assert.deepEqual(groupIds("Sinusoidal Positional Encoding", "M"), [], "Search and difficulty must match the same module");
-  assert.deepEqual(groupIds("Transformer"), transformer.module_ids, "A paper search includes its modules");
+  assert.deepEqual(groupIds("Attention Is All You Need"), transformer.module_ids, "An exact paper-title search includes its modules");
   const unknownListHtml = renderToString(React.createElement(CollectionDetail, {
     ...libraryProps, saved: {}, progressReady: true, collectionId: "not-a-maintained-list",
   }));
@@ -182,13 +182,13 @@ try {
     "An unknown collection must show an explicit not-found page instead of unrelated papers");
   const loadingHtml = renderToString(React.createElement(PaperLibrary,
     {...libraryProps, saved: {}, progressReady: false}));
-  assert(/class="random-problem"[^>]*disabled/.test(loadingHtml), "Wait for account progress before drawing");
+  assert(/class="random-problem"[^>]*disabled/.test(loadingHtml), "Wait for local progress before drawing");
   const readyHtml = renderToString(React.createElement(PaperLibrary, {...libraryProps, saved: {}}));
   assert(!/class="random-problem"[^>]*disabled/.test(readyHtml), "Untouched modules should enable random selection");
   assert.equal([...readyHtml.matchAll(/class="collection-card /g)].length, paperCollections.length);
   assert(!readyHtml.includes("Study lists") && !readyHtml.includes("library-sidebar"));
   console.log("PASS standalone collection pages, curated groups, module links, filters, not-found routes, random availability and scoped progress");
-  const maintained = catalog.problems.filter((p) => !p.id.startsWith("community/"));
+  const maintained = catalog.problems;
   for (const problem of maintained) {
     const file = problem.id.replaceAll("/", "-") + ".json";
     assert(fs.existsSync(`public/data/${file}`), `${file}: run paperleet vizdata all`);
@@ -206,15 +206,6 @@ try {
     }
     console.log(`PASS ${file}`);
   }
-  const publishedToy = renderToString(React.createElement(Lab, {
-    problem: {id: "community/toy", title: "Reviewed toy", vizData: null},
-    report: {problem: "community/toy", tests: [{id: "test_behavior", layer: "T3", passed: true,
-      artifacts: {experiment: {kind: "toy_experiment", loss_curve: [[0, 1], [1, .1]], metrics: {error: .1}}}}]},
-  }));
-  assert(publishedToy.includes("test_behavior") && publishedToy.includes("loss_curve"));
-  assert(publishedToy.includes("我的运行结果") && !publishedToy.includes(">参考实验</button>"),
-    "Published toys without static previews must show actual judged artifacts, not an empty reference view");
-
   const packed = Buffer.alloc(8);
   [1000, -2000, 32767, -32768].forEach((value, i) =>
     packed.writeInt16LE(value, i * 2),

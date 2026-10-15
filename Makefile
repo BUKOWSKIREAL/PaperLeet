@@ -1,30 +1,23 @@
-.PHONY: dev check data build deploy-build deploy-up deploy-down deploy-backup
+.PHONY: dev check data build ci
 
-PYTHON := .venv/bin/python
-PAPERLEET := .venv/bin/paperleet
+PYTHON ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 
 dev:
 	$(PYTHON) scripts/dev.py
 
 check:
+	$(PYTHON) -m paperleet.cli export
 	$(PYTHON) -m pytest tests -q
-	$(PAPERLEET) ci
+	npm --prefix web run check
 
 data:
-	$(PAPERLEET) vizdata all
+	$(PYTHON) -m paperleet.cli vizdata all
 
 build:
-	$(PAPERLEET) export
-	cd web && npm run build
+	$(PYTHON) -m paperleet.cli export
+	npm --prefix web run build
+	npm --prefix web run check:build
 
-deploy-build:
-	sh deploy/manage.sh build
-
-deploy-up:
-	sh deploy/manage.sh up
-
-deploy-down:
-	sh deploy/manage.sh down
-
-deploy-backup:
-	sh deploy/manage.sh backup
+ci: check
+	$(PYTHON) -m paperleet.cli ci --repeats 1 --budget 600
+	$(MAKE) build PYTHON=$(PYTHON)

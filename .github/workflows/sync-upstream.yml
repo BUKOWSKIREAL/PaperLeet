@@ -1,0 +1,178 @@
+name: Sync offline problem library
+
+on:
+  schedule:
+    - cron: '37 8 * * *'
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: 'Optional full upstream commit SHA (default: current main)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: offline-upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: github.repository == 'Hongyang-Du/PaperLeet' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      changed: ${{ steps.candidate.outputs.changed }}
+    env:
+      OMP_NUM_THREADS: '2'
+      MKL_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
+      PYTHONHASHSEED: '0'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Resolve and import one immutable backbone snapshot
+        id: sync
+        env:
+          REQUESTED_REVISION: ${{ inputs.revision }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/upstream-sync"
+          git rev-parse HEAD > "$RUNNER_TEMP/upstream-sync/base.txt"
+          arguments=()
+          if [[ -n "$REQUESTED_REVISION" ]]; then
+            arguments+=(--ref "$REQUESTED_REVISION")
+          fi
+          python scripts/sync_upstream.py "${arguments[@]}" \
+            --report "$RUNNER_TEMP/upstream-sync/report.json" --github-output "$GITHUB_OUTPUT"
+      - name: Skip a candidate already covered by the open synchronization PR
+        id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CONTENT_CHANGED: ${{ steps.sync.outputs.changed }}
+        run: |
+          if [[ "$CONTENT_CHANGED" != 'true' ]]; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          pending=$(gh pr list --head sync/upstream --base main --state open --json headRefOid --jq '.[0].headRefOid // empty')
+          if [[ -n "$pending" ]]; then
+            git fetch --no-tags origin "$pending"
+            if git merge-base --is-ancestor HEAD FETCH_HEAD; then
+              git show FETCH_HEAD:sync/upstream.lock.json > "$RUNNER_TEMP/upstream-sync/pending-lock.json"
+              if python - <<'PY'
+          import json, os, sys
+          from pathlib import Path
+          pending = json.loads((Path(os.environ['RUNNER_TEMP']) / 'upstream-sync/pending-lock.json').read_text())
+          current = json.loads(Path('sync/upstream.lock.json').read_text())
+          sys.exit(0 if pending.get('repository') == current['repository'] and pending.get('files') == current['files'] else 1)
+          PY
+              then
+                echo 'The open synchronization PR already contains this candidate.'
+                echo 'changed=false' >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+            fi
+          fi
+          echo 'changed=true' >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v4
+        if: steps.candidate.outputs.changed == 'true'
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install CPU-only test dependencies
+        if: steps.candidate.outputs.changed == 'true'
+        run: |
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -e .
+          npm --prefix web ci
+      - name: Validate the offline edition
+        if: steps.candidate.outputs.changed == 'true'
+        run: make ci PYTHON=python
+      - name: Package only verified managed changes
+        if: steps.candidate.outputs.changed == 'true'
+        run: python scripts/sync_upstream.py --write-patch "$RUNNER_TEMP/upstream-sync/upstream.patch"
+      - uses: actions/upload-artifact@v4
+        if: steps.candidate.outputs.changed == 'true'
+        with:
+          name: validated-upstream-sync
+          path: ${{ runner.temp }}/upstream-sync/
+          retention-days: 7
+          if-no-files-found: error
+
+  propose:
+    needs: validate
+    if: needs.validate.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: validated-upstream-sync
+          path: ${{ runner.temp }}/upstream-sync
+      - name: Check the validated base and managed patch
+        run: |
+          test "$(git rev-parse HEAD)" = "$(cat "$RUNNER_TEMP/upstream-sync/base.txt")" || {
+            echo 'main changed during validation; rerun this workflow against the new base.'
+            exit 1
+          }
+          python scripts/sync_upstream.py --apply-patch "$RUNNER_TEMP/upstream-sync/upstream.patch"
+      - name: Refresh the single review branch and pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          branch=sync/upstream
+          gh auth setup-git
+          previous=$(git ls-remote origin "refs/heads/$branch" | cut -f1)
+          if [[ -n "$previous" ]]; then
+            git fetch --no-tags origin "refs/heads/$branch:refs/remotes/origin/$branch"
+            if ! git log "origin/main..origin/$branch" --format='%ae' | \
+                python -c 'import sys; sys.exit(any(line.strip() != "41898282+github-actions[bot]@users.noreply.github.com" for line in sys.stdin))'; then
+              echo 'The sync branch contains human edits; refusing to overwrite it.'
+              exit 1
+            fi
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout -b "$branch"
+          git commit -m 'Sync reviewed offline problem library from backbone'
+          git push --force-with-lease="refs/heads/$branch:$previous" origin "HEAD:refs/heads/$branch"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = json.loads((Path(os.environ['RUNNER_TEMP']) / 'upstream-sync/report.json').read_text())
+          text = ('Updates the offline problem packages, shared judge helpers and per-problem visualizations from '
+                  f"[PaperLeet backbone `{report['commit'][:12]}`](https://github.com/PaperLeet/paperleet.github.io/commit/{report['commit']}).\n\n"
+                  f"Managed files: {report['managed_files']}; updated: {len(report['updated'])}; removed: {len(report['removed'])}.\n\n"
+                  'Validation: `make ci PYTHON=python` passed in the read-only validation job. '
+                  'The offline UI and service adapters remain owned by this repository.\n\n'
+                  'Maintainer review and merge are required. If GitHub requests approval for PR checks, '
+                  'select **Approve workflows to run**.\n')
+          (Path(os.environ['RUNNER_TEMP']) / 'upstream-sync/pr-body.md').write_text(text)
+          PY
+          number=$(gh pr list --head "$branch" --base main --state open --json number --jq '.[0].number // empty')
+          if [[ -n "$number" ]]; then
+            gh pr edit "$number" --title 'Sync offline library from PaperLeet backbone' \
+              --body-file "$RUNNER_TEMP/upstream-sync/pr-body.md"
+          else
+            gh pr create --base main --head "$branch" --title 'Sync offline library from PaperLeet backbone' \
+              --body-file "$RUNNER_TEMP/upstream-sync/pr-body.md"
+          fi

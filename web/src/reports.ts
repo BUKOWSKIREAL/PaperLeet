@@ -94,7 +94,12 @@ export function parseReport(value: unknown): Report {
       }),
     );
   }
+  if (value.workspace_preserved !== undefined && typeof value.workspace_preserved !== "boolean")
+    return invalid("workspace_preserved");
   return {
+    workspace_preserved: value.workspace_preserved,
+    workspace_warning: optionalString(value.workspace_warning, "workspace_warning"),
+    source_path: optionalString(value.source_path, "source_path"),
     problem: value.problem,
     tests,
     summary,

@@ -1,20 +1,43 @@
-"""Local developer bridge and explicitly configured hosted beta API."""
+"""Offline editor bridge: native CPU judging and files on this computer."""
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+from pathlib import Path
+import tempfile
 import threading
-import re
-from urllib.parse import urlparse, urlsplit
+from urllib.parse import parse_qs, unquote, urlparse, urlsplit
 
-from paperleet.catalog import problem, root, workspace_path
-from paperleet.judge.runner import normalize_layers, run_problem
-from paperleet.submissions import Conflict, store
-from paperleet.submissions.model import ModelUnavailable
-from paperleet.social_api import is_social_path, dispatch as dispatch_social
-from paperleet.config import hosted, origin, public_origin, validate_hosted_settings
-from paperleet.presence import PresenceTracker, MAX_BODY_BYTES, dispatch as dispatch_presence
+from paperleet.config import validate_local_settings
+from paperleet.judge.runner import normalize_layers, run_problem, write_report
+from paperleet.judge.jobs_api import is_job_path, dispatch as dispatch_jobs
+from paperleet.workspace import (local_problem as problem, read_reports, read_workspace, report_path,
+                                 save_code, save_submission, validate_code, workspace_digest)
 
 
 _judge_lock = threading.Lock()
+_unobserved = object()
+
+
+def run_code(entry, code, layers, expected_workspace=_unobserved):
+    """Save the submitted solution, then judge an immutable private snapshot.
+
+    An IDE save while tests run stays in workspace and cannot alter this run.
+    The caller owns _judge_lock, shared by synchronous and queued requests.
+    """
+    if expected_workspace is _unobserved:
+        expected_workspace = workspace_digest(entry)
+    preserved = workspace_digest(entry) != expected_workspace
+    path = save_submission(entry, code) if preserved else save_code(entry, code)
+    with tempfile.TemporaryDirectory(prefix="paperleet-run-") as directory:
+        snapshot = Path(directory) / path.name
+        snapshot.write_text(code, encoding="utf-8")
+        report = run_problem(entry["id"], snapshot, layers=layers)
+    report["impl"] = str(path)
+    if preserved:
+        report.update(workspace_preserved=True, source_path=str(path),
+                      workspace_warning="The local workspace changed while this run was queued. "
+                                        "That file was preserved; the submitted solution was saved separately.")
+    write_report(report, report_path(entry))
+    return report
 
 
 class JudgeHandler(BaseHTTPRequestHandler):
@@ -38,61 +61,61 @@ class JudgeHandler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def valid_origin(self):
-        if hosted():
-            try:
-                expected = public_origin()
-                host = origin("https://" + self.headers.get("Host", ""))
-                supplied = self.headers.get("Origin")
-                if host != expected:
-                    return False
-                if self.command == "POST" and not supplied:
-                    return False
-                return not supplied or origin(supplied) == expected
-            except ValueError:
+        allowed = ("127.0.0.1", "localhost", "::1")
+        try:
+            host = urlparse("http://" + self.headers.get("Host", ""))
+            origin = self.headers.get("Origin")
+            if host.hostname not in allowed or host.username is not None:
                 return False
-        host = urlparse("http://" + self.headers.get("Host", "")).hostname
-        supplied_origin = self.headers.get("Origin")
-        return host in ("127.0.0.1", "localhost", "::1") and (not supplied_origin or urlparse(supplied_origin).hostname in ("127.0.0.1", "localhost", "::1"))
+            if not origin:
+                return True
+            parsed = urlparse(origin)
+            return (parsed.scheme in ("http", "https") and parsed.hostname in allowed
+                    and parsed.username is None)
+        except ValueError:
+            return False
+
+    def catalog(self):
+        # Export is metadata-only: no reference execution, Torch or downloads.
+        # One export per local bridge also picks up a freshly synced curriculum.
+        with self.server.catalog_lock:
+            if self.server.catalog_data is None:
+                from paperleet.export import export_catalog
+                self.server.catalog_data = json.loads(export_catalog().read_text(encoding="utf-8"))
+            return self.server.catalog_data
 
     def do_GET(self):
         if not self.valid_origin():
             return self.respond(403, {"error": "This request origin is not allowed"})
-        if self.path == "/api/presence":
-            return dispatch_presence(self, "GET")
-        if not hosted() and urlsplit(self.path).path == "/api/practice/stats":
-            return self.respond(200, {"available": False, "stats": {}})
-        if self.path == "/api/health":
-            result = {"ok": True, "mode": "hosted" if hosted() else "local", "version": "0.1.0",
-                      "auth_required": hosted(), "judge": {"ready": True}}
-            if hosted():
-                from paperleet.hosting.judge_client import judge_capabilities
-                result["judge"] = judge_capabilities()
-            return self.respond(200, result)
-        if is_social_path(self.path):
-            return dispatch_social(self, "GET")
-        if hosted():
-            from paperleet.hosting.api import dispatch
-            return dispatch(self, "GET")
+        parsed = urlsplit(self.path)
+        if parsed.path == "/api/health":
+            return self.respond(200, {"ok": True, "mode": "local", "edition": "offline",
+                                      "version": "0.1.0", "auth_required": False,
+                                      "judge": {"ready": True}})
+        if is_job_path(self.path):
+            return dispatch_jobs(self, "GET")
         try:
-            if self.path == "/api/submissions/capabilities":
-                return self.respond(200, store().capabilities())
-            if self.path == "/api/submissions":
-                return self.respond(200, {"submissions": store().list()})
-            match = re.fullmatch(r"/api/submissions/([0-9a-f]{32})", self.path)
-            if match:
-                return self.respond(200, store().get(match[1]))
-        except KeyError:
-            return self.respond(404, {"error": "Unknown submission"})
+            if parsed.path == "/api/catalog":
+                return self.respond(200, self.catalog())
+            if parsed.path.startswith("/api/problems/"):
+                entry = problem(unquote(parsed.path[len("/api/problems/"):]))
+                data = next(row for row in self.catalog()["problems"] if row["id"] == entry["id"])
+                return self.respond(200, data)
+            if parsed.path == "/api/workspace":
+                identifier = parse_qs(parsed.query).get("problem", [None])[0]
+                return self.respond(200, read_workspace(problem(identifier)))
+            if parsed.path == "/api/reports":
+                return self.respond(200, {"reports": read_reports()})
         except ValueError as exc:
             return self.respond(400, {"error": str(exc)})
+        except OSError:
+            return self.respond(500, {"error": "Could not read local practice files"})
         return self.respond(404, {"error": "Unknown endpoint"})
 
     def do_POST(self):
         if not self.valid_origin():
             return self.respond(403, {"error": "This request origin is not allowed"})
-        presence_heartbeat = self.path == "/api/presence/heartbeat"
-        submission_action = re.fullmatch(r"/api/submissions/([0-9a-f]{32})/(generate|validate|review)", self.path)
-        if self.path not in ("/api/test", "/api/submissions", "/api/practice/draft") and not presence_heartbeat and not submission_action and not is_social_path(self.path):
+        if self.path not in ("/api/test", "/api/workspace") and not is_job_path(self.path):
             return self.respond(404, {"error": "Unknown endpoint"})
         if self.headers.get_content_type() != "application/json":
             return self.respond(415, {"error": "Expected application/json"})
@@ -100,62 +123,41 @@ class JudgeHandler(BaseHTTPRequestHandler):
             return self.respond(400, {"error": "Expected one Content-Length header"})
         try:
             size = int(self.headers.get("Content-Length", "0"))
-            body_limit = MAX_BODY_BYTES if presence_heartbeat else 256 * 1024
-            if not 0 < size <= body_limit:
-                message = "Request must be between 1 byte and 512 bytes" if presence_heartbeat else "Request must be between 1 byte and 256 KB"
-                return self.respond(413, {"error": message})
+            if not 0 < size <= 256 * 1024:
+                return self.respond(413, {"error": "Request must be between 1 byte and 256 KB"})
             data = json.loads(self.rfile.read(size))
             if not isinstance(data, dict):
                 raise ValueError("Expected a JSON object")
-            if presence_heartbeat:
-                return dispatch_presence(self, "POST", data)
-            if is_social_path(self.path):
-                return dispatch_social(self, "POST", data)
-            if hosted():
-                from paperleet.hosting.api import dispatch
-                return dispatch(self, "POST", data)
-            if self.path == "/api/practice/draft":
-                return self.respond(404, {"error": "Cloud practice is only available in hosted mode"})
-            if self.path == "/api/submissions":
-                return self.respond(201, store().create(data))
-            if submission_action:
-                identifier, action = submission_action.groups()
-                if action == "review":
-                    return self.respond(200, store().review(identifier, data))
-                return self.respond(202, store().start(identifier, action))
-            entry = problem(data["problem"])
-            code = data["code"]
-            if not isinstance(code, str) or not code.strip():
-                raise ValueError("Python code cannot be empty")
+            if is_job_path(self.path):
+                return dispatch_jobs(self, "POST", data)
+            entry = problem(data.get("problem"))
+            code = validate_code(data.get("code"), allow_empty=self.path == "/api/workspace")
+            if self.path == "/api/workspace":
+                save_code(entry, code)
+                return self.respond(200, {"ok": True, "problem": entry["id"]})
             layers = normalize_layers(data.get("layers"))
-        except ModelUnavailable as exc:
-            return self.respond(503, {"error": str(exc)})
-        except Conflict as exc:
-            return self.respond(409, {"error": str(exc)})
-        except (ValueError, KeyError, TypeError) as exc:
+        except (ValueError, KeyError, TypeError, UnicodeError) as exc:
             return self.respond(400, {"error": str(exc)})
+        except OSError:
+            return self.respond(500, {"error": "Could not save local practice files"})
         if not _judge_lock.acquire(blocking=False):
             return self.respond(409, {"error": "A judge run is already in progress. Please wait."})
         try:
-            path = workspace_path(entry)
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(code, encoding="utf-8")
-            destination = root() / "reports" / (entry["id"].replace("/", "-") + ".json")
-            report = run_problem(entry["id"], path, layers=layers, report_path=destination)
-            self.respond(200, report)
-        except Exception as exc:
-            self.respond(500, {"error": str(exc)})
+            return self.respond(200, run_code(entry, code, layers))
+        except Exception:
+            return self.respond(500, {"error": "The local judge could not complete this run"})
         finally:
             _judge_lock.release()
 
 
 class BoundedHTTPServer(ThreadingHTTPServer):
-    """Limit concurrent connections; the public reverse proxy handles TLS."""
+    """Limit concurrent connections; the bridge only binds loopback."""
     daemon_threads = True
 
     def __init__(self, *args, **kwargs):
         self.slots = threading.BoundedSemaphore(32)
-        self.presence = PresenceTracker()
+        self.catalog_lock = threading.Lock()
+        self.catalog_data = None
         super().__init__(*args, **kwargs)
 
     def process_request(self, request, client_address):
@@ -174,12 +176,19 @@ class BoundedHTTPServer(ThreadingHTTPServer):
         finally:
             self.slots.release()
 
+    def server_close(self):
+        if hasattr(self, "judge_queue"):
+            self.judge_queue.close()
+        super().server_close()
+
 
 def serve(port=8765):
-    validate_hosted_settings()
-    address = "0.0.0.0" if hosted() else "127.0.0.1"
+    validate_local_settings()
+    address = "127.0.0.1"
     server = BoundedHTTPServer((address, port), JudgeHandler)
-    print(f"PaperLeet {'hosted API' if hosted() else 'local judge'}: http://{address}:{port}", flush=True)
+    from paperleet.judge.jobs_api import start_queue
+    start_queue(server)
+    print(f"PaperLeet local CPU judge: http://{address}:{port}", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

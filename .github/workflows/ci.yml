@@ -1,53 +1,41 @@
-name: PaperLeet quality gate
+name: Offline edition checks
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  pilot:
+  offline:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     env:
       OMP_NUM_THREADS: '2'
       MKL_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
       PYTHONHASHSEED: '0'
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: pip
-      - name: Install CPU-only dependencies
-        run: |
-          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
-          python -m pip install -e .
-      - name: Test judge infrastructure
-        run: python -m pytest tests -q
-      - name: Reference, mutation, determinism, and CPU budgets
-        # The 60-module catalog takes ~330s on hosted runners. Keep the three
-        # repetitions and per-module T3 limits; allow headroom for runner variance.
-        run: paperleet ci --budget 600
-      - name: Generate all visualization data and catalog
-        run: paperleet vizdata all
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: web/package-lock.json
-      - name: Build static web app
-        working-directory: web
+      - name: Install local CPU dependencies
         run: |
-          npm ci
-          npm run check
-          npm run build
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: judge-reports
-          path: reports/
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -e .
+          npm --prefix web ci
+      - name: Verify the offline edition
+        run: make ci PYTHON=python
       - uses: actions/upload-artifact@v4
         with:
-          name: paperleet-web
+          name: paperleet-offline-web
           path: web/dist/

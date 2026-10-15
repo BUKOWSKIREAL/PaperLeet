@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "repository": "PaperLeet/paperleet.github.io",
+  "files": [
+    "papers.yaml",
+    "conftest.py",
+    "paperleet/__init__.py",
+    "paperleet/catalog.py",
+    "paperleet/paper_catalog.py",
+    "paperleet/judge/__init__.py",
+    "paperleet/judge/loader.py",
+    "paperleet/judge/pytest_plugin.py",
+    "paperleet/judge/mutation.py",
+    "paperleet/judge/queue.py",
+    "web/src/paperCollections.ts"
+  ],
+  "directories": ["problems/", "paperleet/common/"],
+  "per_problem_visualizations": true
+}

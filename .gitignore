@@ -9,7 +9,7 @@ __pycache__/
 workspace/
 reports/
 .paperleet/
-web/node_modules/
+web/node_modules
 web/dist/
 .DS_Store
 .vite/

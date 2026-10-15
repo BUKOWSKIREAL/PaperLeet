@@ -5,7 +5,8 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "paperleet"
 version = "0.1.0"
-description = "PaperLeet: coding practice for AI researchers."
+description = "PaperLeet Offline: research-paper coding practice on your CPU."
+license = {file = "LICENSE"}
 requires-python = ">=3.10"
 dependencies = ["torch>=2.2", "numpy>=1.26", "pytest>=8", "pytest-timeout>=2.3", "PyYAML>=6"]
 

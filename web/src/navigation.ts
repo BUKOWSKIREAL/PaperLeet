@@ -11,7 +11,10 @@ export function resolveAppLocation({ pathname, hash }: { pathname: string; hash:
   canonicalUrl?: string;
 } {
   if (hash) {
-    const route = decodeProblemHash(hash);
+    const route = decodeProblemHash(hash).replace(/\/+$/, "");
+    const practiceRoute = /^(?:[0-9]+|papers\/[a-z0-9_-]+|(?:architecture|diffusion|finetuning|optimization|representation|rl|world_models)\/[a-z0-9_-]+)$/;
+    if (route && collectionIdFromRoute(route) === undefined && !practiceRoute.test(route))
+      return { route: "", canonicalUrl: "/" };
     const collectionId = collectionIdFromRoute(route);
     if (collectionId !== undefined) {
       return { route: `collections/${collectionId}`, canonicalUrl: collectionHref(collectionId) };

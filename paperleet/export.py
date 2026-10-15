@@ -1,5 +1,6 @@
 """Produce the web's one source of truth from problem packages."""
 import json
+import hashlib
 import re
 from pathlib import Path
 
@@ -25,8 +26,6 @@ def web_readme(markdown: str, language: str = "zh") -> str:
 
 
 def vizdata(entry):
-    if entry["id"].startswith("community/"):
-        raise ValueError("Generated community packages do not execute visualization generators on the host. Their paper, code, and test results are available in the web editor.")
     import random
     import numpy as np
     import torch
@@ -89,4 +88,29 @@ def export_catalog():
     categories = [category for category in CATEGORIES if any(paper["category"] == category["id"] for paper in papers)]
     temporary.write_text(json.dumps({"categories": categories, "papers": papers, "problems": catalog}, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     temporary.replace(destination)
+    # Keep catalog.json for CLI consumers and older clients. The website reads
+    # the small index and requests only the selected module's immutable detail.
+    def write_json(path, payload):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        raw = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+        temp = path.with_suffix(".json.tmp")
+        temp.write_text(raw, encoding="utf-8")
+        temp.replace(path)
+
+    fields = {"id", "number", "paper_id", "short_id", "title", "difficulty", "type", "parent",
+              "paper", "functions", "module", "estimated_minutes", "tests", "starter"}
+    index = []
+    for data in catalog:
+        raw = json.dumps(data, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        digest = hashlib.sha256(raw).hexdigest()[:20]
+        relative = f"modules/{data['number']}-{digest}.json"
+        write_json(destination.parent / relative, data)
+        summary = {key: value for key, value in data.items() if key in fields}
+        summary.update(readme="", notes="", detail_url=relative,
+                       translations={"en": {"title": data["translations"]["en"]["title"], "readme": "", "notes": ""}})
+        index.append(summary)
+    # Publish the manifest last so every referenced detail already exists.
+    # Do not delete previous hashes: a browser may still hold the old manifest.
+    write_json(destination.parent / "index.json",
+               {"schema_version": 2, "categories": categories, "papers": papers, "problems": index})
     return destination

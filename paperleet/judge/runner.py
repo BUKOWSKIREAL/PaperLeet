@@ -28,8 +28,6 @@ def normalize_layers(layers=None):
 
 def run_batch(plan, layers=None, timeout=600):
     layers = normalize_layers(layers)
-    if any(problem(identifier)["id"].startswith("community/") for identifier in plan):
-        raise ValueError("Generated community packages must run in the submission sandbox. Use the web editor or paperleet test for a single implementation; batch CI/mutate currently supports maintained packages only.")
     # Freeze every source before pytest begins. Saving a file during a run must
     # not make different tests judge different versions of the implementation.
     sources = {}
@@ -50,7 +48,8 @@ def run_batch(plan, layers=None, timeout=600):
         args = [sys.executable, "-m", "pytest", *paths, "-q", "--tb=short", "-p", "pytest_timeout",
                 "--paperleet-plan", str(plan_path), "--paperleet-result", str(result_path),
                 "-m", " or ".join(layer.lower() for layer in layers)]
-        env = dict(os.environ, PYTEST_DISABLE_PLUGIN_AUTOLOAD="1", PYTHONHASHSEED="0", OMP_NUM_THREADS="2", MKL_NUM_THREADS="2")
+        env = dict(os.environ, PYTEST_DISABLE_PLUGIN_AUTOLOAD="1", PYTHONHASHSEED="0",
+                   OMP_NUM_THREADS="2", MKL_NUM_THREADS="2", CUDA_VISIBLE_DEVICES="")
         env["PYTHONPATH"] = str(root()) + os.pathsep + env.get("PYTHONPATH", "")
         def recover():
             if result_path.exists():
@@ -104,12 +103,6 @@ def run_problem(identifier, implementation, layers=None, report_path=None):
     implementation = Path(implementation).resolve()
     if not implementation.is_file():
         raise ValueError(f"Missing implementation {implementation}. Run paperleet init {entry['id']} first.")
-    if entry["id"].startswith("community/"):
-        from paperleet.submissions.sandbox import run_published
-        report = run_published(entry, implementation, layers)
-        if report_path:
-            write_report(report, report_path)
-        return report
     result = run_batch({entry["id"]: [{"path": str(implementation), "variant": "implementation"}]}, layers, timeout=120)
     error = result["output"] if result.get("incomplete") or result["exit_code"] not in (0, 1) or not result["tests"] else None
     report = make_report(entry["id"], implementation, result["tests"], layers, error)

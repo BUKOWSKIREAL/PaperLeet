@@ -69,6 +69,9 @@ export type TestResult = {
   artifacts?: Record<string, unknown>;
 };
 export type Report = {
+  workspace_preserved?: boolean;
+  workspace_warning?: string;
+  source_path?: string;
   error?: string;
   problem: string;
   impl?: string;
