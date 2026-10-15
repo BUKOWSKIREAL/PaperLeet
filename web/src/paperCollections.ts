@@ -20,6 +20,14 @@ export const paperCollections: PaperCollection[] = [
     paperIds: ["transformer", "rmsnorm", "roformer", "gqa", "adamw", "flash-attention", "lora"],
   },
   {
+    id: "retrieval",
+    name: "检索与推荐",
+    name_en: "Retrieval",
+    description: "序列推荐 · 对比检索 · 生成式召回",
+    description_en: "Sequential recommendation · Contrastive retrieval · Generative retrieval",
+    paperIds: ["bpr", "lightgcn", "sasrec", "clip", "colbert", "rotation-trick", "tiger"],
+  },
+  {
     id: "rl",
     name: "强化学习",
     name_en: "Reinforcement Learning",
@@ -79,5 +87,5 @@ export function papersInCollection(papers: Paper[], collection?: PaperCollection
 
 export function collectionIdFromRoute(route: string): string | undefined {
   // Keep previously shared learning-list links usable.
-  return /^(?:collections|lists)\/(.+)$/.exec(route)?.[1];
+  return /^(?:collections|lists)\/([a-z0-9_-]+)$/.exec(route.split('?')[0])?.[1];
 }
