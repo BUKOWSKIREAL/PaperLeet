@@ -15,7 +15,7 @@ PaperLeet is a paper-to-code practice library: read a method, implement its core
 
 Explore attention and modern LLM building blocks, reinforcement learning, diffusion and flow, post-training, representation learning, and world models. Each exercise includes English and Chinese explanations, a starter, a reference solution, tests, and notes on common mistakes. Python/PyTorch executes locally; you need no GPU, account, or cloud API.
 
-[Quick start](#quick-start) · [First exercise](#your-first-exercise) · [Learning paths](#choose-a-learning-path) · [All 49 papers](#full-curriculum) · [How tests teach](#learn-from-four-layers-of-tests) · [Contribute](#contribute)
+[Quick start](#quick-start) · [First exercise](#your-first-exercise) · [Learning paths](#choose-a-learning-path) · [All 49 papers](#full-curriculum) · [How tests teach](#learn-from-four-layers-of-tests) · [Contribute](#contribute) · [Star history](#star-history)
 
 ![The local paper library, with featured collections and searchable papers](assets/readme/library.png)
 
@@ -311,6 +311,15 @@ Useful contributions include clearer derivations, counterexamples, better failur
 See [CONTRIBUTING.md](CONTRIBUTING.md). Preserve source attribution, stable module IDs, bilingual explanations, and the connection between a paper's claim and its tests. A question package should give future learners enough evidence to understand both a correct implementation and the mistakes around it.
 
 If PaperLeet helps you read a paper more deeply, **star this repository** and share it with your study group. A clear issue, a corrected explanation, or a new test is also a useful way to help the library grow.
+
+## Star history
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/metrics/stars-dark.svg">
+  <img src="docs/metrics/stars.svg" alt="GitHub Star History for Hongyang-Du/PaperLeet" width="840">
+</picture>
+
+Updated daily from this repository's stars. [Data and refresh details](docs/metrics.md).
 
 ## License
 
