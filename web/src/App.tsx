@@ -44,6 +44,7 @@ import { navigateToProblem, resolveAppLocation } from "./navigation";
 import { LocaleProvider, useI18n } from "./i18n";
 import { usePracticeWorkspace } from "./PracticeWorkspace";
 import Brand from "./Brand";
+import RepositoryLink from "./RepositoryLink";
 import ResizableSplit from "./ResizableSplit";
 
 const difficulty = (d: string) =>
@@ -532,18 +533,7 @@ function Workspace() {
             </button>
           </nav>
           <div className="nav-actions">
-            <span
-              className={`connection ${online ? "connected" : ""}`}
-              title={t(
-                "代码仅发送到本机 Python 服务，使用自己的 CPU 运行",
-                "Code runs only on this computer’s Python service and CPU",
-              )}
-            >
-              <i />
-              {online
-                ? t("本机 CPU 已连接", "Local CPU ready")
-                : t("本机服务未连接", "Local service offline")}
-            </span>
+            <RepositoryLink />
             <button
               className="language-toggle"
               aria-label={t("切换到英文", "Switch to Chinese")}
@@ -1083,7 +1073,7 @@ function Workspace() {
                   </ResizableSplit>
                   <div className="editor-bottom">
                     {judge.job?.status === "queued" && <button className="text-button" onClick={() => void judge.cancel()}>{t("取消排队", "Cancel queued run")}</button>}
-                    <span>
+                    <span className="editor-run-status" role="status">
                       {running ? (
                         <>
                           <span className="spinner" />
@@ -1092,12 +1082,12 @@ function Workspace() {
                       ) : online ? (
                         <>
                           <i className="green-dot" />
-                          {t("可以运行", "Ready")}
+                          {t("本机 CPU 已连接", "Local CPU ready")}
                         </>
                       ) : (
                         <>
                           <i className="yellow-dot" />
-                          {t("判题服务暂时不可用", "Judge unavailable")}
+                          {t("本机服务未连接", "Local service offline")}
                         </>
                       )}
                     </span>

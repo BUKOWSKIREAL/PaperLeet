@@ -1,5 +1,5 @@
 {
-  "commit": "bc414345b3b7b493f7ae3e2d8c880e2d31debfd7",
+  "commit": "46f3a90c1d00a98be6ece6f84888f704ebc1e688",
   "files": {
     "conftest.py": {
       "mode": "100644",
@@ -3859,7 +3859,7 @@
     },
     "web/src/paperCollections.ts": {
       "mode": "100644",
-      "sha256": "b219f83f76c794caff69d03a80ac42162d0455f59529632ca854095446349a70"
+      "sha256": "a9b10b5bf912d268f924e53672f8cff74f6f5042892e56fd798ae989bb43bd26"
     }
   },
   "repository": "PaperLeet/paperleet.github.io",
