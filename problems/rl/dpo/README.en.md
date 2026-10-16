@@ -8,9 +8,30 @@ Module goal: Compute the preference loss and implicit rewards from policy and re
 
 ## 2. Core equations and task
 
+### Return requirements
+
+Use the return structure below exactly; Tensor shapes include singleton dimensions. A scalar Tensor has shape `()`, not a Python `float`.
+
+#### `dpo_loss` · Required
+
+Return `(loss, chosen_rewards, rejected_rewards)`, a tuple of **three Tensors in this order**:
+
+- `loss`: shape `()`, the batch-mean smoothed DPO loss; retain policy gradients.
+- `chosen_rewards`: shape `[B]`, `beta * (pi_chosen - ref_chosen)`, detached when returned.
+- `rejected_rewards`: shape `[B]`, `beta * (pi_rejected - ref_rejected)`, detached when returned.
+
+`B` is the number of preference pairs. Preserve input floating dtype/device and keep reward vectors shaped `[1]` for `B=1`. Reference inputs are fixed. Do not detach the policy computation used for the loss, call `.item()` on the loss, or average/squeeze the returned reward vectors. Returning only `loss` does not satisfy the interface.
+
+#### `sequence_logprob` · Provided
+
+Returns one floating Tensor `scores`, shape `[B]`, from logits `[B, T, V]` (`T` positions, `V` vocabulary entries). Each value is the **sum** of shifted, masked response-token log-probabilities, not a token mean. Preserve logits dtype/device and gradients; `B=1` still returns `[1]`.
+
+### Formula and conventions
+
 Implement only `dpo_loss`. The supplied `sequence_logprob` helper handles next-token label shifting, response masking, and summation to produce the sequence scores.
 
- The four sequence log-probabilities have shape `[B]`. Return a scalar loss and two detached reward vectors.
+The four sequence log-probability inputs have shape `[B]`, where `B` is the number of preference pairs.
+
 
 $$
 h=(\log\pi_c-\log\pi^{ref}_c)-(\log\pi_r-\log\pi^{ref}_r),\qquad
