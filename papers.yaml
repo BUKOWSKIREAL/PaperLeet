@@ -613,3 +613,66 @@ papers:
     scope: 稠密二部图、线性传播与均匀层聚合，以及 160 次真实合成训练；不复现大规模稀疏训练或论文数据基准。
     scope_en: Dense bipartite graphs, linear propagation, uniform layer aggregation and 160 actual synthetic training updates; no large sparse training or paper dataset benchmark.
     module_ids: [retrieval/lightgcn]
+
+  - id: simclr
+    number: 57
+    category: representation
+    short_title: SimCLR
+    year: 2020
+    tags: [Contrastive Learning, Self Supervision, NT-Xent]
+    summary: 用 2B 个锚点实现 NT-Xent，理解正样本映射、自身掩码、同视图负样本与温度。
+    summary_en: Implement NT-Xent over 2B anchors with positive-pair mapping, self masking, same-view negatives and temperature.
+    scope: 归一化对比损失、独立梯度检查及 6 对向量的真实 CPU 训练；不复现图像训练或论文基准。
+    scope_en: Normalized contrastive loss, independent gradient checks and actual CPU training on 6 vector pairs; no image-training or paper benchmark reproduction.
+    module_ids: [representation/simclr]
+
+  - id: moco
+    number: 58
+    category: representation
+    short_title: MoCo
+    year: 2020
+    tags: [Contrastive Learning, Momentum Encoder, Negative Dictionary]
+    summary: 用动量编码器和跨 batch 负样本队列构建一致的对比字典。
+    summary_en: Build a consistent contrastive dictionary with a momentum encoder and cross-batch negative queue.
+    scope: Query-only InfoNCE、参数 EMA 和环形字典；提供 12 次真实合成 SGD，不复现图像训练或论文基准。
+    scope_en: Query-only InfoNCE, parameter EMA and a circular dictionary, with 12 actual synthetic SGD steps; no image-training or paper benchmark reproduction.
+    module_ids: [representation/moco]
+
+  - id: llm-training-generation
+    number: 59
+    kind: course
+    category: foundations
+    short_title: LLM Training & Generation · 训练与生成入门
+    tags:
+    - Back to Basics
+    - Next-token Loss
+    - SFT
+    - Top-k
+    - Top-p
+    - Gradient Accumulation
+    - Gradient Clipping
+    summary: 从下一词预测与回答掩码，到候选概率、有效 token 梯度累积和全局裁剪。
+    summary_en: From next-token targets and response masks to candidate probabilities, token-weighted
+      accumulation and global clipping.
+    scope: 6 道独立基础题，明确错位、掩码、并列值和归约约定；提供确定性概率实验与真实小模型梯度更新。
+    scope_en: Six standalone exercises with explicit shifting, masks, ties and reductions; deterministic
+      probability experiments and actual small-model gradient updates.
+    module_ids:
+    - foundations/next_token_loss
+    - foundations/sft_loss_mask
+    - foundations/top_k_sampling
+    - foundations/top_p_sampling
+    - foundations/gradient_accumulation
+    - foundations/gradient_clipping
+
+  - id: groupnorm
+    number: 60
+    category: architecture
+    short_title: GroupNorm
+    year: 2018
+    tags: [GroupNorm, Normalization, Computer Vision]
+    summary: 在每个样本内按连续通道分组归一化，研究批次组成与组数的影响。
+    summary_en: Normalize contiguous channel groups within each sample and explore batch composition and group counts.
+    scope: 实现可微的分组统计与逐通道仿射参数；提供标量基准、梯度检查和无需训练的合成实验。
+    scope_en: Implement differentiable grouped moments and per-channel affine; scalar oracles, gradient checks and a training-free synthetic experiment are supplied.
+    module_ids: [architecture/group_norm]

@@ -8,9 +8,30 @@ DPO 把 KL 正则化奖励最大化改写为偏好对上的分类目标，训练
 
 ## 2. 核心公式与题面
 
-只需实现 `dpo_loss`。starter 已提供 `sequence_logprob`，处理 next-token 标签移位、回答 mask 和 log-prob 求和，直接产生目标函数所需的序列分数。
+### 返回值要求
 
-四个序列 log-prob 都是 `[B]`，返回 loss 标量，以及两个已经 detach 的奖励向量。
+按下列结构返回，保留形状中的单例维度。标量 Tensor 的形状为 `()`，不是 Python `float`。
+
+#### `dpo_loss` · 需要实现
+
+按顺序返回 **三个 Tensor 的元组** `(loss, chosen_rewards, rejected_rewards)`：
+
+- `loss`：形状 `()`，对 batch 取平均的平滑 DPO loss，保留策略梯度。
+- `chosen_rewards`：形状 `[B]`，`beta * (pi_chosen - ref_chosen)`，返回时 detach。
+- `rejected_rewards`：形状 `[B]`，`beta * (pi_rejected - ref_rejected)`，返回时 detach。
+
+`B` 是偏好对数量。保留输入浮点 dtype/device；`B=1` 时奖励仍为 `[1]`。reference 输入固定。计算 loss 的策略分支不要 detach，loss 不调用 `.item()`，不要对奖励向量求平均或 squeeze。只返回 `loss` 不符合本题接口。
+
+#### `sequence_logprob` · 已提供
+
+对 `[B, T, V]` logits（`T` 个位置、词表大小 `V`），返回浮点 Tensor `scores`，形状 `[B]`。每个值是对齐下一 token 的标签与 mask 后，回答 token log-prob 的 **总和**，不是 token 平均值。保留 logits 的 dtype/device 和梯度；`B=1` 仍返回 `[1]`。
+
+### 公式与约定
+
+只需实现 `dpo_loss`。starter 已提供 `sequence_logprob`，对齐 next-token 标签与回答 mask，再对 log-prob 求和，直接产生目标函数所需的序列分数。
+
+四个序列 log-prob 输入的形状都是 `[B]`，其中 `B` 是偏好对的数量。
+
 
 $$
 h=(\log\pi_c-\log\pi^{ref}_c)-(\log\pi_r-\log\pi^{ref}_r),\qquad
@@ -34,7 +55,7 @@ $c,r$ 分别代表 chosen 和 rejected，$\beta$ 默认为 0.1，标签平滑 $\
 | 项目 | 本题 | 相关方法或库 |
 |---|---|---|
 | token 聚合 | 回答 log-prob 总和 | SimPO 使用长度归一化，目标不同 |
-| mask | 与右移后的标签对齐 | prompt 与 padding 均排除 |
+| mask | 与下一 token 标签对齐 | prompt 与 padding 均排除 |
 | label smoothing | 正反 sigmoid loss 的凸组合 | TRL v0.23.1 的保守 DPO 说明 |
 | reference 与奖励 | reference 无梯度，返回奖励 detach | 奖励用于诊断而非再次反传 |
 

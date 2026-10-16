@@ -15,9 +15,17 @@ export const paperCollections: PaperCollection[] = [
     id: "llm-basics",
     name: "LLM 基础",
     name_en: "LLM Basics",
-    description: "Attention · Transformer · LoRA",
-    description_en: "Attention · Transformer · LoRA",
-    paperIds: ["transformer", "rmsnorm", "roformer", "gqa", "adamw", "flash-attention", "lora"],
+    description: "训练与生成入门 · Attention · LoRA",
+    description_en: "Training & generation · Attention · LoRA",
+    paperIds: ["llm-training-generation", "transformer", "rmsnorm", "roformer", "gqa", "adamw", "flash-attention", "lora"],
+  },
+  {
+    id: "llm-frontier",
+    name: "LLM 前沿",
+    name_en: "LLM Frontier",
+    description: "Kimi K3 · GLM-5",
+    description_en: "Kimi K3 · GLM-5",
+    paperIds: ["kimi-k3", "glm-5"],
   },
   {
     id: "retrieval",
@@ -72,7 +80,7 @@ export const paperCollections: PaperCollection[] = [
     name_en: "Visual Generation",
     description: "视觉表征 · 多尺度生成",
     description_en: "Visual features · Multiscale generation",
-    paperIds: ["clip", "rotation-trick", "var", "repa", "drifting", "fd-loss"],
+    paperIds: ["clip", "simclr", "moco", "rotation-trick", "var", "repa", "drifting", "fd-loss"],
   },
 ];
 
