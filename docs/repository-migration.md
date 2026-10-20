@@ -15,9 +15,9 @@ Issues、PR 和历史。迁移前不要创建同名替代仓，迁移后不要�
 
 私有平台通过固定公共 commit 采用题库和判题改进，不会覆盖其私有线上前端。
 TorchWasm（原 StrideTorch）独立维护，产品采用经过验证的版本。GitHub 独立仓库
-目前仍是 `PaperLeet/stridetorch`；公共主分支采用 0.85，改名为 `torchwasm` 的
-0.91 仍是[待合并候选](https://github.com/PaperLeet/stridetorch/pull/1)。运行时改名需要公共包路径、导入、浏览器 Worker、
-资源和来源锁文件一起更新；本仓的白名单同步不能提前切到未合并候选。
+目前仍是 `PaperLeet/stridetorch`；公共主分支现已接入改名为 `torchwasm` 的
+0.91；独立仓库的[接入 PR](https://github.com/PaperLeet/stridetorch/pull/1) 仍是草稿。运行时改名需要公共包路径、导入、浏览器 Worker、
+资源和来源锁文件一起更新；本仓的白名单同步继续跟随已审核的公共快照，不能越过现有同步边界。
 仓库 URL 改名和 owner 转移分别处理，未发生前保留可用上游。
 
 迁移验收包括干净安装、本地完整练习、浏览器与原生执行、线上平台集成。
