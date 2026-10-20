@@ -2,7 +2,7 @@
   "repository": "Hongyang-Du/PaperLeet",
   "metric": "current_stargazers",
   "label": "GitHub stars",
-  "updated_at": "2026-10-19T21:34:50Z",
+  "updated_at": "2026-10-20T20:40:21Z",
   "stale": false,
   "points": [
     {
@@ -27,7 +27,11 @@
     },
     {
       "date": "2026-10-19",
-      "value": 99
+      "value": 108
+    },
+    {
+      "date": "2026-10-20",
+      "value": 153
     }
   ]
 }
