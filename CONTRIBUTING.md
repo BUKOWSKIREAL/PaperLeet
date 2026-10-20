@@ -1,5 +1,10 @@
 # Contributing to PaperLeet Offline
 
+The owner-assisted organization transfer and future public contribution entry
+point are described in [the repository migration plan](docs/repository-migration.md).
+Until public core consolidation is verified, keep the existing upstream sync
+and contribution routing below.
+
 This repository maintains the offline interface and local CPU service. Shared questions, catalog metadata, and judge helpers are managed by the upstream sync workflow.
 
 - For a new paper, a corrected test, or a reference implementation, submit a change to [PaperLeet/paperleet.github.io](https://github.com/PaperLeet/paperleet.github.io). The offline sync PR brings reviewed changes here.
